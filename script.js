@@ -2,29 +2,37 @@
 
 var rlt = {};
 
-/** An array of [x, y] arrays representing neighboting tiles */
+/** An array of [x, y] arrays representing neighboring tiles in 4 directions */
+rlt.dir4 = [
+    [ 1, 0],
+    [-1, 0],
+    [ 0, 1],
+    [ 0,-1]
+];
+
+/** An array of [x, y] arrays representing neighboring tiles in 8 directions */
 rlt.dir8 = [
-    [ 1, -1],
-    [ 0, -1],
-    [-1, -1],
-    [ 1,  0],
-    [-1,  0],
-    [ 1,  1],
-    [ 0,  1],
-    [-1,  1]
+    [ 1,-1],
+    [ 0,-1],
+    [-1,-1],
+    [ 1, 0],
+    [-1, 0],
+    [ 1, 1],
+    [ 0, 1],
+    [-1, 1]
 ];
 
 /** An array of [x, y] arrays representing tiles in a 3x3 neighbourhood */
 rlt.dir9 = [
-    [ 1, -1],
-    [ 0, -1],
-    [-1, -1],
-    [ 1,  0],
-    [ 0,  0],
-    [-1,  0],
-    [ 1,  1],
-    [ 0,  1],
-    [-1,  1]
+    [ 1,-1],
+    [ 0,-1],
+    [-1,-1],
+    [ 1, 0],
+    [ 0, 0],
+    [-1, 0],
+    [ 1, 1],
+    [ 0, 1],
+    [-1, 1]
 ];
 
 /**
@@ -220,9 +228,12 @@ rlt.shuffle = function(array, prng) {
  * @param starty - the y coordinate of the origin
  * @param cost - the cost of moving to (x,y). If the cost is negative the tile is ignored
  * @param heuristic - the heuristic/expected cost until destination
+ * @param directions - array of array of offests. Default rlt.dir8
  */
-rlt.astar = function(startx, starty, cost, heuristic) {
+rlt.astar = function(startx, starty, cost, heuristic, directions) {
     'use strict';
+    var directions = directions || rlt.dir8;
+
     var open = [{parent: undefined, x: startx, y: starty, f: 0, g: 0, h: 0}];
     var closed = [];
     while (open.length > 0) {
@@ -238,9 +249,9 @@ rlt.astar = function(startx, starty, cost, heuristic) {
         // remove it from open
         var tile = open.splice(iminf, 1)[0];
         // for each neighboring tile
-        for (var i = 0; i < 8; i++) {
-            var x = tile.x + rlt.dir8[i][0];
-            var y = tile.y + rlt.dir8[i][1];
+        for (var i = 0; i < directions.length; i++) {
+            var x = tile.x + directions[i][0];
+            var y = tile.y + directions[i][1];
             // don't consider tiles with negative cost
             if (cost(x, y) < 0) {
                 continue;
@@ -253,7 +264,7 @@ rlt.astar = function(startx, starty, cost, heuristic) {
                 h: heuristic(x, y)
             };
             newtile.f = newtile.g + newtile.h;
-            if (heuristic(x, y) === 0) {
+            if (heuristic(x, y) <= 0) {
                 return newtile;
             }
             // skip this tile if a better (smaller f) one with same position is in the open list
