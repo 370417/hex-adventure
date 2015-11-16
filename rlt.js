@@ -1,4 +1,5 @@
-// jshint undef: true, shadow: true, strict: true
+/* jshint undef: true, shadow: true, strict: true */
+/* globals document, Image */
 
 var rlt = {};
 
@@ -287,4 +288,108 @@ rlt.astar = function(startx, starty, cost, heuristic, directions) {
         closed.push(tile);
     }
     return closed;
+};
+
+/**
+ * Measure the dimensions of a font's character (default @)
+ * @param font - a CSS font string
+ * @return object with width and height properties
+ */
+rlt._measureFont = function(font, char) {
+    'use strict';
+    char = char || '@';
+    var div = document.createElement('div');
+    div.innerHTML = char;
+    div.style.position = 'absolute';
+    div.style.font = font;
+    document.body.appendChild(div);
+    var width = div.offsetWidth;
+    var height = div.offsetHeight;
+    document.body.removeChild(div);
+    return {
+        width: width,
+        height: height
+    };
+};
+
+/**
+ * Convert an array of [r,g,b] or [r,g,b,a] values to a CSS color string
+ * @return CSS color string
+ */
+rlt.arr2rgb = function(array) {
+    'use strict';
+    if (array.length === 3) {
+        return 'rgb(' + array[0] + ',' + array[1] + ',' + array[2] + ')';
+    } else if (array.length === 4) {
+        return 'rgba(' + array[0] + ',' + array[1] + ',' + array[2] + ',' + array[3] + ')';
+    } else {
+        return '';
+    }
+};
+
+/**
+ * @return whether or not a string color is transparent
+ */
+rlt._isTransparent = function(color) {
+    'use strict';
+    if (!color) return true;
+    else if (color === 'transparent') return true;
+    else return false;
+};
+
+rlt.Display = function(args) {
+    'use strict';
+    args = args || {};
+    var display = {
+        // width in tiles
+        width: args.width || 80,
+        // height in tiles
+        height: args.height || 24,
+        // CSS font specifier
+        font: args.font || 'monospace',
+        // parent HTML element
+        parent: args.parent || document.body,
+        // canvas HTML element
+        canvas: args.canvas
+    };
+    // dimensions of a single tile
+    var tile = rlt._measureFont(display.font, '@');
+    display.tileWidth = tile.width;
+    display.tileHeight = tile.height;
+    // default canvas
+    if (!display.canvas) {
+        var canvas = document.createElement('canvas');
+        canvas.width = display.width * display.tileWidth;
+        canvas.height = display.height * display.tileHeight;
+        display.canvas = canvas;
+    }
+    // canvas context
+    display.ctx = display.canvas.getContext('2d');
+    display.ctx.font = display.font;
+    return display;
+};
+
+/**
+ * Draw a glyph
+ * @param x - x coordinate in tiles
+ * @param y - y coordinate in tiles
+ * @param char - character to be drawn
+ * @param fg - optional foregound color, default transparent
+ * @param bg - optional foreground color, default transparent
+ */
+rlt.Display.prototype.draw = function(x, y, char, fg, bg) {
+    'use strict';
+    if (typeof fg === 'object') {
+        fg = rlt.arr2rgb(fg);
+    }
+    if (typeof bg === 'object') {
+        bg = rlt.arr2rgb(bg);
+    }
+    if (!rlt._isTransparent(bg)) {
+        this.fillStyle = bg;
+        this.fillRect(x * this.tileWidth, y * this.tileHeight, this.tileWidth, this.tileHeight);
+    }
+    if (!rlt._isTransparent(fg)) {
+        this.ctx.fillText(char, x * this.tileWidth, y * this.tileHeight);
+    }
 };
