@@ -13,14 +13,14 @@ rlt.dir4 = [
 
 /** An array of [x, y] arrays representing neighboring tiles in 8 directions */
 rlt.dir8 = [
+    [ 1, 0],
     [ 1,-1],
     [ 0,-1],
     [-1,-1],
-    [ 1, 0],
     [-1, 0],
-    [ 1, 1],
+    [-1, 1],
     [ 0, 1],
-    [-1, 1]
+    [ 1, 1]
 ];
 
 /** An array of [x, y] arrays representing tiles in a 3x3 neighbourhood */
@@ -223,6 +223,41 @@ rlt.shuffle = function(array, prng) {
 };
 
 /**
+ * Create an array of elements equal to their indeces.
+ * @param length - length of the array
+ * @return the array
+ */
+rlt.range = function(length) {
+    'use strict';
+    var array = [];
+    for (var i = 0; i < length; i++) {
+        array[i] = i;
+    }
+    return array;
+};
+
+/**
+ * Create an array of elements from 0 to length - 1 in random order.
+ * Essesntially rlt.shuffle(rlt.range(length), prng) but faster
+ * @param length - length of the array
+ * @param prng - function that returns a random number in [0, 1), default Math.random
+ * @return the array
+ */
+rlt.shuffledRange = function(length, prng) {
+    'use strict';
+    prng = prng || Math.random;
+    var array = [];
+    for (var i = 0; i < length; i++) {
+        var j = Math.floor(i * prng());
+        if (j !== i) {
+            array[i] = array[j];
+        }
+        array[j] = i;
+    }
+    return array;
+};
+
+/**
  * Implementation of A* for square grids.
  * Instead of stopping at a goal, it stops when h = 0.
  * @param startx - the x coordinate of the origin
@@ -254,7 +289,7 @@ rlt.astar = function(startx, starty, cost, heuristic, directions) {
             var x = tile.x + directions[i][0];
             var y = tile.y + directions[i][1];
             // don't consider tiles with negative cost
-            if (cost(x, y) < 0) {
+            if (cost(x, y) <= 0) {
                 continue;
             }
             var newtile = {
@@ -337,25 +372,33 @@ rlt._isTransparent = function(color) {
     else return false;
 };
 
+/**
+ * Create a canvas display
+ * All parameters are optional and are passed in an args object.
+ * @param args.width - width in tiles, default 80
+ * @param args.height - height in tiles, default 24
+ * @param args.font - CSS font string, default 1em/1 monospace
+ * @param args.canvas - canvas element, default a new canvas element
+ * @param args.tileWidth - width of a tile, default depends on font
+ * @param args.tileHeight - height of a tile, default depends on font
+ * @return a new display object
+ */
 rlt.Display = function(args) {
     'use strict';
     args = args || {};
-    var display = {
-        // width in tiles
-        width: args.width || 80,
-        // height in tiles
-        height: args.height || 24,
-        // CSS font specifier
-        font: args.font || 'monospace',
-        // parent HTML element
-        parent: args.parent || document.body,
-        // canvas HTML element
-        canvas: args.canvas
-    };
+    var display = Object.create(rlt.Display.prototype);
+    // width in tiles
+    display.width = args.width || 80;
+    // height in tiles
+    display.height = args.height || 24;
+    // CSS font specifier
+    display.font = args.font || '1em/1 monospace';
+    // canvas HTML element
+    display.canvas = args.canvas;
     // dimensions of a single tile
     var tile = rlt._measureFont(display.font, '@');
-    display.tileWidth = tile.width;
-    display.tileHeight = tile.height;
+    display.tileWidth = args.tileWidth || tile.width;
+    display.tileHeight = args.tileHeight || tile.height;
     // default canvas
     if (!display.canvas) {
         var canvas = document.createElement('canvas');
@@ -366,6 +409,8 @@ rlt.Display = function(args) {
     // canvas context
     display.ctx = display.canvas.getContext('2d');
     display.ctx.font = display.font;
+    display.ctx.textAlign = 'center';
+    display.ctx.textBaseline = 'middle';
     return display;
 };
 
@@ -377,7 +422,7 @@ rlt.Display = function(args) {
  * @param fg - optional foregound color, default transparent
  * @param bg - optional foreground color, default transparent
  */
-rlt.Display.prototype.draw = function(x, y, char, fg, bg) {
+rlt.Display.prototype.draw = function(char, x, y, fg, bg) {
     'use strict';
     if (typeof fg === 'object') {
         fg = rlt.arr2rgb(fg);
@@ -386,10 +431,22 @@ rlt.Display.prototype.draw = function(x, y, char, fg, bg) {
         bg = rlt.arr2rgb(bg);
     }
     if (!rlt._isTransparent(bg)) {
-        this.fillStyle = bg;
-        this.fillRect(x * this.tileWidth, y * this.tileHeight, this.tileWidth, this.tileHeight);
+        this.ctx.fillStyle = bg;
+        this.ctx.fillRect(x * this.tileWidth, y * this.tileHeight, this.tileWidth, this.tileHeight);
     }
     if (!rlt._isTransparent(fg)) {
-        this.ctx.fillText(char, x * this.tileWidth, y * this.tileHeight);
+        this.ctx.fillStyle = fg;
+        this.ctx.fillText(char, (x + 0.5) * this.tileWidth, (y + 0.5) * this.tileHeight);
     }
+};
+
+/**
+ * Draw a cached image or canvas element
+ * @param img - the image or canvas element
+ * @param x - x coordinate in tiles
+ * @param y - y coordinate in tiles
+ */
+rlt.Display.prototype.drawCached = function(img, x, y) {
+    'use strict';
+    this.ctx.drawImage(img, x * this.tileWidth, y * this.tileHeight);
 };
