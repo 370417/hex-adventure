@@ -138,9 +138,7 @@ game.newCave = function(width, height, callback, prng, options) {
             if (typeof map[x][y] === 'number' && !connected[map[x][y]] && areaSizes[map[x][y]] > 4) {
                 var node = rlt.astar(x, y, pathcost, pathheuristic, rlt.dir4);
                 while (node.parent) {
-                    //if (map[node.x][node.y] === 'wall') {
-                        map[node.x][node.y] = 'corridor';
-                    //}
+                    map[node.x][node.y] = 'corridor';
                     node = node.parent;
                 }
                 connected[map[x][y]] = true;
@@ -163,21 +161,3 @@ game.newCave = function(width, height, callback, prng, options) {
 
     return map;
 };
-
-var go = function() {
-    'use strict';
-    arr = game.newCave(width, height, false, false, {
-        openness: 0.8
-    });
-for (var x = 0; x < width; x++) {
-    for (var y = 0; y < height; y++) {
-        var char = arr[x][y] ? '.' : '#';
-        var bg = arr[x][y] ? '#000' : '#357';
-        var glyph = arr[x][y] === 'floor' ? game.Tiles.floor.canvas : game.Tiles.wall.canvas;
-        glyph = game.Tiles[arr[x][y]].canvas;
-        d.drawCached(glyph, x, y);
-    }
-}
-};
-alert();
-try{go();}catch(e){console.log(e)}

@@ -1,6 +1,8 @@
 /* jshint undef: true, shadow: true, strict: true */
 /* globals document, Image */
 
+// 11-17-2015
+
 var rlt = {};
 
 /** An array of [x, y] arrays representing neighboring tiles in 4 directions */
@@ -232,6 +234,29 @@ rlt.range = function(length) {
     var array = [];
     for (var i = 0; i < length; i++) {
         array[i] = i;
+    }
+    return array;
+};
+
+/**
+ * Create a 2d array
+ * @param imax - length of the first array
+ * @param jmax - length of the second arrays
+ * @param fill - value of the elements of the second arrays
+ * @return the array
+ */
+rlt.array2d = function(imax, jmax, fill) {
+    'use strict';
+    var array = [];
+    for (var i = 0; i < imax; i++) {
+        array[i] = [];
+        for (var j = 0; j < jmax; j++) {
+            if (typeof fill === 'function') {
+                array[i][j] = fill(i, j);
+            } else {
+                array[i][j] = fill;
+            }
+        }
     }
     return array;
 };
