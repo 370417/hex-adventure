@@ -138,7 +138,11 @@ game.newCave = function(width, height, callback, prng, options) {
             if (typeof map[x][y] === 'number' && !connected[map[x][y]] && areaSizes[map[x][y]] > 4) {
                 var node = rlt.astar(x, y, pathcost, pathheuristic, rlt.dir4);
                 while (node.parent) {
-                    map[node.x][node.y] = 'corridor';
+                    if (map[node.x][node.y] === 'wall') {
+                        map[node.x][node.y] = 'corridor';
+                    } else {
+                        map[node.x][node.y] = 'floor';
+                    }
                     node = node.parent;
                 }
                 connected[map[x][y]] = true;
@@ -148,11 +152,11 @@ game.newCave = function(width, height, callback, prng, options) {
 
     // fill all the areas with floor
     for (var x = 1; x < width - 1; x++) {
-        for (var y = 1; y < width - 1; y++) {
-            if (map[x][y] !== 'wall' && map[x][y] !== 'corridor') {
-                if (typeof map[x][y] !== 'number' || areaSizes[map[x][y]] > 4) {
+        for (var y = 1; y < height - 1; y++) {
+            if (typeof map[x][y] === 'number') {
+                if (areaSizes[map[x][y]] > 4) {
                     map[x][y] = 'floor';
-                } else if (typeof map[x][y] === 'number') {
+                } else {
                     map[x][y] = 'wall';
                 }
             }
@@ -160,4 +164,14 @@ game.newCave = function(width, height, callback, prng, options) {
     }
 
     return map;
+};
+
+game.passable = function(x, y) {
+    'use strict';
+    return game.map[x][y].passable;
+};
+
+game.transparent = function(x, y) {
+    'use strict';
+    return game.map[x][y].transparent;
 };

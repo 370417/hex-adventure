@@ -47,9 +47,16 @@ game.tiles.floor = {
 game.tiles.corridor = {
     transparent: true,
     passable: true,
-    color: '#bbbbbb',
-    name: 'floor',
+    color: '#008800',
+    name: 'corridor',
     char: '.',
     spritex: 2,
     spritey: 14
+};
+game.tiles.player = {
+    color: '#bbbbbb',
+    name: 'player',
+    char: '@',
+    spritex: 4,
+    spritey: 0
 };

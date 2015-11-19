@@ -44,12 +44,12 @@ rlt.dir9 = [
  * Opaque tiles are treated as if they have beveled edges.
  * Transparent tiles are visible only if their center is visible, so the
  * algorithm is symmetric.
- * @param x - x coordinate of center
- * @param y - y coordinate of center
+ * @param cx - x coordinate of center
+ * @param cy - y coordinate of center
  * @param transparent - function that takes (x, y) as arguments and returns the transparency of that tile
  * @param reveal - callback function that reveals the tile at (x, y)
  */
-rlt.shadowcast = function(x, y, transparent, reveal) {
+rlt.shadowcast = function(cx, cy, transparent, reveal) {
     'use strict';
     /**
      * Scan one row of one octant.
@@ -65,8 +65,8 @@ rlt.shadowcast = function(x, y, transparent, reveal) {
         var xmin = Math.round((y - 0.5) * start);
         var xmax = Math.ceil((y + 0.5) * end - 0.5);
         for (var x = xmin; x <= xmax; x++) {
-            var realx = transform.xx * x + transform.xy * y;
-            var realy = transform.yx * x + transform.yy * y;
+            var realx = cx + transform.xx * x + transform.xy * y;
+            var realy = cy + transform.yx * x + transform.yy * y;
             if (transparent(realx, realy)) {
                 if (x >= y * start && x <= y * end) {
                     reveal(realx, realy);
@@ -388,6 +388,21 @@ rlt.arr2rgb = function(array) {
 };
 
 /**
+ * Convert an array of [h,s,l] or [h,s,l,a] values to a CSS color string
+ * @return CSS color string
+ */
+rlt.arr2hsl = function(array) {
+    'use strict';
+    if (array.length === 3) {
+        return 'hsl(' + array[0] + ',' + array[1] + '%,' + array[2] + '%)';
+    } else if (array.length === 4) {
+        return 'hsl(' + array[0] + ',' + array[1] + '%,' + array[2] + '%,' + array[3] + ')';
+    } else {
+        return '';
+    }
+};
+
+/**
  * @return whether or not a string color is transparent
  */
 rlt._isTransparent = function(color) {
@@ -474,4 +489,34 @@ rlt.Display.prototype.draw = function(char, x, y, fg, bg) {
 rlt.Display.prototype.drawCached = function(img, x, y) {
     'use strict';
     this.ctx.drawImage(img, x * this.tileWidth, y * this.tileHeight);
+};
+
+/**
+ * Draw a tile from a monochromatic bitmap in a certain color
+ * @param img - spritesheet
+ * @param sx - x coordinate of tile in spritesheet
+ * @param sy - y coordinate of tile in spritesheet
+ * @param swidth - width of a sprite in the spritesheet
+ * @param sheight - height of a sprite in the spritesheet
+ * @param dx - x coordinate of tile in display
+ * @param dy - y coordinate of tile in display
+ * @param color - color of the tile
+ */
+rlt.Display.prototype.drawBitmap = function(img, sx, sy, swidth, sheight, dx, dy, color, scale) {
+    'use strict';
+    var canvas = document.createElement('canvas');
+    canvas.width = scale * swidth;
+    canvas.height = scale * sheight;
+    var ctx = canvas.getContext('2d');
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    ctx.msImageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, sx * swidth, sy * sheight, swidth, sheight, 0, 0, canvas.width, canvas.height);
+    if (color) {
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    this.ctx.drawImage(canvas, dx * this.tileWidth, dy * this.tileHeight);
 };

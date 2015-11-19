@@ -4,15 +4,35 @@
         <title>Testing</title>
         <style>
         body{background:black}
+        #game {
+            position: relative
+        }
+        #bg-canvas, #shadow, #canvas {
+            position: absolute
+        }
+        #bg-canvas {
+            z-index: 1
+        }
+        #shadow {
+            background: #000000;
+            opacity: 0.6;
+            z-index: 2
+        }
+        #canvas {
+            z-index: 3
+        }
         </style>
     </head>
     <body>
         <div id="game">
+            <canvas id="bg-canvas"></canvas>
+            <div id="shadow"></div>
             <canvas id="canvas"></canvas>
         </div>
         <script src="src/rlt.js"></script>
         <script src="src/game.js"></script>
         <script src="src/map.js"></script>
+        <script src="src/actor.js"></script>
         <script src="src/start.js"></script>
         <script src="src/tiles.js"></script>
         <script src="src/play.js"></script>
