@@ -1,5 +1,5 @@
 /* jshint undef: true, shadow: true, strict: true, -W083 */
-/* globals rlt, game, document, console, window */
+/* globals rlt, game, document, console, window, performance */
 
 game.mode.play = {
     init: function() {
@@ -52,6 +52,7 @@ game.mode.play = {
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
                 weights[x][y] = weights[x][y] / maxWeightPerIter / 100 * openTiles;
+                game.map[x][y].light = weights[x][y];
             }
         }
         // (temp) color tiles based on openness
@@ -74,11 +75,13 @@ game.mode.play = {
                 game.map[x][y].color = color;
             }
         }
+        // cache new colors
+        game.cacheMapTiles(game.map, game.spritesheet, 8, 8, 2);
         // create player (temp)
         game.player = Object.create(game.Player);
         game.player.x = 0;
         game.player.y = 0;
-        game.player.tile = game.tiles.player;
+        game.player.tile = Object.create(game.tiles.player);
         while (!game.passable(game.player.x, game.player.y)) {
             game.player.x = rlt.random(1, game.width - 1, Math.random);
             game.player.y = rlt.random(1, game.height - 1, Math.random);
@@ -107,7 +110,13 @@ game.mode.play = {
         game.mode.play.draw(game.map);
         // add keyboard listeners
         window.addEventListener('keydown', game.mode.play.keydown, false);
+        window.addEventListener('keyup', game.mode.play.keyup, false);
         console.log('...start!');
+    },
+    open: function() {
+        'use strict';
+        window.addEventListener('keydown', game.mode.play.keydown, false);
+        window.addEventListener('keyup', game.mode.play.keyup, false);
     },
     draw: function(map) {
         'use strict';
@@ -116,50 +125,38 @@ game.mode.play = {
             for (var y = 0; y < game.height; y++) {
                 var tile = map[x][y];
                 if (tile.actor) {
-                    game.display.drawCached(tile.actor.tile.canvas, x, y);
-                } else if (tile.visible) {
-                    //game.display.drawCached(tile.canvas, x, y);
+                    var tile = tile.actor.tile;
                     game.display.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
+                } else if (tile.visible) {
+                    game.display.drawCached(tile.canvas, x, y);
+                    //game.display.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
                 } else if (tile.seen && !tile.drawn) {
-                    //game.bgDisplay.drawCached(tile.canvas, x, y);
-                    game.bgDisplay.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
+                    game.bgDisplay.drawCached(tile.canvas, x, y);
+                    //game.bgDisplay.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
                     tile.drawn = true;
                 }
             }
         }
     },
+    close: function() {
+        'use strict';
+        window.removeEventListener('keydown', game.mode.play.keydown, false);
+    },
+    pressed: '',
+    movedDiagonally: false,
     keydown: function(e) {
         'use strict';
         var key = game.key[e.keyCode] || e.key;
-        var numpadPressed = function(key, callback) {
-            if (key === '1') {
-                callback.call(game.player, -1, 1);
-            }
-            else if (key === '2') {
-                callback.call(game.player, 0, 1);
-            }
-            else if (key === '3') {
-                callback.call(game.player, 1, 1);
-            }
-            else if (key === '4') {
-                callback.call(game.player, -1, 0);
-            }
-            else if (key === '5') {
-                callback.call(game.player, 0, 0);
-            }
-            else if (key === '6') {
-                callback.call(game.player, 1, 0);
-            }
-            else if (key === '7') {
-                callback.call(game.player, -1, -1);
-            }
-            else if (key === '8') {
-                callback.call(game.player, 0, -1);
-            }
-            else if (key === '9') {
-                callback.call(game.player, 1, -1);
-            }
-        };
-        numpadPressed(key, game.player.move);
+        game.directionPressed(game.mode.play, key, game.player.move);
+        // ranged combat
+        if (key === 'f') {
+            game.mode.play.close();
+            game.mode.ranged.open();
+        }
+    },
+    keyup: function(e) {
+        'use strict';
+        var key = game.key[e.keyCode] || e.key;
+        game.directionReleased(game.mode.play, key, game.player.move);
     }
 };

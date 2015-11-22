@@ -9,6 +9,7 @@ game.Actor = {
             this.x += dx;
             this.y += dy;
             game.map[this.x][this.y].actor = this;
+            this.recolor(game.map[this.x][this.y].light);
             if (this.name === 'player') {
                 this.see();
                 game.mode.play.draw(game.map);
@@ -24,6 +25,14 @@ game.Actor = {
         } else {
             return false;
         }
+    },
+    recolor: function(light) {
+        'use strict';
+        this.tile.color = rlt.arr2rgb([
+            Math.round(150 + 100 * light),
+            Math.round(150 + 100 * light),
+            Math.round(150 + 100 * light)
+        ]);
     }
 };
 

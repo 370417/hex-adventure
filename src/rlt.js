@@ -95,9 +95,47 @@ rlt.shadowcast = function(cx, cy, transparent, reveal) {
         { xx:  0, xy: -1, yx:  1, yy:  0 },
         { xx:  0, xy: -1, yx: -1, yy:  0 }
     ];
+    reveal(cx, cy);
     // Scan each octant
     for (var i = 0; i < 8; i++) {
         scan(1, 0, 1, transforms[i]);
+    }
+};
+
+/**
+ * Draw a line from (x0, y0) towards (x1, y1) as long as transparent() === true
+ * @param x0 - x coordinate of initial point
+ * @param y0 - y coordinate of initial point
+ * @param x1 - x coordinate of final point
+ * @param y1 - y coordinate of final point
+ * @param transparent - function that returns whether or not to continue drawing
+ * @param reveal - callback that is called for each point on the line with arguments (x, y)
+ */
+rlt.linecast = function(x0, y0, x1, y1, transparent, reveal) {
+    'use strict';
+    var dx = Math.abs(x1 - x0);
+    var dy = Math.abs(y1 - y0);
+    if (dx === 0 && dy === 0) {
+        reveal(x0, y0);
+        return;
+    }
+    var sx = x1 > x0 ? 1 : -1;
+    var sy = y1 > y0 ? 1 : -1;
+    var error = dx - dy;
+    while (true) {
+        reveal(x0, y0);
+        if (!transparent(x0, y0)) {
+            break;
+        }
+        var error2 = 2 * error;
+        if (error2 >= -dx) {
+            error -= dy;
+            x0 += sx;
+        }
+        if (error2 <= dx) {
+            error += dx;
+            y0 += sy;
+        }
     }
 };
 
@@ -236,6 +274,29 @@ rlt.range = function(length) {
         array[i] = i;
     }
     return array;
+};
+
+/**
+ * Execute a binary search over a linked list
+ * @param array - the array to be searched
+ * @param key - the value we are searching foregound
+ * @return index of key or -1 if not found
+ */
+rlt.binarySearch = function(array, key) {
+    'use strict';
+    var min = 0;
+    var max = array.length - 1;
+    while (min < max) {
+        var mid = Math.floor((min + max) / 2);
+        if (array[mid] < key) {
+            min = mid + 1;
+        } else if (array[mid] > key) {
+            max = mid - 1;
+        } else {
+            return mid;
+        }
+    }
+    return -1;
 };
 
 /**

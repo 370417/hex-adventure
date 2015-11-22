@@ -1,5 +1,5 @@
 /* jshint undef: true, shadow: true, strict: true */
-/* globals game, console, rlt */
+/* globals game, console, rlt, document */
 
 game.newCave = function(width, height, callback, prng, options) {
     'use strict';
@@ -174,4 +174,31 @@ game.passable = function(x, y) {
 game.transparent = function(x, y) {
     'use strict';
     return game.map[x][y].transparent;
+};
+
+game.visible = function(x, y) {
+    'use strict';
+    return game.map[x][y].visible;
+};
+
+game.cacheMapTiles = function(map, spritesheet, spriteWidth, spriteHeight, scale) {
+    'use strict';
+    for (var x = 0; x < map.length; x++) {
+        for (var y = 0; y < map[0].length; y++) {
+            var tile = map[x][y];
+            var canvas = document.createElement('canvas');
+            canvas.width = scale * spriteWidth;
+            canvas.height = scale * spriteHeight;
+            var ctx = canvas.getContext('2d');
+            ctx.mozImageSmoothingEnabled = false;
+            ctx.webkitImageSmoothingEnabled = false;
+            ctx.msImageSmoothingEnabled = false;
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(spritesheet, tile.spritex * spriteWidth, tile.spritey * spriteHeight, spriteWidth, spriteHeight, 0, 0, spriteWidth * scale, spriteHeight * scale);
+            ctx.globalCompositeOperation = 'source-in';
+            ctx.fillStyle = tile.color;
+            ctx.fillRect(0, 0, scale * spriteWidth, scale * spriteHeight);
+            tile.canvas = canvas;
+        }
+    }
 };

@@ -8,6 +8,7 @@ var game = {
     tileHeight: 16,
     mode: {},
     key: {
+        '27': 'Escape',
         '32': ' ',
         '37': 'ArrowLeft',
         '38': 'ArrowUp',
@@ -51,6 +52,120 @@ var game = {
         '105': '9',
         '190': '.',
         '191': '/'
+    },
+    directionPressed: function(mode, key, callback) {
+        'use strict';
+        if (key === '1') {
+            callback.call(game.player, -1, 1);
+        }
+        else if (key === '2') {
+            callback.call(game.player, 0, 1);
+        }
+        else if (key === '3') {
+            callback.call(game.player, 1, 1);
+        }
+        else if (key === '4') {
+            callback.call(game.player, -1, 0);
+        }
+        else if (key === '5') {
+            callback.call(game.player, 0, 0);
+        }
+        else if (key === '6') {
+            callback.call(game.player, 1, 0);
+        }
+        else if (key === '7') {
+            callback.call(game.player, -1, -1);
+        }
+        else if (key === '8') {
+            callback.call(game.player, 0, -1);
+        }
+        else if (key === '9') {
+            callback.call(game.player, 1, -1);
+        }
+
+        else if (key === 'Up' || key === 'ArrowUp') {
+            if (mode.pressed === '') {
+                    mode.pressed = 'up';
+            } else if (mode.pressed === 'left') {
+                    mode.movedDiagonally = true;
+                    callback.call(game.player, -1, -1);
+            } else if (mode.pressed === 'right') {
+                    mode.movedDiagonally = true;
+                    callback.call(game.player, 1, -1);
+            } else if (mode.pressed === 'down') {
+                    mode.movedDiagonally = true;
+            }
+        }
+        else if (key === 'Left' || key === 'ArrowLeft') {
+            if (mode.pressed === '') {
+                    mode.pressed = 'left';
+            } else if (mode.pressed === 'up') {
+                    mode.movedDiagonally = true;
+                    callback.call(game.player, -1, -1);
+            } else if (mode.pressed === 'down') {
+                    mode.movedDiagonally = true;
+                    callback.call(game.player, -1, 1);
+            } else if (mode.pressed === 'right') {
+                    mode.movedDiagonally = true;
+            }
+        }
+        else if (key === 'Down' || key === 'ArrowDown') {
+            if (mode.pressed === '') {
+                    mode.pressed = 'down';
+            } else if (mode.pressed === 'left') {
+                    mode.movedDiagonally = true;
+                    callback.call(game.player, -1, 1);
+            } else if (mode.pressed === 'right') {
+                    mode.movedDiagonally = true;
+                    callback.call(game.player, 1, 1);
+            } else if (mode.pressed === 'up') {
+                    mode.movedDiagonally = true;
+            }
+        }
+        else if (key === 'Right' || key === 'ArrowRight') {
+            if (mode.pressed === '') {
+                    mode.pressed = 'right';
+            } else if (mode.pressed === 'up') {
+                    mode.movedDiagonally = true;
+                    callback.call(game.player, 1, -1);
+            } else if (mode.pressed === 'down') {
+                    mode.movedDiagonally = true;
+                    callback.call(game.player, 1, 1);
+            } else if (mode.pressed === 'left') {
+                    mode.movedDiagonally = true;
+            }
+        }
+    },
+    directionReleased: function(mode, key, callback) {
+        'use strict';
+        if (mode.pressed === 'up' && (key === 'Up' || key === 'ArrowUp')) {
+            mode.pressed = '';
+            if (!mode.movedDiagonally) {
+                    callback.call(game.player, 0, -1);
+            }
+            mode.movedDiagonally = false;
+        }
+        else if (mode.pressed === 'left' && (key === 'Left' || key === 'ArrowLeft')) {
+            mode.pressed = '';
+            if (!mode.movedDiagonally) {
+                    callback.call(game.player, -1, 0);
+            }
+            mode.movedDiagonally = false;
+        }
+        else if (mode.pressed === 'down' && (key === 'Down' || key === 'ArrowDown')) {
+            mode.pressed = '';
+            if (!mode.movedDiagonally) {
+                    callback.call(game.player, 0, 1);
+            }
+            mode.movedDiagonally = false;
+        }
+        else if (mode.pressed === 'right' && (key === 'Right' || key === 'ArrowRight')) {
+            mode.pressed = '';
+            if (!mode.movedDiagonally) {
+                    callback.call(game.player, 1, 0);
+            }
+            mode.movedDiagonally = false;
+        }
     }
 };
 
@@ -67,3 +182,9 @@ game.bgCanvas = document.getElementById('bg-canvas');
 game.bgCanvas.width = game.width * game.tileWidth;
 game.bgCanvas.height = game.height * game.tileHeight;
 game.bgCtx = game.bgCanvas.getContext('2d');
+
+// init overlay canvas
+game.overlayCanvas = document.getElementById('overlay');
+game.overlayCanvas.width = game.width * game.tileWidth;
+game.overlayCanvas.height = game.height * game.tileHeight;
+game.overlayCtx = game.overlayCanvas.getContext('2d');
