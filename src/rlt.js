@@ -1,8 +1,6 @@
 /* jshint undef: true, shadow: true, strict: true */
 /* globals document, Image */
 
-// 11-17-2015
-
 var rlt = {};
 
 /** An array of [x, y] arrays representing neighboring tiles in 4 directions */
@@ -277,26 +275,52 @@ rlt.range = function(length) {
 };
 
 /**
- * Execute a binary search over a linked list
+ * Binary seach of a sorted list for what index to insert the key in
  * @param array - the array to be searched
- * @param key - the value we are searching foregound
- * @return index of key or -1 if not found
+ * @param key - the value we are inserting
+ * @return index of upper bound of interval
  */
-rlt.binarySearch = function(array, key) {
+rlt.binarySearchInterval = function(array, key) {
     'use strict';
     var min = 0;
     var max = array.length - 1;
-    while (min < max) {
-        var mid = Math.floor((min + max) / 2);
-        if (array[mid] < key) {
-            min = mid + 1;
-        } else if (array[mid] > key) {
-            max = mid - 1;
+    var guess = Math.floor((min + max) / 2);
+    while (guess > min) {
+        if (array[guess] < key) {
+            min = guess;
+            guess = Math.floor((guess + max) / 2);
+        } else if (array[guess] > key) {
+            max = guess;
+            guess = Math.floor((min + guess) / 2);
         } else {
-            return mid;
+            return guess;
         }
     }
-    return -1;
+    if (key < array[guess]) {
+        return 0;
+    } else {
+        return guess + 1;
+    }
+};
+
+/**
+ * Given an array of weights return a weighted random index
+ * @param array - array where each element is proportional to chance of it being chosen
+ * @param prng - function that returns a random number in [0, 1)
+ * @param cumulative - whether or not the array is a cumulative distrivution function already
+ * @return random index
+ */
+rlt.randomIndex = function(array, prng, cumulative) {
+    'use strict';
+    prng = prng || Math.random;
+    if (!cumulative) {
+        for (var i = 1; i < array.length; i++) {
+            array[i] += array[i-1];
+        }
+    }
+    var max = array[array.length-1];
+    var rand = max * prng();
+    return rlt.binarySearchInterval(array, rand);
 };
 
 /**

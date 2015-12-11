@@ -20,7 +20,11 @@ game.mode.start = {
         var key = game.key[e.keyCode] || e.key;
         if (key === ' ') {
             game.mode.start.close();
-            game.mode.play.init();
+            try {
+                game.mode.play.init();
+            } catch (err) {
+                console.log(err);
+            }
         }
     }
 };

@@ -1,4 +1,4 @@
-/* jshint undef: true, shadow: true, strict: true */
+/* jshint undef: true, shadow: true, strict: true, -W083 */
 /* globals game, console, rlt, document */
 
 game.newCave = function(width, height, callback, prng, options) {
@@ -14,16 +14,14 @@ game.newCave = function(width, height, callback, prng, options) {
             map[x][y] = 'wall';
         }
     }
-
-    // Whether or not the map tile at (x, y) is surrounded by a certain tile in certain directions
-    var surrounded = function(x, y, tile, directions) {
-        for (var i = 0; i < directions.length; i++) {
-            if (map[x + directions[i][0]][y + directions[i][1]] !== tile) {
-                return false;
-            }
+    // 2d array for number of orthogonal floor neighbors
+    var floorCount = [];
+    for (var x = 0; x < width; x++) {
+        floorCount[x] = [];
+        for (var y = 0; y < height; y++) {
+            floorCount[x][y] = 0;
         }
-        return true;
-    };
+    }
 
     // Count the number of contiguous groups of walls surrounding a tile
     var wallGroups = function(x, y) {
@@ -37,6 +35,10 @@ game.newCave = function(width, height, callback, prng, options) {
             }
             prev = next;
         }
+        // in the case of being surrounded by walls, return 'wall'
+        if (count === 0 && prev === 'wall') {
+            return 'surrounded';
+        }
         return count;
     };
 
@@ -47,15 +49,21 @@ game.newCave = function(width, height, callback, prng, options) {
         var j = indeces[i];
         var x = 1 + Math.floor(j / (height-2));
         var y = 1 + j - (x-1) * (height-2);
-        // assign a tile randomly if it is surrounded by walls
-        if (surrounded(x, y, 'wall', rlt.dir8)) {
-            if (prng() < openness) map[x][y] = 'floor';
-            else map[x][y] = 'wall';
-        } else {
-            if (wallGroups(x, y) === 1) {
-                map[x][y] = 'wall';
-            } else {
+        var walls = wallGroups(x, y);
+        // if a tile is surrounded by walls, randomly make it floor
+        if (walls === 'surrounded') {
+            if (prng() < openness) {
                 map[x][y] = 'floor';
+                for (var j = 0; j < 4; j++) {
+                    floorCount[x+rlt.dir4[j][0]][y+rlt.dir4[j][1]]++;
+                }
+            }
+        // if a tile is surrounded by floor or is next to two unconnected regions
+        // of floor, make it floor
+        } else if (walls !== 1) {
+            map[x][y] = 'floor';
+            for (var j = 0; j < 4; j++) {
+                floorCount[x+rlt.dir4[j][0]][y+rlt.dir4[j][1]]++;
             }
         }
     }
@@ -64,7 +72,7 @@ game.newCave = function(width, height, callback, prng, options) {
     var toRemove = [];
     for (var x = 1; x < width - 1; x++) {
         for (var y = 1; y < width - 1; y++) {
-            if (surrounded(x, y, 'floor', rlt.dir4)) {
+            if (map[x][y] === 'wall' && floorCount[x][y] === 4) {
                 toRemove.push([x, y]);
             }
         }
@@ -109,7 +117,6 @@ game.newCave = function(width, height, callback, prng, options) {
     }
 
     // connect smaller areas to the largest one
-
     var pathcost = function(x, y) {
         if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
             return -1;
@@ -135,7 +142,8 @@ game.newCave = function(width, height, callback, prng, options) {
     var connected = [];
     for (var x = 1; x < width - 1; x++) {
         for (var y = 1; y < width - 1; y++) {
-            if (typeof map[x][y] === 'number' && !connected[map[x][y]] && areaSizes[map[x][y]] > 4) {
+            if (options && options.stairs && x === options.stairs.x && y === options.stairs.y ||
+                typeof map[x][y] === 'number' && !connected[map[x][y]] && areaSizes[map[x][y]] > 4) {
                 var node = rlt.astar(x, y, pathcost, pathheuristic, rlt.dir4);
                 while (node.parent) {
                     if (map[node.x][node.y] === 'wall') {
@@ -163,7 +171,32 @@ game.newCave = function(width, height, callback, prng, options) {
         }
     }
 
+    // place stairs
+    if (options.stairs) {
+        map[options.stairs.x][options.stairs.y] = options.stairs.name;
+    }
+
     return map;
+};
+
+game.weight = function(array) {
+    'use strict';
+    var iterations = 100;
+    var weightsPerIter = [];
+    for (var i = 0; i < iterations; i++) {
+        var x = 0;
+        var y = 0;
+        weightsPerIter[i] = 0;
+        while (!game.passable(x, y)) {
+            x = rlt.random(1, game.width - 1, Math.random);
+            y = rlt.random(1, game.height - 1, Math.random);
+        }
+        rlt.shadowcast(x, y, game.transparent, function(x, y) {
+            array[x][y]++;
+            weightsPerIter[i]++;
+        });
+    }
+    return weightsPerIter;
 };
 
 game.passable = function(x, y) {
@@ -201,4 +234,27 @@ game.cacheMapTiles = function(map, spritesheet, spriteWidth, spriteHeight, scale
             tile.canvas = canvas;
         }
     }
+};
+
+game.getRandTile = function(eligible, weight) {
+    'use strict';
+    var tilex = [];
+    var tiley = [];
+    var weights = [];
+    var i = 0;
+    for (var x = 0; x < game.width; x++) {
+        for (var y = 0; y < game.height; y++) {
+            if (eligible(x, y)) {
+                tilex[i] = x;
+                tiley[i] = y;
+                weights[i] = (weights[i-1] || 0) + weight(x, y);
+                i++;
+            }
+        }
+    }
+    var index = rlt.randomIndex(weights, Math.random, false);
+    return {
+        x: tilex[index],
+        y: tiley[index]
+    };
 };

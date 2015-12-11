@@ -53,6 +53,24 @@ game.tiles.corridor = {
     spritex: 2,
     spritey: 14
 };
+game.tiles.downstairs = {
+    transparent: true,
+    passable: true,
+    color: '#bbbbbb',
+    name: 'downstairs',
+    char: '>',
+    spritex: 3,
+    spritey: 14
+};
+game.tiles.upstairs = {
+    transparent: true,
+    passable: true,
+    color: '#bbbbbb',
+    name: 'upstairs',
+    char: '<',
+    spritex: 3,
+    spritey: 12
+};
 game.tiles.player = {
     color: '#bbbbbb',
     name: 'player',
