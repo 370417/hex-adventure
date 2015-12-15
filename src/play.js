@@ -41,9 +41,11 @@ game.mode.play = {
             }
         }
         console.log([maxWeight, maxWeightPerIter]);
+        console.log(weights);
+        console.log(weightsPerIter);
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
-                weights[x][y] = weights[x][y] / maxWeightPerIter;
+                weights[x][y] = weights[x][y] / maxWeight;
                 game.map[x][y].light = weights[x][y];
             }
         }

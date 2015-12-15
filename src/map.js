@@ -187,19 +187,6 @@ game.weight = function(array) {
             }
         }
     }
-    /*for (var i = 0; i < iterations; i++) {
-        var x = 0;
-        var y = 0;
-        weightsPerIter[i] = 0;
-        while (!game.passable(x, y)) {
-            x = rlt.random(1, game.width - 1, Math.random);
-            y = rlt.random(1, game.height - 1, Math.random);
-        }
-        rlt.shadowcast(x, y, game.transparent, function(x, y) {
-            array[x][y]++;
-            weightsPerIter[i]++;
-        });
-    }*/
     return weightsPerIter;
 };
 
