@@ -21,7 +21,9 @@ game.mode.start = {
         if (key === ' ') {
             game.mode.start.close();
             try {
-                game.mode.play.init();
+                game.mode.play.init({
+                    openness: 1.0
+                });
             } catch (err) {
                 console.log(err);
             }

@@ -35,11 +35,19 @@ game.newCave = function(width, height, callback, prng, options) {
             }
             prev = next;
         }
-        // in the case of being surrounded by walls, return 'wall'
+        // in the case of being surrounded by walls, return 'surrounded'
         if (count === 0 && prev === 'wall') {
             return 'surrounded';
         }
         return count;
+    };
+
+    // turn a map tile into floor and update neighbor floor counts
+    var makeFloor = function(x, y) {
+        map[x][y] = 'floor';
+        for (var i = 0; i < 4; i++) {
+            floorCount[x+rlt.dir4[i][0]][y+rlt.dir4[i][1]]++;
+        }
     };
 
     // array of shuffled indeces used to iterate through map randomly
@@ -52,56 +60,39 @@ game.newCave = function(width, height, callback, prng, options) {
         var walls = wallGroups(x, y);
         // if a tile is surrounded by walls, randomly make it floor
         if (walls === 'surrounded') {
-            if (prng() < openness) {
-                map[x][y] = 'floor';
-                for (var j = 0; j < 4; j++) {
-                    floorCount[x+rlt.dir4[j][0]][y+rlt.dir4[j][1]]++;
-                }
-            }
+            if (prng() < openness) makeFloor(x, y);
         // if a tile is surrounded by floor or is next to two unconnected regions
         // of floor, make it floor
         } else if (walls !== 1) {
-            map[x][y] = 'floor';
-            for (var j = 0; j < 4; j++) {
-                floorCount[x+rlt.dir4[j][0]][y+rlt.dir4[j][1]]++;
-            }
+            makeFloor(x, y);
         }
     }
 
     // remove awkward walls
-    var toRemove = [];
     for (var x = 1; x < width - 1; x++) {
         for (var y = 1; y < width - 1; y++) {
             if (map[x][y] === 'wall' && floorCount[x][y] === 4) {
-                toRemove.push([x, y]);
+                map[x][y] = 'floor';
             }
         }
     }
-    for (var i = 0; i < toRemove.length; i++) {
-        map[toRemove[i][0]][toRemove[i][1]] = 'floor';
-    }
 
     // floodfill areas using a*
-    var floodcost = function(x, y) {
-        if (map[x][y] === 'wall') return -1;
-        else return 1;
-    };
-    var noheuristic = function(x, y) {
-        return 0.1;
-    };
-    // fill an area with a certain value
-    var fill = function(tiles, value) {
-        for (var i = 0; i < tiles.length; i++) {
-            map[tiles[i].x][tiles[i].y] = value;
-        }
-    };
-    // list of sizes of each distinct area
     var areaSizes = [];
     for (var x = 1; x < width - 1; x++) {
         for (var y = 1; y < width - 1; y++) {
             if (map[x][y] === 'floor') {
-                var tiles = rlt.astar(x, y, floodcost, noheuristic, rlt.dir4);
-                fill(tiles, areaSizes.length);
+                var tiles = rlt.astar(x, y, function(x, y) {
+                    // cost
+                    if (map[x][y] === 'wall') return -1;
+                    else return 1;
+                }, function() {
+                    // heuristic
+                    return 0.001;
+                }, rlt.dir4);
+                for (var i = 0; i < tiles.length; i++) {
+                    map[tiles[i].x][tiles[i].y] = areaSizes.length;
+                }
                 areaSizes.push(tiles.length);
             }
         }
@@ -183,7 +174,20 @@ game.weight = function(array) {
     'use strict';
     var iterations = 100;
     var weightsPerIter = [];
-    for (var i = 0; i < iterations; i++) {
+    var i = 0;
+    for (var x = 1; x < game.width - 1; x++) {
+        for (var y = 1; y < game.height - 1; y++) {
+            if (game.transparent(x, y)) {
+                weightsPerIter[i] = 0;
+                rlt.shadowcast(x, y, game.transparent, function(x, y) {
+                    array[x][y]++;
+                    weightsPerIter[i]++;
+                });
+                i++;
+            }
+        }
+    }
+    /*for (var i = 0; i < iterations; i++) {
         var x = 0;
         var y = 0;
         weightsPerIter[i] = 0;
@@ -195,7 +199,7 @@ game.weight = function(array) {
             array[x][y]++;
             weightsPerIter[i]++;
         });
-    }
+    }*/
     return weightsPerIter;
 };
 

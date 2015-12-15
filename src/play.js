@@ -10,7 +10,7 @@ game.mode.play = {
         game.bgCtx.clearRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
         // init game map
         var mapOptions = {
-            openness: 0.8
+            openness: options.openness || 1.0
         };
         if (options && options.stairs) {
             mapOptions.stairs = {
@@ -40,9 +40,10 @@ game.mode.play = {
                 }
             }
         }
+        console.log([maxWeight, maxWeightPerIter]);
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
-                weights[x][y] = weights[x][y] / maxWeightPerIter / 100 * openTiles;
+                weights[x][y] = weights[x][y] / maxWeightPerIter;
                 game.map[x][y].light = weights[x][y];
             }
         }
@@ -140,7 +141,7 @@ game.mode.play = {
                 } else if (tile.visible) {
                     game.display.drawCached(tile.canvas, x, y);
                     //game.display.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
-                } else if (true || tile.seen && !tile.drawn) {
+                } else if (tile.seen && !tile.drawn) {
                     game.bgDisplay.drawCached(tile.canvas, x, y);
                     //game.bgDisplay.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
                     tile.drawn = true;
