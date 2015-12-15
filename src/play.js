@@ -8,10 +8,15 @@ game.mode.play = {
         // reset canvases
         game.ctx.clearRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
         game.bgCtx.clearRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
+        // set depth and openness
+        game.mode.play.depth = options.depth || 1;
         // init game map
         var mapOptions = {
-            openness: options.openness || 1.0
+            openness: 1.0
         };
+        if (options.depth) {
+        	mapOptions.openness = rlt.clamp(1 - options.depth / 10, 0.2, 1);
+        }
         if (options && options.stairs) {
             mapOptions.stairs = {
                 x: options.stairs.x,
@@ -24,25 +29,17 @@ game.mode.play = {
             return Object.create(game.tiles[map[x][y]]);
         });
         // weight open tiles based on openness
-        var weights = rlt.array2d(game.width, game.height, 0);
-        var weightsPerIter = game.weight(weights);
-        var maxWeightPerIter = Math.max.apply(null, weightsPerIter);
+        var weights = game.weight(rlt.array2d(game.width, game.height, 0));
         // normalize weights - divide each weight by the largest portion of tiles lit in a single fov
-        var openTiles = 0;
         var maxWeight = 0;
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
-                if (game.passable(x, y)) {
-                    openTiles++;
-                }
                 if (weights[x][y] > maxWeight) {
                     maxWeight = weights[x][y];
                 }
             }
         }
-        console.log([maxWeight, maxWeightPerIter]);
         console.log(weights);
-        console.log(weightsPerIter);
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
                 weights[x][y] = weights[x][y] / maxWeight;
@@ -126,6 +123,7 @@ game.mode.play = {
         window.addEventListener('keyup', game.mode.play.keyup, false);
         console.log('...start!');
     },
+    depth: 1,
     open: function() {
         'use strict';
         window.addEventListener('keydown', game.mode.play.keydown, false);
@@ -140,7 +138,7 @@ game.mode.play = {
                 if (tile.actor) {
                     var tile = tile.actor.tile;
                     game.display.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
-                } else if (tile.visible) {
+                } else if (true || tile.visible) {
                     game.display.drawCached(tile.canvas, x, y);
                     //game.display.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
                 } else if (tile.seen && !tile.drawn) {
@@ -177,7 +175,8 @@ game.mode.play = {
                         x: game.player.x,
                         y: game.player.y,
                         name: 'upstairs'
-                    }
+                    },
+                    depth: ++game.mode.play.depth
                 });
             }
             // upstairs
@@ -188,7 +187,8 @@ game.mode.play = {
                         x: game.player.x,
                         y: game.player.y,
                         name: 'downstairs'
-                    }
+                    },
+                    depth: --game.mode.play.depth
                 });
             }
         }
