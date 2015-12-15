@@ -170,24 +170,23 @@ game.newCave = function(width, height, callback, prng, options) {
     return map;
 };
 
+/**
+ * Takes an array of 0s and weights it based on number of tiles in fov
+ * @return the array
+ */
 game.weight = function(array) {
     'use strict';
     var iterations = 100;
-    var weightsPerIter = [];
-    var i = 0;
     for (var x = 1; x < game.width - 1; x++) {
         for (var y = 1; y < game.height - 1; y++) {
             if (game.transparent(x, y)) {
-                weightsPerIter[i] = 0;
                 rlt.shadowcast(x, y, game.transparent, function(x, y) {
                     array[x][y]++;
-                    weightsPerIter[i]++;
                 });
-                i++;
             }
         }
     }
-    return weightsPerIter;
+    return array;
 };
 
 game.passable = function(x, y) {
