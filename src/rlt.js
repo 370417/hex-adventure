@@ -436,6 +436,26 @@ rlt.astar = function(startx, starty, cost, heuristic, directions) {
 };
 
 /**
+ * Floodfill for square grids
+ * @param startx - the x coordinate of the origin
+ * @param starty - the y coordinate of the origin
+ * @param effect - a function that is called at each floodfilled location
+ * @param passable - a function that determines whether (x, y) is passable
+ * @param directions - array of array of offsets
+ */
+rlt.floodfill = function(startx, starty, effect, passable, directions) {
+    'use strict';
+    for (var i = 0; i < directions.length; i++) {
+        var x = startx + directions[i][0];
+        var y = starty + directions[i][1];
+        if (passable(x, y)) {
+            effect(x, y);
+            rlt.floodfill(x, y, effect, passable, directions);
+        }
+    }
+};
+
+/**
  * Measure the dimensions of a font's character (default @)
  * @param font - a CSS font string
  * @return object with width and height properties

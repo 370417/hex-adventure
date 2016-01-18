@@ -7,6 +7,7 @@ var game = {
     tileWidth: 16,
     tileHeight: 16,
     mode: {},
+    monsters: [],
     key: {
         '27': 'Escape',
         '32': ' ',

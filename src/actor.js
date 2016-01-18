@@ -50,3 +50,26 @@ game.Player.see = function() {
         game.map[x][y].seen = true;
     });
 };
+
+game.Actors2 = {
+    act: function() {
+        'use strict';
+        var stateFunction = this.states[this.state];
+        if (typeof stateFunction === 'function') {
+            stateFunction.call(this);
+        } else {
+            console.log('Error: the state "' + this.state + '" does not correspond to a function.');
+            console.log(this);
+        }
+    },
+    move: function(dx, dy) {
+        'use strict';
+        var newx = this.x + dx;
+        var newy = this.y + dy;
+    }
+};
+
+game.Actors3 = {};
+game.Actors3.vanilla = {
+    act: game.Actors2.act
+};

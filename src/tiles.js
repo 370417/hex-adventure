@@ -78,3 +78,10 @@ game.tiles.player = {
     spritex: 4,
     spritey: 0
 };
+game.tiles.vanilla = {
+    color: '#bbbbbb',
+    name: 'vanilla',
+    char: 'v',
+    spritex: 7,
+    spritey: 6
+};

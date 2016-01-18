@@ -4,7 +4,6 @@
 game.mode.play = {
     init: function(options) {
         'use strict';
-        console.log('Link...');
         // reset canvases
         game.ctx.clearRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
         game.bgCtx.clearRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
@@ -40,7 +39,6 @@ game.mode.play = {
                 }
             }
         }
-        console.log([maxWeight, maxWeightPerIter]);
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
                 weights[x][y] = weights[x][y] / maxWeightPerIter;
@@ -101,6 +99,19 @@ game.mode.play = {
         rlt.shadowcast(game.player.x, game.player.y, game.transparent, function(x, y) {
             game.map[x][y].visible = true;
         });
+        // place monsters
+        for (var i = 0; i < 1; i++) {
+            var newMonster = Object.create(game.Actors3.vanilla);
+            game.monsters.push(newMonster);
+            newMonster.x = 0;
+            newMonster.y = 0;
+            newMonster.tile = Object.create(game.tiles.vanilla);
+            while (!game.passable(newMonster.x, newMonster.y)) {
+                newMonster.x = rlt.random(1, game.width - 1, Math.random);
+                newMonster.y = rlt.random(1, game.height - 1, Math.random);
+            }
+            game.map[newMonster.x][newMonster.y].actor = newMonster;
+        }
         // init display
         game.display = rlt.Display({
             width: game.width,
@@ -122,7 +133,6 @@ game.mode.play = {
         // add keyboard listeners
         window.addEventListener('keydown', game.mode.play.keydown, false);
         window.addEventListener('keyup', game.mode.play.keyup, false);
-        console.log('...start!');
     },
     open: function() {
         'use strict';
@@ -135,12 +145,12 @@ game.mode.play = {
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
                 var tile = map[x][y];
-                if (tile.actor) {
-                    var tile = tile.actor.tile;
-                    game.display.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
-                } else if (tile.visible) {
-                    game.display.drawCached(tile.canvas, x, y);
-                    //game.display.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
+                if (tile.visible) {
+                    if (tile.actor) {
+                        game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 2);
+                    } else {
+                        game.display.drawCached(tile.canvas, x, y);
+                    }
                 } else if (tile.seen && !tile.drawn) {
                     game.bgDisplay.drawCached(tile.canvas, x, y);
                     //game.bgDisplay.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
