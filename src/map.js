@@ -172,7 +172,6 @@ game.newCave = function(width, height, callback, prng, options) {
 
 game.weight = function(array) {
     'use strict';
-    var iterations = 100;
     var weightsPerIter = [];
     var i = 0;
     for (var x = 1; x < game.width - 1; x++) {
@@ -187,25 +186,12 @@ game.weight = function(array) {
             }
         }
     }
-    /*for (var i = 0; i < iterations; i++) {
-        var x = 0;
-        var y = 0;
-        weightsPerIter[i] = 0;
-        while (!game.passable(x, y)) {
-            x = rlt.random(1, game.width - 1, Math.random);
-            y = rlt.random(1, game.height - 1, Math.random);
-        }
-        rlt.shadowcast(x, y, game.transparent, function(x, y) {
-            array[x][y]++;
-            weightsPerIter[i]++;
-        });
-    }*/
     return weightsPerIter;
 };
 
 game.passable = function(x, y) {
     'use strict';
-    return game.map[x][y].passable;
+    return game.map[x][y].passable && !game.map[x][y].actor;
 };
 
 game.transparent = function(x, y) {

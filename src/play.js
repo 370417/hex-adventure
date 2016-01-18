@@ -85,6 +85,7 @@ game.mode.play = {
         game.player.x = 0;
         game.player.y = 0;
         game.player.tile = Object.create(game.tiles.player);
+        game.schedule.add(game.player.act.bind(game.player), 0);
         // place player
         if (options && options.stairs) {
             game.player.x = options.stairs.x;
@@ -111,6 +112,7 @@ game.mode.play = {
                 newMonster.y = rlt.random(1, game.height - 1, Math.random);
             }
             game.map[newMonster.x][newMonster.y].actor = newMonster;
+            game.schedule.add(newMonster.act.bind(newMonster), 1);
         }
         // init display
         game.display = rlt.Display({
