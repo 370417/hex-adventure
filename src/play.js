@@ -23,17 +23,11 @@ game.mode.play = {
             return Object.create(game.tiles[map[x][y]]);
         });
         // weight open tiles based on openness
-        var weights = rlt.array2d(game.width, game.height, 0);
-        var weightsPerIter = game.weight(weights);
-        var maxWeightPerIter = Math.max.apply(null, weightsPerIter);
+        var weights = game.weight(rlt.array2d(game.width, game.height, 0));
         // normalize weights - divide each weight by the largest portion of tiles lit in a single fov
-        var openTiles = 0;
         var maxWeight = 0;
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
-                if (game.passable(x, y)) {
-                    openTiles++;
-                }
                 if (weights[x][y] > maxWeight) {
                     maxWeight = weights[x][y];
                 }
@@ -41,7 +35,7 @@ game.mode.play = {
         }
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
-                weights[x][y] = weights[x][y] / maxWeightPerIter;
+                weights[x][y] = weights[x][y] / maxWeight;
                 game.map[x][y].light = weights[x][y];
             }
         }
@@ -148,7 +142,7 @@ game.mode.play = {
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
                 var tile = map[x][y];
-                if (true || tile.visible) {
+                if (tile.visible) {
                     if (tile.actor) {
                         game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 2);
                     } else {

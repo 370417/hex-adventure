@@ -36,6 +36,13 @@ rlt.dir9 = [
     [-1, 1]
 ];
 
+/** Clamp a number between a min and max */
+rlt.clamp = function(n, min, max) {
+	if (min !== undefined && n < min) return min;
+	if (max !== undefined && n > max) return max;
+	return n;
+};
+
 /**
  * Recursive shadowcasting algorithm.
  * This algorithm creates a field of view centered around (x, y).
