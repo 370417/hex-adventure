@@ -5,7 +5,7 @@
 game.mode.loading = {
     init: function() {
         'use strict';
-        game.ctx.fillStyle = '#000000';
+        game.ctx.fillStyle = '#888';
         game.ctx.fillRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
         game.ctx.fillStyle = '#eeeeee';
         game.ctx.font = '16px/2 monospace';
