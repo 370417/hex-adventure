@@ -368,6 +368,17 @@ rlt.shuffledRange = function(length, prng) {
 };
 
 /**
+ * Find the distance between (x1, y1) and (x2, y2)
+ * @
+ */
+rlt.distance = function(x1, y1, x2, y2) {
+    'use strict';
+    var D = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+    var d = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
+    return D + d / 2;
+};
+
+/**
  * Implementation of A* for square grids.
  * Instead of stopping at a goal, it stops when h = 0.
  * @param startx - the x coordinate of the origin

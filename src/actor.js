@@ -63,6 +63,46 @@ game.actorMixins = {
         'use strict';
         game.schedule.add(this.act.bind(this), 100);
         game.schedule.advance()();
+    },
+    waiting: function() {
+        'use strict';
+        if (Math.random() < 1/3) {
+            this.goal = game.getRandTile(game.passable, function() { return 1; });
+            this.state = 'wandering';
+        }
+        game.schedule.add(this.act.bind(this), 100);
+        game.schedule.advance()();
+    },
+    sneakyWandering: function() {
+        'use strict';
+        var goal = this.goal;
+        if (goal.x === this.x && goal.y === this.y) {
+            this.state = 'waiting';
+            this.act();
+            return;
+        }
+        var tile = rlt.astar(this.x, this.y, function(x, y) {
+            // cost
+            if (game.passable(x, y)) {
+                return 0.01 + game.map[x][y].light;
+            } else {
+                return -1;
+            }
+        }, function(x, y) {
+            // heuristic
+            return Math.max(Math.abs(x - goal.x), Math.abs(y - goal.y));
+        }, rlt.dir8);
+        if (tile.x) {
+            while (tile.parent && tile.parent.parent) {
+                tile = tile.parent;
+            }
+            this.move(tile.x - this.x, tile.y - this.y);
+        } else {
+            console.log('destination unreachable');
+            this.state = 'waiting';
+            this.act();
+            return;
+        }
     }
 };
 
@@ -77,8 +117,12 @@ game.Player = {
 game.Actors3 = {};
 game.Actors3.vanilla = {
     act: game.actorMixins.act,
+    move: game.actorMixins.move,
+    canMove: game.actorMixins.canMove,
     states: {
-        sleeping: game.actorMixins.sleeping
+        sleeping: game.actorMixins.sleeping,
+        waiting: game.actorMixins.waiting,
+        wandering: game.actorMixins.sneakyWandering
     },
-    state: 'sleeping'
+    state: 'waiting'
 };
