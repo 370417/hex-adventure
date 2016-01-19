@@ -7,6 +7,8 @@ game.mode.play = {
         // reset canvases
         game.ctx.clearRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
         game.bgCtx.clearRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
+        // reset schedule
+        game.schedule = rlt.Schedule();
         // init game map
         var mapOptions = {
             openness: options.openness || 1.0

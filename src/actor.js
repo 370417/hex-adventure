@@ -75,6 +75,11 @@ game.actorMixins = {
     },
     sneakyWandering: function() {
         'use strict';
+        if (game.map[this.x][this.y].visible) {
+            this.state = 'playerSeen';
+            this.act();
+            return;
+        }
         var goal = this.goal;
         if (goal.x === this.x && goal.y === this.y) {
             this.state = 'waiting';
@@ -103,6 +108,20 @@ game.actorMixins = {
             this.act();
             return;
         }
+    },
+    fleeing: function() {
+        'use strict';
+        path = rlt.astar(this.x, this.y, function(x, y) {
+            // cost
+            if (game.passable(x, y)) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }, function(x, y) {
+            // heuristic
+            return 0.01;
+        });
     }
 };
 
@@ -122,7 +141,8 @@ game.Actors3.vanilla = {
     states: {
         sleeping: game.actorMixins.sleeping,
         waiting: game.actorMixins.waiting,
-        wandering: game.actorMixins.sneakyWandering
+        wandering: game.actorMixins.sneakyWandering,
+        playerSeen: game.actorMixins.fleeing
     },
     state: 'waiting'
 };
