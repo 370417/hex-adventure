@@ -97,7 +97,6 @@ game.mode.play = {
         // place monsters
         for (var i = 0; i < 3; i++) {
             var newMonster = Object.create(game.Actors3.vanilla);
-            game.monsters.push(newMonster);
             newMonster.x = 0;
             newMonster.y = 0;
             newMonster.tile = Object.create(game.tiles.vanilla);
@@ -124,12 +123,11 @@ game.mode.play = {
             tileWidth: game.tileWidth,
             tileHeight: game.tileHeight
         });
-        // test draw
-        //game.mode.play.draw(game.map);
-        game.schedule.advance()();
         // add keyboard listeners
         window.addEventListener('keydown', game.mode.play.keydown, false);
         window.addEventListener('keyup', game.mode.play.keyup, false);
+        // begin the game
+        game.schedule.advance()();
     },
     open: function() {
         'use strict';
@@ -142,7 +140,7 @@ game.mode.play = {
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
                 var tile = map[x][y];
-                if (tile.visible) {
+                if (true || tile.visible) {
                     if (tile.actor) {
                         game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 2);
                     } else {

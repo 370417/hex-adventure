@@ -7,7 +7,6 @@ var game = {
     tileWidth: 16,
     tileHeight: 16,
     mode: {},
-    monsters: [],
     schedule: rlt.Schedule(),
     key: {
         '27': 'Escape',
