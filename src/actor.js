@@ -46,7 +46,9 @@ game.actorMixins = {
                 game.map[x][y].visible = false;
             }
         }
-        rlt.shadowcast(game.player.x, game.player.y, game.transparent, function(x, y) {
+        rlt.shadowcast(game.player.x, game.player.y, function(x, y) {
+            return !(game.map[x][y].actor && game.map[x][y].actor.name === 'giant') && game.transparent(x, y);
+        }, function(x, y) {
             game.map[x][y].visible = true;
             game.map[x][y].seen = true;
         });
@@ -75,11 +77,11 @@ game.actorMixins = {
     },
     sneakyWandering: function() {
         'use strict';
-        if (game.map[this.x][this.y].visible) {
+        /*if (game.map[this.x][this.y].visible) {
             this.state = 'playerSeen';
             this.act();
             return;
-        }
+        }*/
         var goal = this.goal;
         if (goal.x === this.x && goal.y === this.y) {
             this.state = 'waiting';
@@ -90,6 +92,42 @@ game.actorMixins = {
             // cost
             if (game.passable(x, y)) {
                 return 0.01 + game.map[x][y].light;
+            } else {
+                return -1;
+            }
+        }, function(x, y) {
+            // heuristic
+            return Math.max(Math.abs(x - goal.x), Math.abs(y - goal.y));
+        }, rlt.dir8);
+        if (tile.x) {
+            while (tile.parent && tile.parent.parent) {
+                tile = tile.parent;
+            }
+            this.move(tile.x - this.x, tile.y - this.y);
+        } else {
+            console.log('destination unreachable');
+            this.state = 'waiting';
+            this.act();
+            return;
+        }
+    },
+    braveWandering: function() {
+        'use strict';
+        /*if (game.map[this.x][this.y].visible) {
+            this.state = 'playerSeen';
+            this.act();
+            return;
+        }*/
+        var goal = this.goal;
+        if (goal.x === this.x && goal.y === this.y) {
+            this.state = 'waiting';
+            this.act();
+            return;
+        }
+        var tile = rlt.astar(this.x, this.y, function(x, y) {
+            // cost
+            if (game.passable(x, y)) {
+                return 1.01 - game.map[x][y].light;
             } else {
                 return -1;
             }
@@ -133,16 +171,31 @@ game.Player = {
     act: game.actorMixins.playerAct
 };
 
-game.Actors3 = {};
-game.Actors3.vanilla = {
-    act: game.actorMixins.act,
-    move: game.actorMixins.move,
-    canMove: game.actorMixins.canMove,
-    states: {
-        sleeping: game.actorMixins.sleeping,
-        waiting: game.actorMixins.waiting,
-        wandering: game.actorMixins.sneakyWandering,
-        playerSeen: game.actorMixins.fleeing
+game.Actors3 = {
+    vanilla: {
+        name: 'vanilla',
+        state: 'waiting',
+        act: game.actorMixins.act,
+        move: game.actorMixins.move,
+        canMove: game.actorMixins.canMove,
+        states: {
+            sleeping: game.actorMixins.sleeping,
+            waiting: game.actorMixins.waiting,
+            wandering: game.actorMixins.sneakyWandering,
+            playerSeen: game.actorMixins.fleeing
+        }
     },
-    state: 'waiting'
+    giant: {
+        name: 'giant',
+        state: 'waiting',
+        act: game.actorMixins.act,
+        move: game.actorMixins.move,
+        canMove: game.actorMixins.canMove,
+        states: {
+           sleeping: game.actorMixins.sleeping,
+            waiting: game.actorMixins.waiting,
+            wandering: game.actorMixins.braveWandering,
+            playerSeen: game.actorMixins.fleeing
+        }
+    }
 };

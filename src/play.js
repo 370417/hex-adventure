@@ -97,7 +97,7 @@ game.mode.play = {
             game.map[x][y].visible = true;
         });
         // place monsters
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < 1; i++) {
             var newMonster = Object.create(game.Actors3.vanilla);
             newMonster.x = 0;
             newMonster.y = 0;
@@ -109,6 +109,16 @@ game.mode.play = {
             game.map[newMonster.x][newMonster.y].actor = newMonster;
             game.schedule.add(newMonster.act.bind(newMonster), 1);
         }
+        var giant = Object.create(game.Actors3.giant);
+        giant.x = 0;
+        giant.y = 0;
+        giant.tile = Object.create(game.tiles.giant);
+        while (!game.passable(giant.x, giant.y)) {
+            giant.x = rlt.random(1, game.width - 1, Math.random);
+            giant.y = rlt.random(1, game.height - 1, Math.random);
+        }
+        game.map[giant.x][giant.y].actor = giant;
+        game.schedule.add(giant.act.bind(giant), 1);
         // init display
         game.display = rlt.Display({
             width: game.width,
@@ -142,7 +152,7 @@ game.mode.play = {
         for (var x = 0; x < game.width; x++) {
             for (var y = 0; y < game.height; y++) {
                 var tile = map[x][y];
-                if (true || tile.visible) {
+                if (tile.visible) {
                     if (tile.actor) {
                         game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 2);
                     } else {

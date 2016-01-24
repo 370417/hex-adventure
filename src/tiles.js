@@ -16,7 +16,8 @@ game.tiles = Object.create({
                 ctx.webkitImageSmoothingEnabled = false;
                 ctx.msImageSmoothingEnabled = false;
                 ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(spritesheet, tile.spritex * spriteWidth, tile.spritey * spriteHeight, spriteWidth, spriteHeight, 0, 0, spriteWidth * scale, spriteHeight * scale);
+                ctx.drawImage(spritesheet, tile.spritex * spriteWidth, tile.spritey * spriteHeight, spriteWidth, spriteHeight,
+                    0, 0, spriteWidth * scale, spriteHeight * scale);
                 ctx.globalCompositeOperation = 'source-in';
                 ctx.fillStyle = tile.color;
                 ctx.fillRect(0, 0, scale * spriteWidth, scale * spriteHeight);
@@ -85,3 +86,10 @@ game.tiles.vanilla = {
     spritex: 7,
     spritey: 6
 };
+game.tiles.giant = {
+    color: 'firebrick',
+    name: 'giant',
+    char: 'G',
+    spritex: 4,
+    spritey: 7
+}
