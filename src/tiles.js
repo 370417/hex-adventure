@@ -87,7 +87,7 @@ game.tiles.vanilla = {
     spritey: 6
 };
 game.tiles.giant = {
-    color: 'firebrick',
+    color: '#ee8888',
     name: 'giant',
     char: 'G',
     spritex: 4,
