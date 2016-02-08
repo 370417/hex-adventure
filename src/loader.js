@@ -8,7 +8,7 @@ game.mode.loading = {
         game.ctx.fillStyle = '#000000';
         game.ctx.fillRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
         game.ctx.fillStyle = '#eeeeee';
-        game.ctx.font = '16px/2 monospace';
+        game.ctx.font = '8px/2 monospace';
         game.ctx.fillText('Loading...', 0, 32);
     },
     close: function() {}
@@ -19,6 +19,6 @@ game.mode.loading.init();
 rlt.loadImg('res/terminal8x8_aa_as.png', function() {
     'use strict';
     game.spritesheet = this;
-    game.tiles.cache(game.spritesheet, 8, 8, 2);
+    game.tiles.cache(game.spritesheet, 8, 8, 1);
     game.mode.start.init();
 }, 128, 128);

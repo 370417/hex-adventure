@@ -4,8 +4,8 @@
 var game = {
     width: 40,
     height: 25,
-    tileWidth: 16,
-    tileHeight: 16,
+    tileWidth: 8,
+    tileHeight: 8,
     mode: {},
     schedule: rlt.Schedule(),
     key: {

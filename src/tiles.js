@@ -21,7 +21,7 @@ game.tiles = Object.create({
                 ctx.globalCompositeOperation = 'source-in';
                 ctx.fillStyle = tile.color;
                 ctx.fillRect(0, 0, scale * spriteWidth, scale * spriteHeight);
-                tile.canvas = canvas;
+                //tile.canvas = canvas;
             }
         }
     }

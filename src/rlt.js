@@ -643,3 +643,10 @@ rlt.Display.prototype.drawBitmap = function(img, sx, sy, swidth, sheight, dx, dy
     }
     this.ctx.drawImage(canvas, dx * this.tileWidth, dy * this.tileHeight);
 };
+
+rlt.Display.prototype.drawBg = function(color, x, y) {
+    'use strict';
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(x * this.tileWidth, y * this.tileHeight, this.tileWidth, this.tileHeight);
+};
+

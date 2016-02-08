@@ -75,7 +75,7 @@ game.mode.play = {
             }
         }
         // cache new colors
-        game.cacheMapTiles(game.map, game.spritesheet, 8, 8, 2);
+        game.cacheMapTiles(game.map, game.spritesheet, 8, 8, 1);
         // create player (temp)
         game.player = Object.create(game.Player);
         game.player.x = 0;
@@ -153,11 +153,14 @@ game.mode.play = {
             for (var y = 0; y < game.height; y++) {
                 var tile = map[x][y];
                 if (tile.visible) {
+                    game.display.drawBg('#000', x, y);
                     if (tile.actor) {
-                        game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 2);
+                        game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 1);
                     } else {
                         game.display.drawCached(tile.canvas, x, y);
                     }
+                    // forget that this tile has been drawn in case it changed
+                    tile.drawn = false;
                 } else if (tile.seen && !tile.drawn) {
                     game.bgDisplay.drawCached(tile.canvas, x, y);
                     //game.bgDisplay.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
