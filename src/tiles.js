@@ -93,3 +93,10 @@ game.tiles.giant = {
     spritex: 4,
     spritey: 7
 }
+game.tiles.jacksnake = {
+    color: '#dd0000',
+    name: 'jacksnake',
+    char: 's',
+    spritex: 7,
+    spritey: 3
+}

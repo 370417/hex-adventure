@@ -7,6 +7,7 @@ game.mode.play = {
         // reset canvases
         game.ctx.clearRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
         game.bgCtx.clearRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
+        document.getElementById('shadow').innerHTML = '';
         // reset schedule
         game.schedule = rlt.Schedule();
         // init game map
@@ -78,8 +79,14 @@ game.mode.play = {
         game.cacheMapTiles(game.map, game.spritesheet, 8, 8, 1);
         // create player (temp)
         game.player = Object.create(game.Player);
+        game.player.hp = 10;
+        game.player.maxHp = 10;
+        game.player.xp = 0;
+        game.player.maxXp = 100;
+        game.player.level = 1;
         game.player.x = 0;
         game.player.y = 0;
+        game.player.name = 'player';
         game.player.tile = Object.create(game.tiles.player);
         game.schedule.add(game.player.act.bind(game.player), 0);
         // place player
@@ -99,6 +106,7 @@ game.mode.play = {
         // place monsters
         for (var i = 0; i < 1; i++) {
             var newMonster = Object.create(game.Actors3.vanilla);
+            newMonster.hp = 5;
             newMonster.x = 0;
             newMonster.y = 0;
             newMonster.tile = Object.create(game.tiles.vanilla);
@@ -110,6 +118,7 @@ game.mode.play = {
             game.schedule.add(newMonster.act.bind(newMonster), 1);
         }
         var giant = Object.create(game.Actors3.giant);
+        giant.hp = 1;
         giant.x = 0;
         giant.y = 0;
         giant.tile = Object.create(game.tiles.giant);
@@ -119,6 +128,17 @@ game.mode.play = {
         }
         game.map[giant.x][giant.y].actor = giant;
         game.schedule.add(giant.act.bind(giant), 1);
+        var snake = Object.create(game.Actors3.jacksnake);
+        snake.hp = 10;
+        snake.x = 0;
+        snake.y = 0;
+        snake.tile = Object.create(game.tiles.jacksnake);
+        while (!game.passable(snake.x, snake.y)) {
+            snake.x = rlt.random(1, game.width - 1, Math.random);
+            snake.y = rlt.random(1, game.height - 1, Math.random);
+        }
+        game.map[snake.x][snake.y].actor = snake;
+        game.schedule.add(snake.act.bind(snake), 1);
         // init display
         game.display = rlt.Display({
             width: game.width,
@@ -163,7 +183,7 @@ game.mode.play = {
                     tile.drawn = false;
                 } else if (tile.seen && !tile.drawn) {
                     game.bgDisplay.drawCached(tile.canvas, x, y);
-                    //game.bgDisplay.drawBitmap(game.spritesheet, tile.spritex, tile.spritey, 8, 8, x, y, tile.color, 2);
+                    //if (tile.actor) game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 1);
                     tile.drawn = true;
                 }
             }

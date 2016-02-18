@@ -177,8 +177,6 @@ game.canvas.height = game.height * game.tileHeight;
 game.ctx = game.canvas.getContext('2d');
 
 // init background canvas
-document.getElementById('shadow').style.width = game.width * game.tileWidth + 'px';
-document.getElementById('shadow').style.height = game.height * game.tileHeight + 'px';
 game.bgCanvas = document.getElementById('bg-canvas');
 game.bgCanvas.width = game.width * game.tileWidth;
 game.bgCanvas.height = game.height * game.tileHeight;

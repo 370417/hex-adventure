@@ -4,6 +4,10 @@
 game.actorMixins = {
     act: function() {
         'use strict';
+        if (this.dead) {
+            game.schedule.advance()();
+            return;
+        }
         var stateFunction = this.states[this.state];
         if (typeof stateFunction === 'function') {
             stateFunction.call(this);
@@ -24,7 +28,9 @@ game.actorMixins = {
             this.x += dx;
             this.y += dy;
             game.map[this.x][this.y].actor = this;
-            //this.recolor(game.map[this.x][this.y].light);
+        } else if (game.map[this.x + dx][this.y + dy].actor) {
+            var opponent = game.map[this.x + dx][this.y + dy].actor;
+            opponent.gainHp(-1);
         }
         game.schedule.add(this.act.bind(this), 100);
         game.schedule.advance()();
@@ -38,6 +44,57 @@ game.actorMixins = {
         } else {
             return false;
         }
+    },
+    gainHp: function(hp) {
+        'use strict';
+        this.hp += hp;
+        if (this.hp > this.maxHp) {
+            this.hp = this.maxHp;
+        }
+        if (this.hp < 0) {
+            this.hp = 0;
+        }
+        if (this.name === 'player') {
+            console.log('yo!');
+            document.getElementById('hp-val').innerHTML = this.hp;
+            document.getElementById('hp-progress').style.width = 100 - 100 * this.hp / this.maxHp + '%';
+        }
+        if (this.hp === 0) {
+            this.die();
+        }
+    },
+    die: function() {
+        'use strict';
+        this.dead = true;
+        game.map[this.x][this.y].actor = undefined;
+        game.player.gainXp(60);
+    },
+    gainXp: function(xp) {
+        'use strict';
+        this.xp += xp;
+        if (this.xp > this.maxXp) {
+            this.xp = this.maxXp;
+            document.getElementById('level').style.color = 'gold';
+            document.getElementById('level').style.borderColor = 'gold';
+        }
+        if (this.xp < 0) {
+            this.xp = 0;
+        }
+        document.getElementById('xp-progress').style.width = 100 - 100 * this.xp / this.maxXp + '%';
+        document.getElementById('xp-val').innerHTML = this.xp;
+    },
+    levelUp: function() {
+        'use strict';
+        this.level++;
+        document.getElementById('level').innerHTML = this.level;
+        document.getElementById('level').style.color = '';
+        document.getElementById('level').style.borderColor = '';
+        this.maxXp = 100 * Math.log(this.level + Math.E - 1);
+        this.gainXp(-this.maxXp);
+        document.getElementById('xp-max').innerHTML = Math.round(this.maxXp);
+        this.maxHp += 10;
+        this.gainHp(this.maxHp);
+        document.getElementById('hp-max').innerHTML = this.maxHp;
     },
     see: function() {
         'use strict';
@@ -77,11 +134,11 @@ game.actorMixins = {
     },
     sneakyWandering: function() {
         'use strict';
-        /*if (game.map[this.x][this.y].visible) {
+        if (game.map[this.x][this.y].visible) {
             this.state = 'playerSeen';
             this.act();
             return;
-        }*/
+        }
         var goal = this.goal;
         if (goal.x === this.x && goal.y === this.y) {
             this.state = 'waiting';
@@ -113,11 +170,11 @@ game.actorMixins = {
     },
     braveWandering: function() {
         'use strict';
-        /*if (game.map[this.x][this.y].visible) {
+        if (game.map[this.x][this.y].visible) {
             this.state = 'playerSeen';
             this.act();
             return;
-        }*/
+        }
         var goal = this.goal;
         if (goal.x === this.x && goal.y === this.y) {
             this.state = 'waiting';
@@ -149,17 +206,30 @@ game.actorMixins = {
     },
     fleeing: function() {
         'use strict';
-        path = rlt.astar(this.x, this.y, function(x, y) {
+        if (!game.map[this.x][this.y].visible) {
+            this.goal = game.getRandTile(game.passable, function() { return 1; });
+            this.state = 'wandering';
+            this.act();
+            return;
+        }
+        var path = rlt.astar(this.x, this.y, function(x, y) {
             // cost
-            if (game.passable(x, y)) {
-                return 1;
-            } else {
-                return -1;
-            }
+            return game.passable(x, y) ? 1 : -1;
         }, function(x, y) {
             // heuristic
-            return 0.01;
-        });
+            return game.map[x][y].visible ? 0.01 : 0;
+        }, rlt.dir8);
+        if (path.x) {
+            while (path.parent && path.parent.parent) {
+                path = path.parent;
+            }
+            this.move(path.x - this.x, path.y - this.y);
+        } else {
+            console.log('destination unreachable');
+            this.state = 'waiting';
+            this.act();
+            return;
+        }
     }
 };
 
@@ -168,7 +238,11 @@ game.Player = {
     canMove: game.actorMixins.canMove,
     recolor: game.actorMixins.recolor,
     see: game.actorMixins.see,
-    act: game.actorMixins.playerAct
+    act: game.actorMixins.playerAct,
+    gainHp: game.actorMixins.gainHp,
+    die: game.actorMixins.die,
+    gainXp: game.actorMixins.gainXp,
+    levelUp: game.actorMixins.levelUp
 };
 
 game.Actors3 = {
@@ -178,6 +252,8 @@ game.Actors3 = {
         act: game.actorMixins.act,
         move: game.actorMixins.move,
         canMove: game.actorMixins.canMove,
+        gainHp: game.actorMixins.gainHp,
+        die: game.actorMixins.die,
         states: {
             sleeping: game.actorMixins.sleeping,
             waiting: game.actorMixins.waiting,
@@ -191,10 +267,29 @@ game.Actors3 = {
         act: game.actorMixins.act,
         move: game.actorMixins.move,
         canMove: game.actorMixins.canMove,
+        gainHp: game.actorMixins.gainHp,
+        die: game.actorMixins.die,
         states: {
-           sleeping: game.actorMixins.sleeping,
+            sleeping: game.actorMixins.sleeping,
             waiting: game.actorMixins.waiting,
             wandering: game.actorMixins.braveWandering,
+            playerSeen: game.actorMixins.fleeing
+        }
+    },
+    // large, bright snakes colored in burnished red, black and gold
+    // young ones pose less of a threat, but they are indistinguishable from the smaller fallow snakes that are highly venemous.
+    jacksnake: {
+        name: 'jacksnake',
+        state: 'waiting',
+        act: game.actorMixins.act,
+        move: game.actorMixins.move,
+        canMove: game.actorMixins.canMove,
+        gainHp: game.actorMixins.gainHp,
+        die: game.actorMixins.die,
+        states: {
+            sleeping: game.actorMixins.sleeping,
+            waiting: game.actorMixins.waiting,
+            wandering: game.actorMixins.sneakyWandering,
             playerSeen: game.actorMixins.fleeing
         }
     }

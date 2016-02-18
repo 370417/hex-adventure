@@ -5,11 +5,7 @@
 game.mode.loading = {
     init: function() {
         'use strict';
-        game.ctx.fillStyle = '#000000';
-        game.ctx.fillRect(0, 0, game.width * game.tileWidth, game.height * game.tileHeight);
-        game.ctx.fillStyle = '#eeeeee';
-        game.ctx.font = '8px/2 monospace';
-        game.ctx.fillText('Loading...', 0, 32);
+        document.getElementById('shadow').innerHTML = 'Loading...';
     },
     close: function() {}
 };
