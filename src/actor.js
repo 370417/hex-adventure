@@ -23,15 +23,26 @@ game.actorMixins = {
     },
     move: function(dx, dy) {
         'use strict';
+        if (dx === 0 && dy === 0) {
+            return this.wait();
+        }
+        this.timeSpentStill += 1;
         if (this.canMove(dx, dy)) {
+            this.timeSpentStill = 0;
             game.map[this.x][this.y].actor = null;
             this.x += dx;
             this.y += dy;
             game.map[this.x][this.y].actor = this;
         } else if (game.map[this.x + dx][this.y + dy].actor) {
-            var opponent = game.map[this.x + dx][this.y + dy].actor;
-            opponent.gainHp(-1);
+            this.timeSpentStill = 0;
+            return this.attack(game.map[this.x + dx][this.y + dy].actor);
         }
+        game.schedule.add(this.act.bind(this), 100);
+        game.schedule.advance()();
+    },
+    wait: function() {
+        'use strict';
+        this.timeSpentStill += 1;
         game.schedule.add(this.act.bind(this), 100);
         game.schedule.advance()();
     },
@@ -45,6 +56,43 @@ game.actorMixins = {
             return false;
         }
     },
+    strangledMove: function(dx, dy) {
+        'use strict';
+        this.buffs.strangled.actor.gainHp(-1);
+        game.schedule.add(this.act.bind(this), 100);
+        return game.schedule.advance()();
+    },
+    attack: function(opponent) {
+        'use strict';
+        opponent.gainHp(-1);
+        game.schedule.add(this.act.bind(this), 100);
+        return game.schedule.advance()();
+    },
+    jacksnakeAttack: function(opponent) {
+        'use strict';
+        if (opponent.name === 'player') {
+            game.map[this.x][this.y].actor = null;
+            this.dead = true;
+            this.die = game.actorMixins.jacksnakeDie;
+            opponent.move = game.actorMixins.strangledMove;
+            game.player.buff({
+                name: 'strangled',
+                actor: this
+            });
+            game.schedule.add(this.act.bind(this), 100);
+            return game.schedule.advance()();
+        } else {
+            return game.actorMixins.attack.call(this, opponent);
+        }
+    },
+    buff: function(buff) {
+        'use strict';
+        this.buffs[buff.name] = buff;
+    },
+    dispel: function(buffName) {
+        'use strict';
+        this.buffs[buffName] = undefined;
+    },
     gainHp: function(hp) {
         'use strict';
         this.hp += hp;
@@ -55,7 +103,6 @@ game.actorMixins = {
             this.hp = 0;
         }
         if (this.name === 'player') {
-            console.log('yo!');
             document.getElementById('hp-val').innerHTML = this.hp;
             document.getElementById('hp-progress').style.width = 100 - 100 * this.hp / this.maxHp + '%';
         }
@@ -67,6 +114,12 @@ game.actorMixins = {
         'use strict';
         this.dead = true;
         game.map[this.x][this.y].actor = undefined;
+        game.player.gainXp(60);
+    },
+    jacksnakeDie: function() {
+        'use strict';
+        game.player.dispel('strangled');
+        delete game.player.move;
         game.player.gainXp(60);
     },
     gainXp: function(xp) {
@@ -230,67 +283,95 @@ game.actorMixins = {
             this.act();
             return;
         }
+    },
+    hunting: function() {
+        'use strict';
+        if (!game.map[this.x][this.y].visible) {
+            this.state = 'wandering';
+            this.act();
+            return;
+        }
+        this.goal = {
+            x: game.player.x,
+            y: game.player.y
+        };
+        var path = rlt.astar(this.x, this.y, function(x, y) {
+            // cost
+            return game.defaultCost(x, y) - 1 + game.map[x][y].light;
+        }, function(x, y) {
+            // heuristic
+            return x === game.player.x && y === game.player.y ? 0 : 0.01;
+        }, rlt.dir8);
+        if (path.x) {
+            while (path.parent && path.parent.parent) {
+                path = path.parent;
+            }
+            this.move(path.x - this.x, path.y - this.y);
+        } else {
+            console.log('destination unreachable');
+            this.state = 'waiting';
+            this.act();
+            return;
+        }
     }
 };
 
-game.Player = {
-    move: game.actorMixins.move,
-    canMove: game.actorMixins.canMove,
+function asEntity(p) {
+    'use strict';
+    p.timeSpentStill = 0;
+    p.buffs = p.buffs || {};
+    p.buff = p.buff || game.actorMixins.buff;
+    p.dispel = p.dispel || game.actorMixins.dispel;
+    p.act = p.act || game.actorMixins.act;
+    p.move = p.move || game.actorMixins.move;
+    p.canMove = p.canMove || game.actorMixins.canMove;
+    p.wait = p.wait || game.actorMixins.wait;
+    p.attack = p.attack || game.actorMixins.attack;
+    p.gainHp = p.gainHp || game.actorMixins.gainHp;
+    p.die = p.die || game.actorMixins.die;
+    return p;
+};
+
+game.Player = asEntity({
     recolor: game.actorMixins.recolor,
     see: game.actorMixins.see,
     act: game.actorMixins.playerAct,
-    gainHp: game.actorMixins.gainHp,
-    die: game.actorMixins.die,
     gainXp: game.actorMixins.gainXp,
     levelUp: game.actorMixins.levelUp
-};
+});
 
-game.Actors3 = {
-    vanilla: {
+game.Actors = {
+    vanilla: asEntity({
         name: 'vanilla',
         state: 'waiting',
-        act: game.actorMixins.act,
-        move: game.actorMixins.move,
-        canMove: game.actorMixins.canMove,
-        gainHp: game.actorMixins.gainHp,
-        die: game.actorMixins.die,
         states: {
             sleeping: game.actorMixins.sleeping,
             waiting: game.actorMixins.waiting,
             wandering: game.actorMixins.sneakyWandering,
             playerSeen: game.actorMixins.fleeing
         }
-    },
-    giant: {
+    }),
+    giant: asEntity({
         name: 'giant',
         state: 'waiting',
-        act: game.actorMixins.act,
-        move: game.actorMixins.move,
-        canMove: game.actorMixins.canMove,
-        gainHp: game.actorMixins.gainHp,
-        die: game.actorMixins.die,
         states: {
             sleeping: game.actorMixins.sleeping,
             waiting: game.actorMixins.waiting,
             wandering: game.actorMixins.braveWandering,
             playerSeen: game.actorMixins.fleeing
         }
-    },
+    }),
     // large, bright snakes colored in burnished red, black and gold
     // young ones pose less of a threat, but they are indistinguishable from the smaller fallow snakes that are highly venemous.
-    jacksnake: {
+    jacksnake: asEntity({
         name: 'jacksnake',
         state: 'waiting',
-        act: game.actorMixins.act,
-        move: game.actorMixins.move,
-        canMove: game.actorMixins.canMove,
-        gainHp: game.actorMixins.gainHp,
-        die: game.actorMixins.die,
+        attack: game.actorMixins.jacksnakeAttack,
         states: {
             sleeping: game.actorMixins.sleeping,
             waiting: game.actorMixins.waiting,
             wandering: game.actorMixins.sneakyWandering,
-            playerSeen: game.actorMixins.fleeing
+            playerSeen: game.actorMixins.hunting
         }
-    }
+    })
 };

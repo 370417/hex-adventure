@@ -15,6 +15,6 @@ game.mode.loading.init();
 rlt.loadImg('res/terminal8x8_aa_as.png', function() {
     'use strict';
     game.spritesheet = this;
-    game.tiles.cache(game.spritesheet, 8, 8, 1);
+    game.tiles.cache(game.spritesheet, 8, 8);
     game.mode.start.init();
 }, 128, 128);

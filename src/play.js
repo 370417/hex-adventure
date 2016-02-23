@@ -76,7 +76,7 @@ game.mode.play = {
             }
         }
         // cache new colors
-        game.cacheMapTiles(game.map, game.spritesheet, 8, 8, 1);
+        game.cacheMapTiles(game.map, game.spritesheet, 8, 8);
         // create player (temp)
         game.player = Object.create(game.Player);
         game.player.hp = 10;
@@ -105,7 +105,7 @@ game.mode.play = {
         });
         // place monsters
         for (var i = 0; i < 1; i++) {
-            var newMonster = Object.create(game.Actors3.vanilla);
+            var newMonster = Object.create(game.Actors.vanilla);
             newMonster.hp = 5;
             newMonster.x = 0;
             newMonster.y = 0;
@@ -117,7 +117,7 @@ game.mode.play = {
             game.map[newMonster.x][newMonster.y].actor = newMonster;
             game.schedule.add(newMonster.act.bind(newMonster), 1);
         }
-        var giant = Object.create(game.Actors3.giant);
+        var giant = Object.create(game.Actors.giant);
         giant.hp = 1;
         giant.x = 0;
         giant.y = 0;
@@ -128,7 +128,7 @@ game.mode.play = {
         }
         game.map[giant.x][giant.y].actor = giant;
         game.schedule.add(giant.act.bind(giant), 1);
-        var snake = Object.create(game.Actors3.jacksnake);
+        var snake = Object.create(game.Actors.jacksnake);
         snake.hp = 10;
         snake.x = 0;
         snake.y = 0;
@@ -176,6 +176,9 @@ game.mode.play = {
                     game.display.drawBg('#000', x, y);
                     if (tile.actor) {
                         game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 1);
+                        if (tile.actor.buffs.strangled) {
+                            game.display.drawCached(game.tiles.jacksnake.canvas, x, y);
+                        }
                     } else {
                         game.display.drawCached(tile.canvas, x, y);
                     }

@@ -3,25 +3,21 @@
 
 game.tiles = Object.create({
     /* Create a canvas for each tile with a cached glyph from the spritesheet */
-    cache: function(spritesheet, spriteWidth, spriteHeight, scale) {
+    cache: function(spritesheet, spriteWidth, spriteHeight) {
         'use strict';
         for (var tilename in game.tiles) {
             if (game.tiles.hasOwnProperty(tilename)) {
                 var tile = game.tiles[tilename];
                 var canvas = document.createElement('canvas');
-                canvas.width = scale * spriteWidth;
-                canvas.height = scale * spriteHeight;
+                canvas.width = spriteWidth;
+                canvas.height = spriteHeight;
                 var ctx = canvas.getContext('2d');
-                ctx.mozImageSmoothingEnabled = false;
-                ctx.webkitImageSmoothingEnabled = false;
-                ctx.msImageSmoothingEnabled = false;
-                ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(spritesheet, tile.spritex * spriteWidth, tile.spritey * spriteHeight, spriteWidth, spriteHeight,
-                    0, 0, spriteWidth * scale, spriteHeight * scale);
+                    0, 0, spriteWidth, spriteHeight);
                 ctx.globalCompositeOperation = 'source-in';
                 ctx.fillStyle = tile.color;
-                ctx.fillRect(0, 0, scale * spriteWidth, scale * spriteHeight);
-                //tile.canvas = canvas;
+                ctx.fillRect(0, 0, spriteWidth, spriteHeight);
+                tile.canvas = canvas;
             }
         }
     }
@@ -96,7 +92,7 @@ game.tiles.giant = {
 game.tiles.jacksnake = {
     color: '#dd0000',
     name: 'jacksnake',
-    char: 's',
-    spritex: 7,
+    char: 'S',
+    spritex: 5,
     spritey: 3
 }

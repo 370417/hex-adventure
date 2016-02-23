@@ -193,6 +193,15 @@ game.passable = function(x, y) {
     return game.map[x][y].passable && !game.map[x][y].actor;
 };
 
+game.defaultCost = function(x, y) {
+    'use strict';
+    var tile = game.map[x][y];
+    if (!tile.passable) {
+        return -3;
+    }
+    return 1 + (tile.actor ? tile.actor.timeSpentStill : 0);
+}
+
 game.transparent = function(x, y) {
     'use strict';
     return game.map[x][y].transparent;
@@ -203,23 +212,19 @@ game.visible = function(x, y) {
     return game.map[x][y].visible;
 };
 
-game.cacheMapTiles = function(map, spritesheet, spriteWidth, spriteHeight, scale) {
+game.cacheMapTiles = function(map, spritesheet, spriteWidth, spriteHeight) {
     'use strict';
     for (var x = 0; x < map.length; x++) {
         for (var y = 0; y < map[0].length; y++) {
             var tile = map[x][y];
             var canvas = document.createElement('canvas');
-            canvas.width = scale * spriteWidth;
-            canvas.height = scale * spriteHeight;
+            canvas.width = spriteWidth;
+            canvas.height = spriteHeight;
             var ctx = canvas.getContext('2d');
-            ctx.mozImageSmoothingEnabled = false;
-            ctx.webkitImageSmoothingEnabled = false;
-            ctx.msImageSmoothingEnabled = false;
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(spritesheet, tile.spritex * spriteWidth, tile.spritey * spriteHeight, spriteWidth, spriteHeight, 0, 0, spriteWidth * scale, spriteHeight * scale);
+            ctx.drawImage(spritesheet, tile.spritex * spriteWidth, tile.spritey * spriteHeight, spriteWidth, spriteHeight, 0, 0, spriteWidth, spriteHeight);
             ctx.globalCompositeOperation = 'source-in';
             ctx.fillStyle = tile.color;
-            ctx.fillRect(0, 0, scale * spriteWidth, scale * spriteHeight);
+            ctx.fillRect(0, 0, spriteWidth, spriteHeight);
             tile.canvas = canvas;
         }
     }
