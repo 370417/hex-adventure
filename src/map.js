@@ -7,21 +7,9 @@ game.newCave = function(width, height, callback, prng, options) {
     options = options || {};
     var openness = options.openness || 0.8;
     // 2d array representation of map
-    var map = [];
-    for (var x = 0; x < width; x++) {
-        map[x] = [];
-        for (var y = 0; y < height; y++) {
-            map[x][y] = 'wall';
-        }
-    }
+    var map = rlt.array2d(width, height, 'wall');
     // 2d array for number of orthogonal floor neighbors
-    var floorCount = [];
-    for (var x = 0; x < width; x++) {
-        floorCount[x] = [];
-        for (var y = 0; y < height; y++) {
-            floorCount[x][y] = 0;
-        }
-    }
+    var floorCount = rlt.array2d(width, height, 0);
 
     // Count the number of contiguous groups of walls surrounding a tile
     var wallGroups = function(x, y) {
@@ -69,83 +57,60 @@ game.newCave = function(width, height, callback, prng, options) {
     }
 
     // remove awkward walls
-    for (var x = 1; x < width - 1; x++) {
-        for (var y = 1; y < width - 1; y++) {
-            if (map[x][y] === 'wall' && floorCount[x][y] === 4) {
-                map[x][y] = 'floor';
-            }
+    for (var x = 1; x < width - 1; x++) for (var y = 1; y < width - 1; y++) {
+        if (map[x][y] === 'wall' && floorCount[x][y] === 4) {
+            map[x][y] = 'floor';
         }
     }
 
     // floodfill areas using a*
     var areaSizes = [];
-    for (var x = 1; x < width - 1; x++) {
-        for (var y = 1; y < width - 1; y++) {
-            if (map[x][y] === 'floor') {
-                var tiles = rlt.astar(x, y, function(x, y) {
-                    // cost
-                    if (map[x][y] === 'wall') return -1;
-                    else return 1;
-                }, function() {
-                    // heuristic
-                    return 0.001;
-                }, rlt.dir4);
-                for (var i = 0; i < tiles.length; i++) {
-                    map[tiles[i].x][tiles[i].y] = areaSizes.length;
-                }
-                areaSizes.push(tiles.length);
+    var maxArea = 0;
+    var maxAreaIndex = 0;
+    for (var x = 1; x < width - 1; x++) for (var y = 1; y < width - 1; y++) {
+        if (map[x][y] === 'floor') {
+            var tiles = rlt.astar(x, y, function(x, y) {
+                return map[x][y] === 'wall' ? -1 : 1;
+            }, function() {
+                return 0.01;
+            }, rlt.dir4);
+            for (var i = 0; i < tiles.length; i++) {
+                map[tiles[i].x][tiles[i].y] = areaSizes.length;
             }
-        }
-    }
-    // find the largest area
-    var largestArea = 0;
-    var largestAreaIndex = 0;
-    for (var i = 0; i < areaSizes.length; i++) {
-        if (areaSizes[i] > largestArea) {
-            largestArea = areaSizes[i];
-            largestAreaIndex = i;
+            areaSizes.push(tiles.length);
+            if (tiles.length > maxArea) {
+                maxArea = tiles.length;
+                maxAreaIndex = areaSizes.length - 1;
+            }
         }
     }
 
     // connect smaller areas to the largest one
     var pathcost = function(x, y) {
-        if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
-            return -1;
-        }
-        var tile = map[x][y];
-        if (tile === 'wall') {
-            return 3;
-        } else if (tile === 'corridor') {
-            return 0.5;
-        } else {
-            return 1;
-        }
+        if (x === 0 || y === 0 || x === width - 1 || y === height - 1) return  -1;
+        if (map[x][y] === 'wall')                                      return   3;
+        if (map[x][y] === 'corridor')                                  return 0.5;
+        else                                                           return   1;
     };
 
     var pathheuristic = function(x, y) {
-        if (map[x][y] === largestAreaIndex) {
-            return 0;
-        } else {
-            return 0.1;
-        }
+        return map[x][y] === maxAreaIndex ? 0 : 0.01;
     };
 
     var connected = [];
-    for (var x = 1; x < width - 1; x++) {
-        for (var y = 1; y < width - 1; y++) {
-            if (options && options.stairs && x === options.stairs.x && y === options.stairs.y ||
-                typeof map[x][y] === 'number' && !connected[map[x][y]] && areaSizes[map[x][y]] > 4) {
-                var node = rlt.astar(x, y, pathcost, pathheuristic, rlt.dir4);
-                while (node.parent) {
-                    if (map[node.x][node.y] === 'wall') {
-                        map[node.x][node.y] = 'corridor';
-                    } else {
-                        map[node.x][node.y] = 'floor';
-                    }
-                    node = node.parent;
+    for (var x = 1; x < width - 1; x++) for (var y = 1; y < width - 1; y++) {
+        if (options && options.stairs && x === options.stairs.x && y === options.stairs.y ||
+            typeof map[x][y] === 'number' && !connected[map[x][y]] && areaSizes[map[x][y]] > 4) {
+            var node = rlt.astar(x, y, pathcost, pathheuristic, rlt.dir4);
+            while (node.parent) {
+                if (map[node.x][node.y] === 'wall') {
+                    map[node.x][node.y] = 'corridor';
+                } else {
+                    map[node.x][node.y] = 'floor';
                 }
-                connected[map[x][y]] = true;
+                node = node.parent;
             }
+            connected[map[x][y]] = true;
         }
     }
 

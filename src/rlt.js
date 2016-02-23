@@ -354,6 +354,22 @@ rlt.array2d = function(imax, jmax, fill) {
 };
 
 /**
+ * Find the index of the max value of an array (first max in case of ties)
+ */
+rlt.arrayMax = function(arr) {
+    'use strict';
+    var imax;
+    var max = -Infinity;
+    for (var i = 0; i < arr.length; i++) {
+        if (arr[i] > max) {
+            imax = i;
+            max = arr[i];
+        }
+    }
+    return imax;
+};
+
+/**
  * Create an array of elements from 0 to length - 1 in random order.
  * Essesntially rlt.shuffle(rlt.range(length), prng) but faster
  * @param length - length of the array
