@@ -41,6 +41,24 @@ game.tiles.floor = {
     spritex: 2,
     spritey: 14
 };
+game.tiles.tallGrass = {
+    transparent: false,
+    passable: true,
+    color: 'green',
+    name: 'tallGrass',
+    char: '"',
+    spritex: 2,
+    spritey: 2
+};
+game.tiles.grass = {
+    transparent: true,
+    passable: true,
+    color: 'green',
+    name: 'grass',
+    char: '\'',
+    spritex: 2,
+    spritey: 0
+};
 game.tiles.corridor = {
     transparent: true,
     passable: true,
@@ -69,6 +87,7 @@ game.tiles.upstairs = {
     spritey: 12
 };
 game.tiles.player = {
+    transparent: true,
     color: '#bbbbbb',
     name: 'player',
     char: '@',
@@ -76,6 +95,7 @@ game.tiles.player = {
     spritey: 0
 };
 game.tiles.vanilla = {
+    transparent: true,
     color: '#bbbbbb',
     name: 'vanilla',
     char: 'v',
@@ -83,16 +103,37 @@ game.tiles.vanilla = {
     spritey: 6
 };
 game.tiles.giant = {
+    transparent: false,
     color: '#ee8888',
     name: 'giant',
     char: 'G',
     spritex: 4,
     spritey: 7
-}
+};
 game.tiles.jacksnake = {
+    transparent: true,
     color: '#dd0000',
     name: 'jacksnake',
     char: 'S',
     spritex: 5,
     spritey: 3
-}
+};
+
+game.tiles.tallGrass.stepIn = function(x, y) {
+    'use strict';
+    var tile = game.map[x][y];
+    game.map[x][y] = Object.create(game.tiles.grass);
+    game.map[x][y].actor = tile.actor;
+    game.map[x][y].visible = tile.visible;
+    game.map[x][y].drawn = !tile.visible;
+    game.map[x][y].light = 0;
+    game.schedule.add(function() {
+        var tile = game.map[x][y];
+        game.map[x][y] = Object.create(game.tiles.tallGrass);
+        game.map[x][y].actor = tile.actor;
+        game.map[x][y].visible = tile.visible;
+        game.map[x][y].drawn = !tile.visible;
+        game.map[x][y].light = 0;
+        return game.schedule.advance()();
+    }, 200 + Math.random() * 400);
+};

@@ -3,12 +3,20 @@
 
 game.newCave = function(width, height, callback, prng, options) {
     'use strict';
+
+    // for use as a cost function in a*
+    var arrCellIs = function(arr, cell, x, y) {
+        if (x < 0 || y < 0 || x >= width || y >= height) return -1;
+        return arr[x][y] === cell ? 1 : -1;
+    };
+    var noHeuristic = function(){
+        return 1;
+    }
+
     prng = prng || Math.random;
     options = options || {};
     var openness = options.openness || 0.8;
-    // 2d array representation of map
     var map = rlt.array2d(width, height, 'wall');
-    // 2d array for number of orthogonal floor neighbors
     var floorCount = rlt.array2d(width, height, 0);
 
     // Count the number of contiguous groups of walls surrounding a tile
@@ -46,14 +54,7 @@ game.newCave = function(width, height, callback, prng, options) {
         var x = 1 + Math.floor(j / (height-2));
         var y = 1 + j - (x-1) * (height-2);
         var walls = wallGroups(x, y);
-        // if a tile is surrounded by walls, randomly make it floor
-        if (walls === 'surrounded') {
-            if (prng() < openness) makeFloor(x, y);
-        // if a tile is surrounded by floor or is next to two unconnected regions
-        // of floor, make it floor
-        } else if (walls !== 1) {
-            makeFloor(x, y);
-        }
+        if (walls === 'surrounded' && prng() < openness || walls !== 1) makeFloor(x, y);
     }
 
     // remove awkward walls
@@ -69,11 +70,7 @@ game.newCave = function(width, height, callback, prng, options) {
     var maxAreaIndex = 0;
     for (var x = 1; x < width - 1; x++) for (var y = 1; y < width - 1; y++) {
         if (map[x][y] === 'floor') {
-            var tiles = rlt.astar(x, y, function(x, y) {
-                return map[x][y] === 'wall' ? -1 : 1;
-            }, function() {
-                return 0.01;
-            }, rlt.dir4);
+            var tiles = rlt.astar(x, y, arrCellIs.bind(null, map, 'floor'), noHeuristic, rlt.dir4);
             for (var i = 0; i < tiles.length; i++) {
                 map[tiles[i].x][tiles[i].y] = areaSizes.length;
             }
@@ -92,39 +89,56 @@ game.newCave = function(width, height, callback, prng, options) {
         if (map[x][y] === 'corridor')                                  return 0.5;
         else                                                           return   1;
     };
-
     var pathheuristic = function(x, y) {
-        return map[x][y] === maxAreaIndex ? 0 : 0.01;
+        return map[x][y] === maxAreaIndex ? 0 : 1;
     };
-
     var connected = [];
     for (var x = 1; x < width - 1; x++) for (var y = 1; y < width - 1; y++) {
         if (options && options.stairs && x === options.stairs.x && y === options.stairs.y ||
             typeof map[x][y] === 'number' && !connected[map[x][y]] && areaSizes[map[x][y]] > 4) {
-            var node = rlt.astar(x, y, pathcost, pathheuristic, rlt.dir4);
-            while (node.parent) {
+            for (var node = rlt.astar(x, y, pathcost, pathheuristic, rlt.dir4); node.parent; node = node.parent) {
                 if (map[node.x][node.y] === 'wall') {
                     map[node.x][node.y] = 'corridor';
                 } else {
                     map[node.x][node.y] = 'floor';
                 }
-                node = node.parent;
             }
             connected[map[x][y]] = true;
         }
     }
 
     // fill all the areas with floor
-    for (var x = 1; x < width - 1; x++) {
-        for (var y = 1; y < height - 1; y++) {
-            if (typeof map[x][y] === 'number') {
-                if (areaSizes[map[x][y]] > 4) {
-                    map[x][y] = 'floor';
-                } else {
-                    map[x][y] = 'wall';
-                }
+    for (var x = 1; x < width - 1; x++) for (var y = 1; y < height - 1; y++) {
+        if (typeof map[x][y] === 'number') {
+            if (areaSizes[map[x][y]] > 4) {
+                map[x][y] = 'floor';
+            } else {
+                map[x][y] = 'wall';
             }
         }
+    }
+
+    //floodfill walls connected to edge
+    var outer = rlt.astar(0, 0, arrCellIs.bind(null, map, 'wall'), noHeuristic, rlt.dir4);
+    for (var i = 0; i < outer.length; i++) {
+        map[outer[i].x][outer[i].y] = 'outerWall';
+    }
+
+    // randomly turn groups of walls into grass
+    for (var i = 0; i < 100; i++) {
+        var randx = rlt.random(2, width - 3);
+        var randy = rlt.random(2, height - 3);
+        if (map[randx][randy] === 'wall') {
+            var grass = rlt.astar(randx, randy, arrCellIs.bind(null, map, 'wall'), noHeuristic, rlt.dir4);
+            for (var j = 0; j < grass.length; j++) {
+                map[grass[j].x][grass[j].y] = 'tallGrass';
+            }
+        }
+    }
+
+    // turn outerwalls back into walls
+    for (var x = 0; x < width; x++) for (var y = 0; y < height; y++) {
+        if (map[x][y] === 'outerWall') map[x][y] = 'wall';
     }
 
     // place stairs
@@ -135,12 +149,22 @@ game.newCave = function(width, height, callback, prng, options) {
     return map;
 };
 
+game.decorateCave = function(cave) {
+    'use strict';
+    game.map = rlt.array2d(game.width, game.height, function(x, y) {
+        return Object.create(game.tiles[cave[x][y]]);
+    });
+    var weights = rlt.normalize2d(game.weight());
+
+};
+
 /**
  * Takes an array of 0s and weights it based on number of tiles in fov
  * @return the array
  */
-game.weight = function(array) {
+game.weight = function() {
     'use strict';
+    var array = rlt.array2d(game.width, game.height, 0);
     for (var x = 1; x < game.width - 1; x++) {
         for (var y = 1; y < game.height - 1; y++) {
             if (game.transparent(x, y)) {
@@ -169,7 +193,8 @@ game.defaultCost = function(x, y) {
 
 game.transparent = function(x, y) {
     'use strict';
-    return game.map[x][y].transparent;
+    var tile = game.map[x][y];
+    return tile.actor ? tile.actor.tile.transparent : tile.transparent;
 };
 
 game.visible = function(x, y) {
@@ -177,20 +202,24 @@ game.visible = function(x, y) {
     return game.map[x][y].visible;
 };
 
+game.cacheMapTile = function(tile, spritesheet, spriteWidth, spriteHeight) {
+    'use strict';
+    var canvas = document.createElement('canvas');
+    canvas.width = spriteWidth;
+    canvas.height = spriteHeight;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(spritesheet, tile.spritex * spriteWidth, tile.spritey * spriteHeight, spriteWidth, spriteHeight, 0, 0, spriteWidth, spriteHeight);
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = tile.color;
+    ctx.fillRect(0, 0, spriteWidth, spriteHeight);
+    tile.canvas = canvas;
+};
+
 game.cacheMapTiles = function(map, spritesheet, spriteWidth, spriteHeight) {
     'use strict';
     for (var x = 0; x < map.length; x++) {
         for (var y = 0; y < map[0].length; y++) {
-            var tile = map[x][y];
-            var canvas = document.createElement('canvas');
-            canvas.width = spriteWidth;
-            canvas.height = spriteHeight;
-            var ctx = canvas.getContext('2d');
-            ctx.drawImage(spritesheet, tile.spritex * spriteWidth, tile.spritey * spriteHeight, spriteWidth, spriteHeight, 0, 0, spriteWidth, spriteHeight);
-            ctx.globalCompositeOperation = 'source-in';
-            ctx.fillStyle = tile.color;
-            ctx.fillRect(0, 0, spriteWidth, spriteHeight);
-            tile.canvas = canvas;
+            game.cacheMapTile(map[x][y], spritesheet, spriteWidth, spriteHeight);
         }
     }
 };

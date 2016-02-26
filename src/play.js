@@ -22,25 +22,22 @@ game.mode.play = {
             };
         }
         var map = game.newCave(game.width, game.height, false, Math.random, mapOptions);
+        game.map = game.decorateCave(map);
         game.map = rlt.array2d(game.width, game.height, function(x, y) {
             return Object.create(game.tiles[map[x][y]]);
         });
         // weight open tiles based on openness
-        var weights = game.weight(rlt.array2d(game.width, game.height, 0));
+        var weights = game.weight();
         // normalize weights - divide each weight by the largest portion of tiles lit in a single fov
         var maxWeight = 0;
-        for (var x = 0; x < game.width; x++) {
-            for (var y = 0; y < game.height; y++) {
-                if (weights[x][y] > maxWeight) {
-                    maxWeight = weights[x][y];
-                }
+        for (var x = 0; x < game.width; x++) for (var y = 0; y < game.height; y++) {
+            if (weights[x][y] > maxWeight) {
+                maxWeight = weights[x][y];
             }
         }
-        for (var x = 0; x < game.width; x++) {
-            for (var y = 0; y < game.height; y++) {
-                weights[x][y] = weights[x][y] / maxWeight;
-                game.map[x][y].light = weights[x][y];
-            }
+        for (var x = 0; x < game.width; x++) for (var y = 0; y < game.height; y++) {
+            weights[x][y] = weights[x][y] / maxWeight;
+            game.map[x][y].light = weights[x][y];
         }
         // place stairs in a well-lit area
         var stairs = game.getRandTile(function(x, y) {
@@ -56,24 +53,23 @@ game.mode.play = {
         game.map[stairs.x][stairs.y] = Object.create(game.tiles[newStairs]);
         game.map[stairs.x][stairs.y].light = light;
         // (temp) color tiles based on openness
-        for (var x = 0; x < game.width; x++) {
-            for (var y = 0; y < game.height; y++) {
-                var color;
-                if (game.passable(x, y)) {
-                    color = rlt.arr2rgb([
-                        Math.round(50 + 200 * weights[x][y]),
-                        Math.round(50 + 200 * weights[x][y]),
-                        Math.round(50 + 200 * weights[x][y])
-                    ]);
-                } else {
-                    color = rlt.arr2rgb([
-                        Math.round(50 + 200 * weights[x][y]),
-                        Math.round(30 + 220 * weights[x][y]),
-                        Math.round(10 + 230 * weights[x][y])
-                    ]);
-                }
-                game.map[x][y].color = color;
+        for (var x = 0; x < game.width; x++) for (var y = 0; y < game.height; y++) {
+            var color = undefined;
+            var weight = weights[x][y];
+            if (game.map[x][y].name === 'floor') {
+                color = rlt.arr2rgb([
+                    Math.round(50 + 205 * weights[x][y]),
+                    Math.round(50 + 205 * weights[x][y]),
+                    Math.round(50 + 205 * weights[x][y])
+                ]);
+            } else if (game.map[x][y].name === 'wall') {
+                color = rlt.arr2rgb([
+                    Math.round(75 + 180 * weight),//50 + 200 * weights[x][y]),
+                    Math.round(55 + 198 * weight),//30 + 220 * weights[x][y]),
+                    Math.round(43 + 207 * weight) //10 + 230 * weights[x][y])
+                ]);
             }
+            game.map[x][y].color = color || game.map[x][y].color;
         }
         // cache new colors
         game.cacheMapTiles(game.map, game.spritesheet, 8, 8);
@@ -169,26 +165,23 @@ game.mode.play = {
     draw: function(map) {
         'use strict';
         game.display.ctx.clearRect(0, 0, game.tileWidth * game.width, game.tileHeight * game.height);
-        for (var x = 0; x < game.width; x++) {
-            for (var y = 0; y < game.height; y++) {
-                var tile = map[x][y];
-                if (tile.visible) {
-                    game.display.drawBg('#000', x, y);
-                    if (tile.actor) {
-                        game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 1);
-                        if (tile.actor.buffs.strangled) {
-                            game.display.drawCached(game.tiles.jacksnake.canvas, x, y);
-                        }
-                    } else {
-                        game.display.drawCached(tile.canvas, x, y);
+        for (var x = 0; x < game.width; x++) for (var y = 0; y < game.height; y++) {
+            var tile = map[x][y];
+            if (tile.visible) {
+                game.display.drawBg('#000', x, y);
+                if (tile.actor) {
+                    game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 1);
+                    if (tile.actor.buffs.strangled) {
+                        game.display.drawCached(game.tiles.jacksnake.canvas, x, y);
                     }
-                    // forget that this tile has been drawn in case it changed
-                    tile.drawn = false;
-                } else if (tile.seen && !tile.drawn) {
-                    game.bgDisplay.drawCached(tile.canvas, x, y);
-                    //if (tile.actor) game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 1);
-                    tile.drawn = true;
+                } else {
+                    game.display.drawCached(tile.canvas, x, y);
                 }
+                // forget that this tile has been drawn in case it changed
+                tile.drawn = false;
+            } else if (tile.seen && !tile.drawn) {
+                game.bgDisplay.drawCached(tile.canvas, x, y);
+                tile.drawn = true;
             }
         }
     },
@@ -201,38 +194,38 @@ game.mode.play = {
     keydown: function(e) {
         'use strict';
         try {
-        var key = game.key[e.keyCode] || e.key;
-        game.directionPressed(game.mode.play, key, game.player.move);
-        // ranged combat
-        if (key === 'f') {
-            game.mode.play.close();
-            game.mode.ranged.open();
-        }
-        if (key === ' ') {
-            var tile = game.map[game.player.x][game.player.y];
-            // downstairs
-            if (tile.name === 'downstairs') {
+            var key = game.key[e.keyCode] || e.key;
+            game.directionPressed(game.mode.play, key, game.player.move);
+            // ranged combat
+            if (key === 'f') {
                 game.mode.play.close();
-                game.mode.play.init({
-                    stairs: {
-                        x: game.player.x,
-                        y: game.player.y,
-                        name: 'upstairs'
-                    }
-                });
+                game.mode.ranged.open();
             }
-            // upstairs
-            if (tile.name === 'upstairs') {
-                game.mode.play.close();
-                game.mode.play.init({
-                    stairs: {
-                        x: game.player.x,
-                        y: game.player.y,
-                        name: 'downstairs'
-                    }
-                });
+            if (key === ' ') {
+                var tile = game.map[game.player.x][game.player.y];
+                // downstairs
+                if (tile.name === 'downstairs') {
+                    game.mode.play.close();
+                    game.mode.play.init({
+                        stairs: {
+                            x: game.player.x,
+                            y: game.player.y,
+                            name: 'upstairs'
+                        }
+                    });
+                }
+                // upstairs
+                if (tile.name === 'upstairs') {
+                    game.mode.play.close();
+                    game.mode.play.init({
+                        stairs: {
+                            x: game.player.x,
+                            y: game.player.y,
+                            name: 'downstairs'
+                        }
+                    });
+                }
             }
-        }
         } catch (err) {
             console.log(err);
         }

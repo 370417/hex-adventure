@@ -370,6 +370,21 @@ rlt.arrayMax = function(arr) {
 };
 
 /**
+ * Normalize a 2d array of positive values
+ */
+rlt.normalize2d = function(arr) {
+    'use strict';
+    var max = 0;
+    for (var i = 0; i < arr.length; i++) for (var j = 0; j < arr[0].length; j++) {
+        if (arr[i][j] > max) max = arr[i][j];
+    }
+    for (var i = 0; i < arr.length; i++) for (var j = 0; j < arr[0].length; j++) {
+        arr[i][j] /= max;
+    }
+    return arr;
+};
+
+/**
  * Create an array of elements from 0 to length - 1 in random order.
  * Essesntially rlt.shuffle(rlt.range(length), prng) but faster
  * @param length - length of the array

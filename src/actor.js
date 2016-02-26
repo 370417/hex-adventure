@@ -1,6 +1,13 @@
 /* jshint undef: true, shadow: true, strict: true */
 /* globals rlt, game, document, console */
 
+/**
+ * PLANS
+ * Stealth mode - active if you have not moved more than one step at a time
+ * Stealth mode lets you not trample grass
+ * Corridors are cuurently green
+ */
+
 game.actorMixins = {
     act: function() {
         'use strict';
@@ -33,6 +40,9 @@ game.actorMixins = {
             this.x += dx;
             this.y += dy;
             game.map[this.x][this.y].actor = this;
+            if (game.map[this.x][this.y].stepIn) {
+                game.map[this.x][this.y].stepIn(this.x, this.y);
+            }
         } else if (game.map[this.x + dx][this.y + dy].actor) {
             this.timeSpentStill = 0;
             return this.attack(game.map[this.x + dx][this.y + dy].actor);
@@ -236,11 +246,7 @@ game.actorMixins = {
         }
         var tile = rlt.astar(this.x, this.y, function(x, y) {
             // cost
-            if (game.passable(x, y)) {
-                return 1.01 - game.map[x][y].light;
-            } else {
-                return -1;
-            }
+            return game.defaultCost(x, y) + 0.01 - game.map[x][y].light;
         }, function(x, y) {
             // heuristic
             return Math.max(Math.abs(x - goal.x), Math.abs(y - goal.y));
@@ -297,7 +303,7 @@ game.actorMixins = {
         };
         var path = rlt.astar(this.x, this.y, function(x, y) {
             // cost
-            return game.defaultCost(x, y) - 1 + game.map[x][y].light;
+            return game.defaultCost(x, y) - 0.99 + game.map[x][y].light;
         }, function(x, y) {
             // heuristic
             return x === game.player.x && y === game.player.y ? 0 : 0.01;
