@@ -125,7 +125,7 @@ game.newCave = function(width, height, callback, prng, options) {
     }
 
     // randomly turn groups of walls into grass
-    for (var i = 0; i < 100; i++) {
+    for (var i = 0; i < 80; i++) {
         var randx = rlt.random(2, width - 3);
         var randy = rlt.random(2, height - 3);
         if (map[randx][randy] === 'wall') {
@@ -133,6 +133,45 @@ game.newCave = function(width, height, callback, prng, options) {
             for (var j = 0; j < grass.length; j++) {
                 map[grass[j].x][grass[j].y] = 'tallGrass';
             }
+        }
+    }
+
+    // find portion of neighbors that are grass
+    var grassPortion = function(x, y) {
+        var total = 0;
+        for (var i = 0; i < 8; i++) {
+            var dx = rlt.dir8[i][0];
+            var dy = rlt.dir8[i][1];
+            if (map[x+dx][y+dy] === 'grass' || map[x+dx][y+dy] === 'tallGrass') {
+                total += dx === 0 || dy === 0 ? .147 : 0.103;
+            }
+        }
+        return total;
+    }
+
+    // find portaion of neighbors that are wall
+    var wallPortion = function(x, y) {
+        var total = 0;
+        for (var i = 0; i < 8; i++) {
+            var dx = rlt.dir8[i][0];
+            var dy = rlt.dir8[i][1];
+            if (map[x+dx][y+dy] === 'wall' || map[x+dx][y+dy] === 'rubble') {
+                total += dx === 0 || dy === 0 ? .147 : 0.103;
+            }
+        }
+        return total;
+    }
+
+    // randomly turn tiles adjacent to grass into short grass
+    indeces = rlt.shuffledRange((width-2)*(height-2), prng);
+    for (var i = 0; i < (width-2)*(height-2); i++) {
+        var j = indeces[i];
+        var x = 1 + Math.floor(j / (height-2));
+        var y = 1 + j - (x-1) * (height-2);
+        if (map[x][y] === 'floor' && 2 * prng() < 0.1 + grassPortion(x, y)) {
+            map[x][y] = 'grass';
+        } else if (map[x][y] === 'floor' && 2 * prng() < 0.1 + wallPortion(x, y)) {
+            map[x][y] = 'rubble';
         }
     }
 

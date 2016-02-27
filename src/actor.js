@@ -6,6 +6,8 @@
  * Stealth mode - active if you have not moved more than one step at a time
  * Stealth mode lets you not trample grass
  * Corridors are cuurently green
+
+ * The ____ are blessed with flight but cursed to stay underground for eternity. They 
  */
 
 game.actorMixins = {
@@ -30,6 +32,8 @@ game.actorMixins = {
     },
     move: function(dx, dy) {
         'use strict';
+        this.dx = dx;
+        this.dy = dy;
         if (dx === 0 && dy === 0) {
             return this.wait();
         }
@@ -197,10 +201,12 @@ game.actorMixins = {
     },
     sneakyWandering: function() {
         'use strict';
-        if (game.map[this.x][this.y].visible) {
+        // if facing player (within 180 deg, calculated by dot product of direction vector and vector
+        // from this to player)
+        if (game.map[this.x][this.y].visible &&
+            this.dx * (game.player.x - this.x) + this.dy * (game.player.y - this.y) >= 0) {
             this.state = 'playerSeen';
-            this.act();
-            return;
+            return this.act();
         }
         var goal = this.goal;
         if (goal.x === this.x && goal.y === this.y) {
@@ -324,6 +330,10 @@ game.actorMixins = {
 
 function asEntity(p) {
     'use strict';
+    p.x = 0;
+    p.y = 0;
+    p.dx = 0;
+    p.dy = 0;
     p.timeSpentStill = 0;
     p.buffs = p.buffs || {};
     p.buff = p.buff || game.actorMixins.buff;

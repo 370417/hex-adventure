@@ -80,8 +80,6 @@ game.mode.play = {
         game.player.xp = 0;
         game.player.maxXp = 100;
         game.player.level = 1;
-        game.player.x = 0;
-        game.player.y = 0;
         game.player.name = 'player';
         game.player.tile = Object.create(game.tiles.player);
         game.schedule.add(game.player.act.bind(game.player), 0);
@@ -103,8 +101,6 @@ game.mode.play = {
         for (var i = 0; i < 1; i++) {
             var newMonster = Object.create(game.Actors.vanilla);
             newMonster.hp = 5;
-            newMonster.x = 0;
-            newMonster.y = 0;
             newMonster.tile = Object.create(game.tiles.vanilla);
             while (!game.passable(newMonster.x, newMonster.y)) {
                 newMonster.x = rlt.random(1, game.width - 1, Math.random);
@@ -115,8 +111,6 @@ game.mode.play = {
         }
         var giant = Object.create(game.Actors.giant);
         giant.hp = 1;
-        giant.x = 0;
-        giant.y = 0;
         giant.tile = Object.create(game.tiles.giant);
         while (!game.passable(giant.x, giant.y)) {
             giant.x = rlt.random(1, game.width - 1, Math.random);
@@ -126,8 +120,6 @@ game.mode.play = {
         game.schedule.add(giant.act.bind(giant), 1);
         var snake = Object.create(game.Actors.jacksnake);
         snake.hp = 10;
-        snake.x = 0;
-        snake.y = 0;
         snake.tile = Object.create(game.tiles.jacksnake);
         while (!game.passable(snake.x, snake.y)) {
             snake.x = rlt.random(1, game.width - 1, Math.random);

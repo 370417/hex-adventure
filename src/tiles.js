@@ -41,10 +41,19 @@ game.tiles.floor = {
     spritex: 2,
     spritey: 14
 };
+game.tiles.rubble = {
+    transparent: true,
+    passable: true,
+    color: '#bbbbbb',
+    name: 'rubble',
+    char: ',',
+    spritex: 2,
+    spritey: 12
+};
 game.tiles.tallGrass = {
     transparent: false,
     passable: true,
-    color: 'green',
+    color: '#282',
     name: 'tallGrass',
     char: '"',
     spritex: 2,
@@ -53,7 +62,7 @@ game.tiles.tallGrass = {
 game.tiles.grass = {
     transparent: true,
     passable: true,
-    color: 'green',
+    color: '#060',
     name: 'grass',
     char: '\'',
     spritex: 2,
