@@ -29,8 +29,8 @@ game.tiles.wall = {
     color: '#aaaaaa',
     name: 'wall',
     char: '#',
-    spritex: 2,
-    spritey: 3
+    spritex: 3,
+    spritey: 4
 };
 game.tiles.floor = {
     transparent: true,
@@ -38,8 +38,8 @@ game.tiles.floor = {
     color: '#bbbbbb',
     name: 'floor',
     char: '.',
-    spritex: 2,
-    spritey: 14
+    spritex: 1,
+    spritey: 4
 };
 game.tiles.rubble = {
     transparent: true,
@@ -48,7 +48,7 @@ game.tiles.rubble = {
     name: 'rubble',
     char: ',',
     spritex: 2,
-    spritey: 12
+    spritey: 4
 };
 game.tiles.tallGrass = {
     transparent: false,
@@ -56,8 +56,8 @@ game.tiles.tallGrass = {
     color: '#282',
     name: 'tallGrass',
     char: '"',
-    spritex: 2,
-    spritey: 2
+    spritex: 4,
+    spritey: 4
 };
 game.tiles.grass = {
     transparent: true,
@@ -65,8 +65,8 @@ game.tiles.grass = {
     color: '#060',
     name: 'grass',
     char: '\'',
-    spritex: 2,
-    spritey: 0
+    spritex: 5,
+    spritey: 4
 };
 game.tiles.corridor = {
     transparent: true,
@@ -74,8 +74,8 @@ game.tiles.corridor = {
     color: '#008800',
     name: 'corridor',
     char: '.',
-    spritex: 2,
-    spritey: 14
+    spritex: 1,
+    spritey: 4
 };
 game.tiles.downstairs = {
     transparent: true,
@@ -83,8 +83,8 @@ game.tiles.downstairs = {
     color: '#bbbbbb',
     name: 'downstairs',
     char: '>',
-    spritex: 3,
-    spritey: 14
+    spritex: 8,
+    spritey: 4
 };
 game.tiles.upstairs = {
     transparent: true,
@@ -92,32 +92,32 @@ game.tiles.upstairs = {
     color: '#bbbbbb',
     name: 'upstairs',
     char: '<',
-    spritex: 3,
-    spritey: 12
+    spritex: 7,
+    spritey: 4
 };
 game.tiles.player = {
     transparent: true,
     color: '#bbbbbb',
     name: 'player',
     char: '@',
-    spritex: 4,
-    spritey: 0
+    spritex: 6,
+    spritey: 4
 };
 game.tiles.vanilla = {
     transparent: true,
     color: '#bbbbbb',
     name: 'vanilla',
     char: 'v',
-    spritex: 7,
-    spritey: 6
+    spritex: 8,
+    spritey: 3
 };
 game.tiles.giant = {
     transparent: false,
     color: '#ee8888',
     name: 'giant',
     char: 'G',
-    spritex: 4,
-    spritey: 7
+    spritex: 6,
+    spritey: 0
 };
 game.tiles.jacksnake = {
     transparent: true,
@@ -125,7 +125,7 @@ game.tiles.jacksnake = {
     name: 'jacksnake',
     char: 'S',
     spritex: 5,
-    spritey: 3
+    spritey: 1
 };
 
 game.tiles.tallGrass.stepIn = function(x, y) {

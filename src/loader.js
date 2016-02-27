@@ -12,9 +12,9 @@ game.mode.loading = {
 game.mode.loading.init();
 
 // load the spritesheet
-rlt.loadImg('res/terminal8x8_aa_as.png', function() {
+rlt.loadImg('res/tileset.png', function() {
     'use strict';
     game.spritesheet = this;
     game.tiles.cache(game.spritesheet, game.tileWidth, game.tileHeight);
     game.mode.start.init();
-}, 128, 128);
+}, 104, 104);
