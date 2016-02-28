@@ -177,14 +177,6 @@ game.actorMixins = {
             game.map[x][y].seen = true;
         });
     },
-    recolor: function(light) {
-        'use strict';
-        this.tile.color = rlt.arr2rgb([
-            Math.round(150 + 100 * light),
-            Math.round(150 + 100 * light),
-            Math.round(150 + 100 * light)
-        ]);
-    },
     sleeping: function() {
         'use strict';
         game.schedule.add(this.act.bind(this), 100);

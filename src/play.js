@@ -159,7 +159,7 @@ game.mode.play = {
         game.display.ctx.clearRect(0, 0, game.tileWidth * game.width, game.tileHeight * game.height);
         for (var x = 0; x < game.width; x++) for (var y = 0; y < game.height; y++) {
             var tile = map[x][y];
-            if (tile.visible) {
+            if (true || tile.visible) {
                 game.display.drawBg('#000', x, y);
                 if (tile.actor) {
                     game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 1);

@@ -18,7 +18,7 @@ game.mode.start = {
             game.mode.start.close();
             try {
                 game.mode.play.init({
-                    openness: 1.0
+                    openness: undefined
                 });
             } catch (err) {
                 console.log(err);
