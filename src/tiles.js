@@ -134,14 +134,12 @@ game.tiles.tallGrass.stepIn = function(x, y) {
     game.map[x][y] = Object.create(game.tiles.grass);
     game.map[x][y].actor = tile.actor;
     game.map[x][y].visible = tile.visible;
-    game.map[x][y].drawn = !tile.visible;
     game.map[x][y].light = 0;
     game.schedule.add(function() {
         var tile = game.map[x][y];
         game.map[x][y] = Object.create(game.tiles.tallGrass);
         game.map[x][y].actor = tile.actor;
         game.map[x][y].visible = tile.visible;
-        game.map[x][y].drawn = !tile.visible;
         game.map[x][y].light = 0;
         return game.schedule.advance()();
     }, 200 + Math.random() * 400);

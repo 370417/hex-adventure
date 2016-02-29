@@ -56,13 +56,14 @@ game.mode.play = {
         for (var x = 0; x < game.width; x++) for (var y = 0; y < game.height; y++) {
             var color = undefined;
             var weight = weights[x][y];
-            if (game.map[x][y].name === 'floor') {
+            var tile = game.map[x][y];
+            if (tile.name === 'floor' || tile.name === 'rubble' || tile.name === 'corridor') {
                 color = rlt.arr2rgb([
                     Math.round(50 + 205 * weights[x][y]),
                     Math.round(50 + 205 * weights[x][y]),
                     Math.round(50 + 205 * weights[x][y])
                 ]);
-            } else if (game.map[x][y].name === 'wall') {
+            } else if (tile.name === 'wall') {
                 color = rlt.arr2rgb([
                     Math.round(75 + 180 * weight),//50 + 200 * weights[x][y]),
                     Math.round(55 + 198 * weight),//30 + 220 * weights[x][y]),
@@ -143,39 +144,68 @@ game.mode.play = {
             tileWidth: game.tileWidth,
             tileHeight: game.tileHeight
         });
-        // add keyboard listeners
-        window.addEventListener('keydown', game.mode.play.keydown, false);
-        window.addEventListener('keyup', game.mode.play.keyup, false);
         // begin the game
+        this.open();
         game.schedule.advance()();
     },
     open: function() {
         'use strict';
-        window.addEventListener('keydown', game.mode.play.keydown, false);
-        window.addEventListener('keyup', game.mode.play.keyup, false);
+        requestAnimationFrame(this.drawFg.bind(this, game.map));
+        window.addEventListener('keydown', this.keydown, false);
+        window.addEventListener('keyup', this.keyup, false);
     },
     draw: function(map) {
+        'use strict';
+        this.drawBg(map);
+    },
+    drawFg: function(map) {
         'use strict';
         game.display.ctx.clearRect(0, 0, game.tileWidth * game.width, game.tileHeight * game.height);
         for (var x = 0; x < game.width; x++) for (var y = 0; y < game.height; y++) {
             var tile = map[x][y];
-            if (true || tile.visible) {
+            if (tile.visible) {
+                tile.drawn = false;
                 game.display.drawBg('#000', x, y);
                 if (tile.actor) {
-                    game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color, 1);
+                    game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.tile.color);
+                    if (tile.actor.overlayColor) {
+                        game.display.drawBitmap(game.spritesheet, tile.actor.tile.spritex, tile.actor.tile.spritey, 8, 8, x, y, tile.actor.overlayColor());
+                    }
                     if (tile.actor.buffs.strangled) {
                         game.display.drawCached(game.tiles.jacksnake.canvas, x, y);
                     }
                 } else {
                     game.display.drawCached(tile.canvas, x, y);
                 }
-                // forget that this tile has been drawn in case it changed
-                tile.drawn = false;
-            } else if (tile.seen && !tile.drawn) {
+            }
+            // make sure overlays get animated offscreen
+            else if (tile.actor && tile.actor.overlayColor) {
+                tile.actor.overlayColor();
+            }
+        }
+        requestAnimationFrame(this.drawFg.bind(this, map));
+    },
+    drawBg: function(map) {
+        'use strict';
+        for (var x = 0; x < game.width; x++) for (var y = 0; y < game.height; y++) {
+            var tile = map[x][y];
+            if (!tile.visible && tile.seen && !tile.drawn) {
+                game.bgDisplay.ctx.clearRect(game.tileWidth * x, game.tileHeight * y, game.tileWidth, game.tileHeight);
                 game.bgDisplay.drawCached(tile.canvas, x, y);
                 tile.drawn = true;
             }
         }
+    },
+    animateHurt: function(x, y) {
+        'use strict';
+        var duration = 30;
+        var actor = game.map[x][y].actor;
+        actor.overlayColor = function() {
+            if (duration === 0) {
+                actor.overlayColor = undefined;
+            }
+            return 'rgba(255, 0, 0, ' + duration-- / 60 + ')';
+        };
     },
     close: function() {
         'use strict';

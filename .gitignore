@@ -4,3 +4,7 @@
 # Tileset stuff
 font_ibm_bios.png
 *.xcf
+
+# Sublime
+*.sublime-project
+*.sublime-workspace

@@ -21,23 +21,20 @@ game.mode.ranged = {
     // coordinates of targeting reticle
     x: 0,
     y: 0,
-    // list of coordinates of projectile path
-    pathx: [],
-    pathy: [],
     // draw code
     draw: function() {
         'use strict';
         var ctx = game.overlayCtx;
-        var mode = game.mode.ranged;
-        ctx.clearRect(0, 0, game.tileWidth * game.width, game.tileHeight * game.height);
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
-        ctx.fillRect(game.tileWidth * mode.x, game.tileHeight * mode.y, game.tileWidth, game.tileHeight);
-        for (var i = 0; i < mode.pathx.length; i++) {
-            var x = mode.pathx[i];
-            var y = mode.pathy[i];
-            if (game.visible(x, y)) {
-                ctx.fillRect(game.tileWidth * x, game.tileHeight * y, game.tileWidth, game.tileHeight);
-            }
+        ctx.clearRect(0, 0, game.width, game.height);
+        ctx.strokeStyle = '#fff';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillRect(this.x, this.y, 1, 1);
+        ctx.lineWidth = 0.5;
+        if (game.map[this.x][this.y].visible) {
+            ctx.beginPath();
+            ctx.moveTo(0.5 + game.player.x, 0.5 + game.player.y);
+            ctx.lineTo(0.5 +  this.x, 0.5 + this.y);
+            ctx.stroke();
         }
     },
     // move reticle
@@ -46,12 +43,6 @@ game.mode.ranged = {
         var mode = game.mode.ranged;
         mode.x += x;
         mode.y += y;
-        mode.pathx = [];
-        mode.pathy = [];
-        rlt.linecast(game.player.x, game.player.y, mode.x, mode.y, game.passable, function(x, y) {
-            mode.pathx.push(x);
-            mode.pathy.push(y);
-        });
         mode.draw();
     },
     // input

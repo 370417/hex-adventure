@@ -184,6 +184,6 @@ game.bgCtx = game.bgCanvas.getContext('2d');
 
 // init overlay canvas
 game.overlayCanvas = document.getElementById('overlay');
-game.overlayCanvas.width = game.width * game.tileWidth;
-game.overlayCanvas.height = game.height * game.tileHeight;
+game.overlayCanvas.width = game.width;
+game.overlayCanvas.height = game.height;
 game.overlayCtx = game.overlayCanvas.getContext('2d');

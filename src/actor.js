@@ -5,7 +5,6 @@
  * PLANS
  * Stealth mode - active if you have not moved more than one step at a time
  * Stealth mode lets you not trample grass
- * Corridors are cuurently green
 
  * The ____ are blessed with flight but cursed to stay underground for eternity. They 
  */
@@ -14,8 +13,7 @@ game.actorMixins = {
     act: function() {
         'use strict';
         if (this.dead) {
-            game.schedule.advance()();
-            return;
+            return game.schedule.advance()();
         }
         var stateFunction = this.states[this.state];
         if (typeof stateFunction === 'function') {
@@ -84,7 +82,7 @@ game.actorMixins = {
     },
     jacksnakeAttack: function(opponent) {
         'use strict';
-        if (opponent.name === 'player') {
+        if (false && opponent.name === 'player') {
             game.map[this.x][this.y].actor = null;
             this.dead = true;
             this.die = game.actorMixins.jacksnakeDie;
@@ -110,6 +108,9 @@ game.actorMixins = {
     gainHp: function(hp) {
         'use strict';
         this.hp += hp;
+        if (hp < 0) {
+            game.mode.play.animateHurt(this.x, this.y);
+        }
         if (this.hp > this.maxHp) {
             this.hp = this.maxHp;
         }
@@ -191,14 +192,29 @@ game.actorMixins = {
         game.schedule.add(this.act.bind(this), 100);
         game.schedule.advance()();
     },
+    canSeePlayer: function() {
+        'use strict';
+        return game.map[this.x][this.y].visible;
+    },
     sneakyWandering: function() {
         'use strict';
         // if facing player (within 180 deg, calculated by dot product of direction vector and vector
         // from this to player)
-        if (game.map[this.x][this.y].visible &&
+        if (this.canSeePlayer() &&
             this.dx * (game.player.x - this.x) + this.dy * (game.player.y - this.y) >= 0) {
             this.state = 'playerSeen';
             return this.act();
+        }
+        if (this.timeTillPause < 0) {
+            this.timeTillPause = rlt.random(3, 6);
+        } else if (this.timeTillPause > 0) {
+            this.timeTillPause--;
+        } else {
+            this.timeTillPause--;
+            if (this.canSeePlayer()) {
+                this.state = 'playerSeen';
+            }
+            return this.wait();
         }
         var goal = this.goal;
         if (goal.x === this.x && goal.y === this.y) {
@@ -223,7 +239,6 @@ game.actorMixins = {
             }
             this.move(tile.x - this.x, tile.y - this.y);
         } else {
-            console.log('destination unreachable');
             this.state = 'waiting';
             this.act();
             return;
@@ -337,6 +352,7 @@ function asEntity(p) {
     p.attack = p.attack || game.actorMixins.attack;
     p.gainHp = p.gainHp || game.actorMixins.gainHp;
     p.die = p.die || game.actorMixins.die;
+    p.canSeePlayer = p.canSeePlayer || game.actorMixins.canSeePlayer;
     return p;
 };
 
@@ -352,6 +368,7 @@ game.Actors = {
     vanilla: asEntity({
         name: 'vanilla',
         state: 'waiting',
+        timeTillPause: -1,
         states: {
             sleeping: game.actorMixins.sleeping,
             waiting: game.actorMixins.waiting,
@@ -375,6 +392,7 @@ game.Actors = {
         name: 'jacksnake',
         state: 'waiting',
         attack: game.actorMixins.jacksnakeAttack,
+        timeTillPause: -1,
         states: {
             sleeping: game.actorMixins.sleeping,
             waiting: game.actorMixins.waiting,

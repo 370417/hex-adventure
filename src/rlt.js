@@ -656,16 +656,12 @@ rlt.Display.prototype.drawCached = function(img, x, y) {
  * @param dy - y coordinate of tile in display
  * @param color - color of the tile
  */
-rlt.Display.prototype.drawBitmap = function(img, sx, sy, swidth, sheight, dx, dy, color, scale) {
+rlt.Display.prototype.drawBitmap = function(img, sx, sy, swidth, sheight, dx, dy, color) {
     'use strict';
     var canvas = document.createElement('canvas');
-    canvas.width = scale * swidth;
-    canvas.height = scale * sheight;
+    canvas.width = swidth;
+    canvas.height = sheight;
     var ctx = canvas.getContext('2d');
-    ctx.mozImageSmoothingEnabled = false;
-    ctx.webkitImageSmoothingEnabled = false;
-    ctx.msImageSmoothingEnabled = false;
-    ctx.imageSmoothingEnabled = false;
     ctx.drawImage(img, sx * swidth, sy * sheight, swidth, sheight, 0, 0, canvas.width, canvas.height);
     if (color) {
         ctx.globalCompositeOperation = 'source-in';
