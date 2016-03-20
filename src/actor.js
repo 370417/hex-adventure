@@ -68,11 +68,19 @@ game.actorMixins = {
             return false;
         }
     },
-    strangledMove: function(dx, dy) {
+    strangledMove: function() {
         'use strict';
         this.buffs.strangled.actor.gainHp(-1);
         game.schedule.add(this.act.bind(this), 100);
         return game.schedule.advance()();
+    },
+    ConfusedMove: function() {
+        'use strict';
+        var shuffledDirs = rlt.shuffle(rlt.range(8));
+        return function(dx, dy) {
+            var dir = rlt.dir8[s];
+            game.actorMixins.move();
+        };
     },
     attack: function(opponent) {
         'use strict';
@@ -332,10 +340,10 @@ game.actorMixins = {
             this.act();
             return;
         }
-    }
+    },
 };
 
-function asEntity(p) {
+var asEntity = function (p) {
     'use strict';
     p.x = 0;
     p.y = 0;
@@ -399,5 +407,5 @@ game.Actors = {
             wandering: game.actorMixins.sneakyWandering,
             playerSeen: game.actorMixins.hunting
         }
-    })
+    }),
 };

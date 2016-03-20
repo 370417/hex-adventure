@@ -11,7 +11,7 @@ game.newCave = function(width, height, callback, prng, options) {
     };
     var noHeuristic = function(){
         return 1;
-    }
+    };
 
     prng = prng || Math.random;
     options = options || {};
@@ -143,11 +143,11 @@ game.newCave = function(width, height, callback, prng, options) {
             var dx = rlt.dir8[i][0];
             var dy = rlt.dir8[i][1];
             if (map[x+dx][y+dy] === 'grass' || map[x+dx][y+dy] === 'tallGrass') {
-                total += dx === 0 || dy === 0 ? .147 : 0.103;
+                total += dx === 0 || dy === 0 ? 0.147 : 0.103;
             }
         }
         return total;
-    }
+    };
 
     // find portaion of neighbors that are wall
     var wallPortion = function(x, y) {
@@ -156,11 +156,11 @@ game.newCave = function(width, height, callback, prng, options) {
             var dx = rlt.dir8[i][0];
             var dy = rlt.dir8[i][1];
             if (map[x+dx][y+dy] === 'wall' || map[x+dx][y+dy] === 'rubble') {
-                total += dx === 0 || dy === 0 ? .147 : 0.103;
+                total += dx === 0 || dy === 0 ? 0.147 : 0.103;
             }
         }
         return total;
-    }
+    };
 
     // randomly turn tiles adjacent to grass into short grass
     indeces = rlt.shuffledRange((width-2)*(height-2), prng);
@@ -228,7 +228,7 @@ game.defaultCost = function(x, y) {
         return -3;
     }
     return 1 + (tile.actor ? tile.actor.timeSpentStill : 0);
-}
+};
 
 game.transparent = function(x, y) {
     'use strict';
