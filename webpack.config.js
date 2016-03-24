@@ -8,6 +8,7 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
 var dir_js = path.resolve(__dirname, 'js');
 var dir_html = path.resolve(__dirname, 'html');
 var dir_css = path.resolve(__dirname, 'css');
+var dir_res = path.resolve(__dirname, 'res');
 var dir_build = path.resolve(__dirname, 'build');
 
 module.exports = {
@@ -32,6 +33,7 @@ module.exports = {
         new CopyWebpackPlugin([
             { from: dir_html },
             { from: dir_css },
+            { from: dir_res },
         ]),
         // Avoid publishing files when compilation fails
         new webpack.NoErrorsPlugin()
@@ -41,5 +43,5 @@ module.exports = {
         colors: true
     },
     // Create Sourcemaps for the bundle
-    devtool: 'cheap-source-map',
+    // devtool: 'cheap-source-map',
 };
