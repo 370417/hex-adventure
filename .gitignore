@@ -1,0 +1,13 @@
+# server - Python
+marserver/__pycache__
+
+# server - venv
+marserver/pyvenv.cfg
+marserver/pip-selfcheck.json
+marserver/lib
+marserver/bin
+marserver/include
+
+# secret key
+marclient/secret.js
+marserver/secret.py
