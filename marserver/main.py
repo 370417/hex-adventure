@@ -17,48 +17,55 @@ from game import Game
 
 
 games = {}
-generateid = count()
+generateid = count(1)
 
 
-def respond(id, line):
-    key, blank, value = line.partition(' ')
-
-    if key == 'quit':
-        return
-
-    elif key == 'newgame':
-        if not value:
-            value = random.randrange(10000)
-        games[id] = Game(value)
-
-
-def func(ws):
-    id = next(generateid)
-
-    def wait():
-        while True:
-            message = ws.wait()
-            if message:
-                yield from message.splitlines()
-            else:
-                break
-
-    games[id] = Game(wait, ws.send)
+def chooseid(message):
+    """Choose a new id for a new game or the old one to continue a game"""
+    try:
+        message = int(message)
+    except ValueError:
+        pass
+    if message in games:
+        return message
+    else:
+        return next(generateid)
 
 
 @websocket.WebSocketWSGI
 def appobject(ws):
-    id = next(generateid)
+    # make a new game or continue an old one based on the first message
+    # game ids start with i and seeds start with s to distinguish them
+    firstmessage = ws.wait()
+    if firstmessage in games:
+        # contine game if the first message is a valid game id
+        gameid = firstmessage
+        game = games[gameid]
+    else:
+        # new game seeded with s + first message
+        seed = 's' + firstmessage
+        game = Game(seed, ws.send)
+        gameid = 'i' + str(next(generateid))
+        games[gameid] = game
 
-    def wait():
-        while True:
+    ws.send('id ' + gameid)
+
+    while True:
+        try:
             message = ws.wait()
-            if message:
-                yield from message.splitlines()
-            else:
-                break
+        except OSError:
+            print(OSError)
+            break
+        if message:
+            for line in message.splitlines():
+                game.input(line)
+        else:
+            print('Client closed connection')
+            break
+        eventlet.sleep(0)
 
-    games[id] = Game(wait(), ws.send)
-
-
-wsgi.server(listen(('localhost', 4000)), appobject, debug=True)
+try:
+    wsgi.server(listen(('localhost', 4000)), appobject, debug=True)
+except KeyboardInterrupt:
+    print('KeyboardInterrupt')
+    pass
