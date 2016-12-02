@@ -16,7 +16,11 @@ import secret
 from game import Game
 
 
+# dict of current games by game id
 games = {}
+
+
+# generator to generate unique game ids
 generateid = count(1)
 
 
@@ -50,6 +54,7 @@ def appobject(ws):
 
     ws.send('id ' + gameid)
 
+    # feed messages from the websocket to the game
     while True:
         try:
             message = ws.wait()
