@@ -30,7 +30,7 @@ class Game:
 
 
     def input(self, line):
-        """Receive input in the form of a one line string"""
+        """Receive input and run game until it is the player's turn again"""
         command, blank, arg = line.partition(' ')
 
         delay = self.player.act(command, arg)
