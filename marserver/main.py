@@ -9,12 +9,16 @@ quit - quit the game
 newgame - start a new game seeded with the argument
 """
 
+
 from itertools import count
-from eventlet import wsgi, websocket, listen, greenthread
+from eventlet import wsgi, websocket, listen
 import secret
+from game import Game
+
 
 games = {}
 generateid = count()
+
 
 def respond(id, line):
     key, blank, value = line.partition(' ')
@@ -23,23 +27,38 @@ def respond(id, line):
         return
 
     elif key == 'newgame':
-        games[id] = 'newgame'
+        if not value:
+            value = random.randrange(10000)
+        games[id] = Game(value)
+
 
 def func(ws):
     id = next(generateid)
-    while True:
-        message = ws.wait()
-        if message == None:
-            return
-        response = [respond(id, line) for line in message.splitlines()]
-        ws.send('\n'.join(response))
-        if response[-1] == None:
-            return ws.close()
-        greenthread.sleep(0)
+
+    def wait():
+        while True:
+            message = ws.wait()
+            if message:
+                yield from message.splitlines()
+            else:
+                break
+
+    games[id] = Game(wait, ws.send)
+
 
 @websocket.WebSocketWSGI
 def appobject(ws):
-    thread = greenthread.spawn_n(func, ws)
+    id = next(generateid)
+
+    def wait():
+        while True:
+            message = ws.wait()
+            if message:
+                yield from message.splitlines()
+            else:
+                break
+
+    games[id] = Game(wait(), ws.send)
 
 
 wsgi.server(listen(('localhost', 4000)), appobject, debug=True)
