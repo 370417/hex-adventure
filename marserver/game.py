@@ -1,4 +1,6 @@
 from random import Random
+from level import Level
+
 
 class Game:
     
@@ -11,6 +13,11 @@ class Game:
 
         self.level = None
         self.schedule = None
+
+
+    def descend(self):
+        newlevel = Level()
+
 
     def input(self, line):
         self.output(line)
