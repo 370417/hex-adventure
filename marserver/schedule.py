@@ -1,3 +1,5 @@
+from heapq import heappop, heappush, heappushpop
+
 class Schedule:
     """Represents a schedule of events"""
 

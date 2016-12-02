@@ -1,5 +1,7 @@
 function onopen(event) {
     socket.send('piglatin');
+    socket.send('piglatin');
+    socket.send('piglatin');
 }
 
 function onmessage(event) {

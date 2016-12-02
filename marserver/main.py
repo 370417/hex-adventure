@@ -11,7 +11,8 @@ newgame - start a new game seeded with the argument
 
 
 from itertools import count
-from eventlet import wsgi, websocket, listen
+from eventlet import wsgi, websocket, listen, sleep
+
 import secret
 from game import Game
 
@@ -48,9 +49,10 @@ def appobject(ws):
     else:
         # new game seeded with s + first message
         seed = 's' + firstmessage
-        game = Game(seed, ws.send)
+        game = Game(seed)
         gameid = 'i' + str(next(generateid))
         games[gameid] = game
+    game.output = ws.send
 
     ws.send('id ' + gameid)
 
@@ -67,7 +69,7 @@ def appobject(ws):
         else:
             print('Client closed connection')
             break
-        eventlet.sleep(0)
+        sleep(0)
 
 try:
     wsgi.server(listen(('localhost', 4000)), appobject, debug=True)
