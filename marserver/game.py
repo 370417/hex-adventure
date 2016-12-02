@@ -6,7 +6,7 @@ class Game:
         self.seed = seed
         self.output = output
 
-        self.random = Random
+        self.random = Random()
         self.random.seed(seed)
 
         self.level = None
