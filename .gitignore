@@ -1,10 +1,13 @@
-# Mac
-.DS_Store
+# server - Python
+marserver/__pycache__
 
-# Tileset stuff
-font_ibm_bios.png
-*.xcf
+# server - venv
+marserver/pyvenv.cfg
+marserver/pip-selfcheck.json
+marserver/lib
+marserver/bin
+marserver/include
 
-# Sublime
-*.sublime-project
-*.sublime-workspace
+# secret key
+marclient/secret.js
+marserver/secret.py
