@@ -9,5 +9,8 @@ class Game:
         self.random = Random
         self.random.seed(seed)
 
+        self.level = None
+        self.schedule = None
+
     def input(self, line):
         self.output(line)
