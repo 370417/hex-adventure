@@ -2,3 +2,11 @@ body {
     background: #000;
     margin: 0;
 }
+
+#canvases {
+    position: relative;
+}
+
+#canvases canvas {
+    position: absolute;
+}
