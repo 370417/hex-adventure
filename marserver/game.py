@@ -14,6 +14,7 @@ class Game:
         self.random.seed(seed)
 
         self.output = None
+        self.outputqueue = []
         self.level = None
         self.schedule = None
 
@@ -30,7 +31,7 @@ class Game:
 
 
     def input(self, line):
-        """Receive input and run game until it is the player's turn again"""
+        """Receive input and send output"""
         command, blank, arg = line.partition(' ')
 
         delay = self.player.act(command, arg)
@@ -41,4 +42,8 @@ class Game:
             actor = Actor.actors[id]
             delay = actor.act()
             id = self.schedule.pushpop(id, delay)
-        self.output(line)
+        self.output('\n'.join(self.outputqueue))
+
+
+    def queueoutput(self, line):
+        self.outputqueue.append(str(self.schedule.time) + ' ' + line)

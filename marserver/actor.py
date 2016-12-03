@@ -19,4 +19,6 @@ class Actor:
 class Player(Actor):
     
     def act(self, command, arg):
+        for x, y in self.game.level.positions:
+            self.game.queueoutput('discovertile ' + str(x) + ' ' + str(y)) # make a pos2str function
         return self.delay
