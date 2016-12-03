@@ -11,3 +11,6 @@ include
 # secret key
 secret.js
 secret.py
+
+# tileset
+tileset.xcf

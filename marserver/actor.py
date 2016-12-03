@@ -20,5 +20,5 @@ class Player(Actor):
     
     def act(self, command, arg):
         for x, y in self.game.level.positions:
-            self.game.queueoutput('newtile {},{}'.format(x, y))
+            self.game.queueoutput('newtile {},{},{}'.format('wall', x, y))
         return self.delay

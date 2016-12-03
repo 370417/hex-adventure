@@ -34,7 +34,7 @@ function onmessage(event) {
     for (let i = 0; i < lines.length; i++) {
         const [time, command, arg] = lines[i].split(' ');
         if (command === 'newtile') {
-            let [x, y] = arg.split(',');
+            let [tile, x, y] = arg.split(',');
             x = +x;
             y = +y;
             console.log(x, y)
