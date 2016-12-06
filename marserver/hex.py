@@ -10,16 +10,19 @@ dir11 = ( 0,-1)
 
 directions = [dir1, dir3, dir5, dir7, dir9, dir11]
 
+
 def add(pos1, pos2):
     x1, y1 = pos1
     x2, y2 = pos2
     return (x1 + x2, y1 + y2)
+
 
 def neighbors(pos):
     """Generate the neighbors of pos."""
     x, y = pos
     for dx, dy in directions:
         yield (x + dx, y + dy)
+
 
 def countgroups(pos, ingroup):
     groupcount = 0
@@ -32,3 +35,15 @@ def countgroups(pos, ingroup):
         return int(ingroup(curr))
     else:
         return groupcount
+
+
+def floodfill(pos, passable, visited):
+    """Floodfill all passable positions around pos."""
+    if passable(pos) and pos not in visited:
+        visited.add(pos)
+        for neighbor in neighbors(pos):
+            floodfill(neighbor, passable, visited)
+
+
+def surrounded(pos, istype):
+    return all((istype(neighbor) for neighbor in neighbors(pos)))
