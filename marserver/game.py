@@ -24,7 +24,7 @@ class Game:
 
 
     def descend(self):
-        newlevel = Level()
+        newlevel = Level((24, 15), 48, 31, self.random)
         newschedule = Schedule()
         self.level = newlevel
         self.schedule = newschedule

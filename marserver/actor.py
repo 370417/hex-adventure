@@ -20,5 +20,9 @@ class Player(Actor):
     
     def act(self, command, arg):
         for x, y in self.game.level.positions:
-            self.game.queueoutput('newtile {},{},{}'.format('wall', x, y))
+            if self.game.level.passable[x,y]:
+                tile = 'floor'
+            else:
+                tile = 'wall'
+            self.game.queueoutput('newtile {},{},{}'.format(tile, x, y))
         return self.delay

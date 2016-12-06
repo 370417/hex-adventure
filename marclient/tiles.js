@@ -4,8 +4,13 @@ const tiles = {
     wall: {
         x: 0,
         y: 0,
-        color: 'white',
+        color: 'green',
     },
+    floor: {
+        x: 1,
+        y: 0,
+        color: 'green',
+    }
 };
 
 function cacheTile(tile) {
