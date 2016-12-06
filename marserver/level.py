@@ -2,7 +2,7 @@ import math
 
 class Level:
 
-    def __init__(self, startpos=(0,0), width=5, height=5):
+    def __init__(self, startpos=(0,0), width=48, height=31):
         self.setpositions(width, height)
 
 

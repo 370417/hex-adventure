@@ -24,9 +24,20 @@ for (let y = 0; y < height; y++) {
     $canvases.appendChild(canvas);
 }
 
-function onopen(event) {
-    socket.send('piglatin');
-    socket.send('command arg');
+function drawTile(x, y, tileName) {
+    tile = tiles[tileName];
+    const ctx = ctxs[y];
+    const realx = (x - (height - y - 1) / 2) * xu;
+    ctx.drawImage(tile.canvas, 0, 0, xu, bigyu, realx, 0, xu, bigyu);
+}
+
+let progress = 0;
+function startGame() {
+    progress += 1;
+    if (progress == 2) {
+        socket.send('piglatin');
+        socket.send('command arg');
+    }
 }
 
 function onmessage(event) {
@@ -37,7 +48,7 @@ function onmessage(event) {
             let [tile, x, y] = arg.split(',');
             x = +x;
             y = +y;
-            console.log(x, y)
+            drawTile(x, y, tile);
         }
     }
 }
@@ -48,6 +59,6 @@ function onerror(event) {
 
 let socket = new WebSocket('ws://localhost:4000');
 
-socket.addEventListener('open', onopen);
+socket.addEventListener('open', startGame);
 socket.addEventListener('message', onmessage);
 socket.addEventListener('error', onerror);
