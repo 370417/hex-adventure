@@ -35,7 +35,7 @@ let progress = 0;
 function startGame() {
     progress += 1;
     if (progress == 2) {
-        socket.send('piglatin');
+        socket.send('any a rogue');
         socket.send('command arg');
     }
 }

@@ -4,12 +4,12 @@ const tiles = {
     wall: {
         x: 0,
         y: 0,
-        color: 'green',
+        color: '#F80',
     },
     floor: {
         x: 1,
         y: 0,
-        color: 'green',
+        color: '#F80',
     }
 };
 

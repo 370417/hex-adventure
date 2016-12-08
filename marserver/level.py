@@ -16,6 +16,7 @@ class Level:
         self.removesmallwalls()
         self.removeothercaves()
         self.filldeadends()
+        self.fillsmallcaves()
 
 
     def setpositions(self, width, height):
@@ -64,6 +65,10 @@ class Level:
                 self.passable[pos] = False
 
 
+    def iscave(self, pos):
+        return self.passable[pos] and countgroups(pos, self.isfloor) == 1
+
+
     def isnotcave(self, pos):
         return not self.passable[pos] or countgroups(pos, self.isfloor) != 1
 
@@ -86,3 +91,14 @@ class Level:
     def filldeadends(self):
         for pos in self.innerpositions:
             self.filldeadend(pos)
+
+
+    def fillsmallcaves(self):
+        """Remove 2 or 3 tile caves."""
+        for pos in self.innerpositions:
+            cave = set()
+            floodfill(pos, self.iscave, cave)
+            if len(cave) == 3 or len(cave) == 2:
+                self.passable[pos] = False
+                for cavepos in cave:
+                    self.filldeadend(cavepos)
