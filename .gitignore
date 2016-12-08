@@ -1,16 +1,1 @@
-# server - Python
-__pycache__
-
-# server - venv
-pyvenv.cfg
-pip-selfcheck.json
-lib
-bin
-include
-
-# secret key
-secret.js
-secret.py
-
-# tileset
 tileset.xcf

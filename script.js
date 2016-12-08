@@ -39,26 +39,3 @@ function startGame() {
         socket.send('command arg');
     }
 }
-
-function onmessage(event) {
-    const lines = event.data.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-        const [time, command, arg] = lines[i].split(' ');
-        if (command === 'newtile') {
-            let [tile, x, y] = arg.split(',');
-            x = +x;
-            y = +y;
-            drawTile(x, y, tile);
-        }
-    }
-}
-
-function onerror(event) {
-    console.log('error')
-}
-
-let socket = new WebSocket('ws://localhost:4000');
-
-socket.addEventListener('open', startGame);
-socket.addEventListener('message', onmessage);
-socket.addEventListener('error', onerror);
