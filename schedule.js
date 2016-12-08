@@ -20,7 +20,7 @@ const protoSchedule = {
         time, newid = Heap.pushpop(this.heap, [this.time + delay, id], this.cmp);
         this.time = time;
         return newid;
-    }
+    },
 
 
     cmp(a, b) {
