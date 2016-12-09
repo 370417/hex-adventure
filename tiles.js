@@ -15,6 +15,7 @@
 
     function cacheTiles(tileset, xu, yu) {
         for (const type in tilemap) {
+            const tiles = {};
             const tile = tilemap[type];
 
             const canvas = document.createElement('canvas');
@@ -26,8 +27,9 @@
             ctx.globalCompositeOperation = 'source-in';
             ctx.fillRect(0, 0, xu, yu);
 
-            tile.canvas = canvas;
+            tiles[type] = canvas;
         }
+        return tiles;
     }
 
 
@@ -35,8 +37,7 @@
         const tileset = document.createElement('img');
 
         tileset.addEventListener('load', () => {
-            cacheTiles(tileset, xu, yu);
-            callback();
+            callback(cacheTiles(tileset, xu, yu));
         }, false);
 
         tileset.src = source;

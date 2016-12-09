@@ -1,2 +1,1 @@
-const WIDTH = 48;
-const HEIGHT = 31;
+Display(document.getElementById('game'));

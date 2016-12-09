@@ -1,5 +1,5 @@
-(() => {
-    function createPositions() {
+const protolevel = {
+    createPositions() {
         const positions = {};
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = Math.floor((HEIGHT - y) / 2); x < WIDTH - Math.floor(y / 2); x++) {
@@ -7,10 +7,10 @@
             }
         }
         return positions;
-    }
+    },
 
 
-    function createInnerPositions() {
+    createInnerPositions() {
         const innerPositions = {};
         for (let y = 1; y < HEIGHT - 1; y++) {
             for (let x = Math.floor((HEIGHT - y) / 2) + 1; x < WIDTH - Math.floor(y / 2) - 1; x++) {
@@ -18,30 +18,38 @@
             }
         }
         return innerPositions;
-    }
+    },
 
 
-    const protoLevel = {
-        initPositions(WIDTH, HEIGHT) {
-            this.positions = Map(WIDTH);
-            forEachTileOfLevel(WIDTH, HEIGHT, (x, y) => {
-                this.positions.set(x, y, true);
-            });
-
-            this.innerPositions = Map(WIDTH);
-            forEachInnerTileOfLevel(WIDTH, HEIGHT, (x, y) => {
-                this.innerPositions.set(x, y, true);
-            });
-        },
-    };
+    createPassable() {
+        const passable = {};
+        for (pos in this.positions) {
+            passable[pos] = false;
+        }
+        passable[this.startpos] = true;
+        return passable;
+    },
 
 
-    function Level(WIDTH, HEIGHT) {
-        const level = {
-            map: Map(WIDTH),
-        };
-    }
+    carveCaves() {
+        shuffle(Object.keys(this.innerPositions)).forEach(pos => {
+            if (countGroups(Number(pos), pos => this.passable[pos]) !== 1) {
+                this.passable[pos] = true;
+            }
+        });
+    },
+};
 
 
-    this.Level = Level;
-})();
+function Level(startpos) {
+    const level = Object.create(protolevel);
+    level.startpos = startpos;
+    level.positions = level.createPositions();
+    level.innerPositions = level.createInnerPositions();
+    level.passable = level.createPassable();
+    level.carveCaves();
+    return level;
+}
+
+
+const lvl = Level(xy2pos(24, 16)).passable;
