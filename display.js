@@ -12,38 +12,38 @@
 
     const protoDisplay = {
         drawTile(pos, type) {
-            const [x, y] = pos2xy(pos);
-            tile = this.tiles[type];
-            const ctx = this.ctxs[y];
-            const realx = (x - (height - y - 1) / 2) * xu;
-            ctx.drawImage(tile.canvas, 0, 0, xu, bigyu, realx, 0, xu, bigyu);
+            const {x, y} = pos2xy(pos);
+
+            const realx = (x - (HEIGHT - y - 1) / 2) * 18;
+            const realy = y * 16;
+
+            let tile;
+            if (pos in this.tiles) {
+                tile = this.tiles[pos];
+                this.tiles[pos].type = type;
+            } else {
+                tile = document.createElement('div');
+                tile.setAttribute('class', 'white ' + type + ' tile');
+                this.tiles[pos] = {type, tile};
+                this.$tiles.appendChild(tile);
+            }
+            tile.style.left = realx + 'px';
+            tile.style.top = realy + 'px';
+
+
+            //tile = this.tiles[type];
+            //const ctx = this.ctxs[y];
+            //ctx.drawImage(tile.canvas, 0, 0, xu, bigyu, realx, 0, xu, bigyu);
         },
     };
 
     this.Display = function($root, tiles) {
         const display = Object.create(protoDisplay);
 
-        const $canvases = document.createElement('div');
-        $canvases.setAttribute('id', 'canvases');
-        const canvaseswidth = (WIDTH - HEIGHT / 2 + 1) * xu;
-        const canvasesheight = bigyu + (HEIGHT - 1) * smallyu;
-        $canvases.style.width = canvaseswidth + 'px';
-        $canvases.style.height = canvasesheight + 'px';
+        display.tiles = {};
+        display.$tiles = document.getElementById('tiles');
 
-        const canvases = [];
-        const ctxs = [];
-        for (let y = 0; y < HEIGHT; y++) {
-            const canvas = document.createElement('canvas');
-            canvas.width = canvaseswidth;
-            canvas.height = bigyu;
-            canvas.style.top = y * smallyu + 'px';
-            const ctx = canvas.getContext('2d');
-            canvases[y] = canvas;
-            ctxs[y] = ctx;
-            $canvases.appendChild(canvas);
-        }
-        $root.appendChild($canvases);
-        display.ctxs = ctxs;
+        const canvaseswidth = (WIDTH - HEIGHT / 2 + 1) * xu;
 
         return display;
     }

@@ -10,6 +10,7 @@ html {
     height: 1rem;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    position: absolute;
 }
 
 /* Tiles */
