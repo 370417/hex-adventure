@@ -1,9 +1,9 @@
 const protolevel = {
     createPositions() {
-        const positions = {};
+        const positions = new Set();
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = Math.floor((HEIGHT - y) / 2); x < WIDTH - Math.floor(y / 2); x++) {
-                positions[xy2pos(x, y)] = true;
+                positions.add(xy2pos(x, y));
             }
         }
         return positions;
@@ -11,10 +11,10 @@ const protolevel = {
 
 
     createInnerPositions() {
-        const innerPositions = {};
+        const innerPositions = new Set();
         for (let y = 1; y < HEIGHT - 1; y++) {
             for (let x = Math.floor((HEIGHT - y) / 2) + 1; x < WIDTH - Math.floor(y / 2) - 1; x++) {
-                innerPositions[xy2pos(x, y)] = true;
+                innerPositions.add(xy2pos(x, y));
             }
         }
         return innerPositions;
@@ -22,33 +22,28 @@ const protolevel = {
 
 
     createPassable() {
-        const passable = {};
-        for (const pos in this.positions) {
-            passable[pos] = false;
-        }
-        passable[this.startpos] = true;
-        return passable;
+        return new Set([this.startpos]);
     },
 
 
     carveCaves() {
-        shuffle(Object.keys(this.innerPositions), this.random).forEach(pos => {
-            if (countGroups(Number(pos), pos => this.passable[pos]) !== 1) {
-                this.passable[pos] = true;
+        shuffle(Array.from(this.innerPositions), this.random).forEach(pos => {
+            if (countGroups(pos, pos => this.passable.has(pos)) !== 1) {
+                this.passable.add(pos);
             }
         });
     },
 
 
     removeSmallWalls() {
-        for (const pos in this.innerPositions) {
+        for (const pos of this.innerPositions) {
             const wallGroup = new Set();
-            const floodable = pos => pos in this.passable && !wallGroup.has(pos) && !this.passable[pos];
+            const floodable = pos => this.positions.has(pos) && !wallGroup.has(pos) && !this.passable.has(pos);
             const flood = pos => wallGroup.add(pos);
-            floodfill(Number(pos), floodable, flood);
+            floodfill(pos, floodable, flood);
             if (wallGroup.size < 6) {
                 for (const pos of wallGroup) {
-                    this.passable[pos] = true;
+                    this.passable.add(pos);
                 }
             }
         }
