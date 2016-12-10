@@ -32,7 +32,7 @@ const protolevel = {
 
 
     carveCaves() {
-        shuffle(Object.keys(this.innerPositions)).forEach(pos => {
+        shuffle(Object.keys(this.innerPositions), this.random).forEach(pos => {
             if (countGroups(Number(pos), pos => this.passable[pos]) !== 1) {
                 this.passable[pos] = true;
             }
@@ -43,6 +43,7 @@ const protolevel = {
 
 function Level(startpos) {
     const level = Object.create(protolevel);
+    level.random = alea('example seed');
     level.startpos = startpos;
     level.positions = level.createPositions();
     level.innerPositions = level.createInnerPositions();
