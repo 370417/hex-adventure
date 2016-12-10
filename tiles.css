@@ -8,14 +8,28 @@ html {
     font-size: 18px;
     width: 1em;
     height: 1rem;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
+
+/* Tiles */
 
 .wall {
     -webkit-mask: url(tileset.png), 0em 0rem;
     mask: url(tileset.png), 0em 0rem;
-    background: black;
 }
 
 .floor {
-    background-position: 1em 0rem;
+    -webkit-mask: url(tileset.png), 1em 0rem;
+    mask: url(tileset.png), 1em 0rem;
+}
+
+/* Colors */
+
+.black {
+    background: #000;
+}
+
+.white {
+    background: #FFF;
 }
