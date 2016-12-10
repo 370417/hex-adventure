@@ -45,7 +45,7 @@ function floodfill(pos, floodable, flood) {
     if (floodable(pos)) {
         flood(pos);
         for (let i = 0; i < 6; i++) {
-            floodfill(pos + direction[i], floodable, flood);
+            floodfill(pos + directions[i], floodable, flood);
         }
     }
 };
@@ -53,7 +53,7 @@ function floodfill(pos, floodable, flood) {
 
 function surrounded(pos, istype) {
     for (let i = 0; i < 6; i++) {
-        if (!istype(pos + direction[i])) {
+        if (!istype(pos + directions[i])) {
             return false;
         }
     }

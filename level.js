@@ -38,6 +38,21 @@ const protolevel = {
             }
         });
     },
+
+
+    removeSmallWalls() {
+        for (const pos in this.innerPositions) {
+            const wallGroup = new Set();
+            const floodable = pos => pos in this.passable && !wallGroup.has(pos) && !this.passable[pos];
+            const flood = pos => wallGroup.add(pos);
+            floodfill(Number(pos), floodable, flood);
+            if (wallGroup.size < 6) {
+                for (const pos of wallGroup) {
+                    this.passable[pos] = true;
+                }
+            }
+        }
+    },
 };
 
 
@@ -49,5 +64,6 @@ function Level(startpos) {
     level.innerPositions = level.createInnerPositions();
     level.passable = level.createPassable();
     level.carveCaves();
+    level.removeSmallWalls();
     return level;
 }

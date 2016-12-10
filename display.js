@@ -24,9 +24,6 @@
             } else {
                 tile = document.createElement('div');
                 tile.setAttribute('class', 'white ' + type + ' tile');
-                if (type === 'floor') {
-                    console.log(' ')
-                }
                 this.tiles[pos] = {type, tile};
                 this.$tiles.appendChild(tile);
             }
