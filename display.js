@@ -24,16 +24,14 @@
             } else {
                 tile = document.createElement('div');
                 tile.setAttribute('class', 'white ' + type + ' tile');
+                if (type === 'floor') {
+                    console.log(' ')
+                }
                 this.tiles[pos] = {type, tile};
                 this.$tiles.appendChild(tile);
             }
             tile.style.left = realx + 'px';
             tile.style.top = realy + 'px';
-
-
-            //tile = this.tiles[type];
-            //const ctx = this.ctxs[y];
-            //ctx.drawImage(tile.canvas, 0, 0, xu, bigyu, realx, 0, xu, bigyu);
         },
     };
 
