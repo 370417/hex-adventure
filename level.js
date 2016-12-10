@@ -23,7 +23,7 @@ const protolevel = {
 
     createPassable() {
         const passable = {};
-        for (pos in this.positions) {
+        for (const pos in this.positions) {
             passable[pos] = false;
         }
         passable[this.startpos] = true;
@@ -50,6 +50,3 @@ function Level(startpos) {
     level.carveCaves();
     return level;
 }
-
-
-const lvl = Level(xy2pos(24, 16)).passable;

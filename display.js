@@ -10,8 +10,18 @@
         ctx.drawImage(tile.canvas, 0, 0, xu, bigyu, realx, 0, xu, bigyu);
     }
 
-    this.Display = function($root) {
-        const display = {};
+    const protoDisplay = {
+        drawTile(pos, type) {
+            const [x, y] = pos2xy(pos);
+            tile = this.tiles[type];
+            const ctx = this.ctxs[y];
+            const realx = (x - (height - y - 1) / 2) * xu;
+            ctx.drawImage(tile.canvas, 0, 0, xu, bigyu, realx, 0, xu, bigyu);
+        },
+    };
+
+    this.Display = function($root, tiles) {
+        const display = Object.create(protoDisplay);
 
         const $canvases = document.createElement('div');
         $canvases.setAttribute('id', 'canvases');
@@ -33,5 +43,8 @@
             $canvases.appendChild(canvas);
         }
         $root.appendChild($canvases);
+        display.ctxs = ctxs;
+
+        return display;
     }
 })();
