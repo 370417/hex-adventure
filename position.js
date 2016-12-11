@@ -13,7 +13,7 @@ const directions = [dir1, dir3, dir5, dir7, dir9, dir11];
 
 function xy2pos(x, y) {
     return x + y * WIDTH;
-};
+}
 
 
 function pos2xy(pos) {
@@ -21,7 +21,7 @@ function pos2xy(pos) {
         x: pos % WIDTH,
         y: Math.floor(pos / WIDTH),
     };
-};
+}
 
 
 function countGroups(pos, ingroup) {
@@ -38,7 +38,7 @@ function countGroups(pos, ingroup) {
     } else {
         return Number(ingroup(pos + dir1));
     }
-};
+}
 
 
 function floodfill(pos, floodable, flood) {
@@ -48,7 +48,7 @@ function floodfill(pos, floodable, flood) {
             floodfill(pos + directions[i], floodable, flood);
         }
     }
-};
+}
 
 
 function surrounded(pos, istype) {
@@ -58,4 +58,11 @@ function surrounded(pos, istype) {
         }
     }
     return true;
-};
+}
+
+
+function forEachNeighbor(pos, callback) {
+    for (let i = 0; i < 6; i++) {
+        callback(pos + directions[i]);
+    }
+}
