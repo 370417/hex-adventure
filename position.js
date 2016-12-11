@@ -25,7 +25,9 @@ function pos2xy(pos) {
 
 
 function countGroups(pos, ingroup) {
-    let groupcount = 0;
+    // use var instead of let because
+    // chrome can't optimize compound let assignment
+    var groupcount = 0;
     for (let i = 0; i < 6; i++) {
         const curr = directions[i];
         const next = directions[(i+1)%6];
