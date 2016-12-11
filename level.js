@@ -1,5 +1,16 @@
-const protolevel = {
-    createPositions() {
+function Level(startpos) {
+    const random = alea('example seed');
+    const positions = createPositions();
+    const innerPositions = createInnerPositions();
+    const passable = new Set([startpos]);
+    carveCaves();
+    removeSmallWalls();
+    removeOtherCaves();
+    //fillDeadEnds();
+    fillSmallCaves();
+
+
+    function createPositions() {
         const positions = new Set();
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = Math.floor((HEIGHT - y) / 2); x < WIDTH - Math.floor(y / 2); x++) {
@@ -7,10 +18,10 @@ const protolevel = {
             }
         }
         return positions;
-    },
+    }
 
 
-    createInnerPositions() {
+    function createInnerPositions() {
         const innerPositions = new Set();
         for (let y = 1; y < HEIGHT - 1; y++) {
             for (let x = Math.floor((HEIGHT - y) / 2) + 1; x < WIDTH - Math.floor(y / 2) - 1; x++) {
@@ -18,106 +29,97 @@ const protolevel = {
             }
         }
         return innerPositions;
-    },
+    }
 
 
-    createPassable() {
-        return new Set([this.startpos]);
-    },
+    function isFloor(pos) {
+        return passable.has(pos);
+    }
 
 
-    isFloor(pos) {
-        return this.passable.has(pos);
-    },
+    function isWall(pos) {
+        return positions.has(pos) && !passable.has(pos);
+    }
 
 
-    isWall(pos) {
-        return this.positions.has(pos) && !this.passable.has(pos);
-    },
-
-
-    carveCaves() {
-        shuffle(Array.from(this.innerPositions), this.random).forEach(pos => {
-            if (countGroups(pos, this.isFloor.bind(this)) !== 1) {
-                this.passable.add(pos);
+    function carveCaves() {
+        shuffle(Array.from(innerPositions), random).forEach(pos => {
+            if (countGroups(pos, isFloor) !== 1) {
+                passable.add(pos);
             }
         });
-    },
+    }
 
 
-    removeSmallWalls() {
-        for (const pos of this.innerPositions) {
+    function removeSmallWalls() {
+        for (const pos of innerPositions) {
             const wallGroup = new Set();
-            const floodable = pos => this.isWall(pos) && !wallGroup.has(pos);
-            const flood = pos => wallGroup.add(pos);
-            floodfill(pos, floodable, flood);
+            floodfill(pos, isWall, wallGroup);
 
             if (wallGroup.size < 6) {
                 for (const pos of wallGroup) {
-                    this.passable.add(pos);
+                    passable.add(pos);
                 }
             }
         }
-    },
+    }
 
 
-    removeOtherCaves() {
+    function removeOtherCaves() {
         const mainCave = new Set();
-        const floodable = pos => this.isFloor(pos) && !mainCave.has(pos);
-        const flood = pos => mainCave.add(pos);
-        floodfill(this.startpos, floodable, flood);
+        floodfill(startpos, isFloor, mainCave);
 
-        for (const pos of this.innerPositions) {
+        for (const pos of innerPositions) {
             if (!mainCave.has(pos)) {
-                this.passable.delete(pos);
+                passable.delete(pos);
             }
         }
-    },
+    }
 
 
-    isCave(pos) {
-        return this.isFloor(pos) && countGroups(pos, this.isFloor.bind(this)) === 1;
-    },
+    function isCave(pos) {
+        return isFloor(pos) && countGroups(pos, isFloor) === 1;
+    }
 
 
-    isDeadEnd(pos) {
-        return this.isFloor(pos)
-            && countGroups(pos, this.isFloor.bind(this)) === 1
-            && surrounded(pos, pos => !this.isCave(pos));
-    },
+    function isDeadEnd(pos) {
+        return isFloor(pos)
+            && countGroups(pos, isFloor) === 1
+            && surrounded(pos, pos => !isCave(pos));
+    }
 
 
-    fillDeadEnd(pos) {
-        if (this.isDeadEnd(pos)) {
-            this.passable.delete(pos);
+    function fillDeadEnd(pos) {
+        if (isDeadEnd(pos)) {
+            passable.delete(pos);
             forEachNeighbor(pos, neighbor => {
-                if (pos === this.startpos && this.passable.has(neighbor)) {
-                    this.startpos = neighbor;
+                if (pos === startpos && passable.has(neighbor)) {
+                    startpos = neighbor;
                 }
-                this.fillDeadEnd(neighbor);
+                fillDeadEnd(neighbor);
             });
         }
-    },
+    }
 
 
-    fillDeadEnds() {
-        for (const pos of this.innerPositions) {
-            this.fillDeadEnd(pos);
+    function fillSmallCaves() {
+        for (const pos of innerPositions) {
+            fillDeadEnd(pos);
+            const cave = new Set();
+            floodfill(pos, isCave, cave);
+            if (cave.size === 2 || cave.size === 3) {
+                passable.delete(pos);
+                for (const pos of cave) {
+                    fillDeadEnd(pos);
+                }
+            }
         }
-    },
-};
+    }
 
 
-function Level(startpos) {
-    const level = Object.create(protolevel);
-    level.random = alea('example seed');
-    level.startpos = startpos;
-    level.positions = level.createPositions();
-    level.innerPositions = level.createInnerPositions();
-    level.passable = level.createPassable();
-    level.carveCaves();
-    level.removeSmallWalls();
-    level.removeOtherCaves();
-    level.fillDeadEnds();
-    return level;
+    return {
+        positions,
+        innerPositions,
+        passable,
+    };
 }

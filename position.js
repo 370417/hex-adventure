@@ -41,12 +41,22 @@ function countGroups(pos, ingroup) {
 }
 
 
-function floodfill(pos, floodable, flood) {
+/*function floodfill(pos, floodable, flood) {
     if (floodable(pos)) {
         flood(pos);
         for (let i = 0; i < 6; i++) {
             floodfill(pos + directions[i], floodable, flood);
         }
+    }
+}*/
+
+
+function floodfill(pos, passable, visited) {
+    if (passable(pos) && !visited.has(pos)) {
+        visited.add(pos);
+        forEachNeighbor(pos, neighbor => {
+            floodfill(neighbor, passable, visited);
+        })
     }
 }
 
