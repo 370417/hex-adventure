@@ -6,7 +6,6 @@ function Level(startpos) {
     carveCaves();
     removeSmallWalls();
     removeOtherCaves();
-    //fillDeadEnds();
     fillSmallCaves();
 
 
@@ -52,9 +51,17 @@ function Level(startpos) {
 
 
     function removeSmallWalls() {
+        const visited = new Set();
         for (const pos of innerPositions) {
             const wallGroup = new Set();
-            floodfill(pos, isWall, wallGroup);
+            const floodable = pos => isWall(pos)
+                                  && !wallGroup.has(pos)
+                                  && !visited.has(pos);
+            const flood = pos => {
+                visited.add(pos);
+                wallGroup.add(pos);
+            };
+            floodfill(pos, floodable, flood);
 
             if (wallGroup.size < 6) {
                 for (const pos of wallGroup) {
@@ -67,7 +74,7 @@ function Level(startpos) {
 
     function removeOtherCaves() {
         const mainCave = new Set();
-        floodfill(startpos, isFloor, mainCave);
+        floodfillSet(startpos, isFloor, mainCave);
 
         for (const pos of innerPositions) {
             if (!mainCave.has(pos)) {
@@ -82,10 +89,15 @@ function Level(startpos) {
     }
 
 
+    function isNotCave(pos) {
+        return isWall(pos) || countGroups(pos, isFloor) !== 1;
+    }
+
+
     function isDeadEnd(pos) {
         return isFloor(pos)
             && countGroups(pos, isFloor) === 1
-            && surrounded(pos, pos => !isCave(pos));
+            && surrounded(pos, isNotCave);
     }
 
 
@@ -103,10 +115,13 @@ function Level(startpos) {
 
 
     function fillSmallCaves() {
+        // can't skip visited tiles here because previous caves can be affected
+        // by the removal of later ones
         for (const pos of innerPositions) {
             fillDeadEnd(pos);
             const cave = new Set();
-            floodfill(pos, isCave, cave);
+            floodfillSet(pos, isCave, cave);
+
             if (cave.size === 2 || cave.size === 3) {
                 passable.delete(pos);
                 for (const pos of cave) {
