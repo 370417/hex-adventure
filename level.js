@@ -1,11 +1,14 @@
-function Level(startpos) {
-    const random = alea('example seed');
+function Level(startpos, seed) {
+    const random = alea(seed);
     const positions = createPositions();
     const innerPositions = createInnerPositions();
     const passable = new Set([startpos]);
     carveCaves();
     removeSmallWalls();
-    removeOtherCaves();
+    const size = removeOtherCaves();
+    if (size < WIDTH * HEIGHT / 4) {
+        return Level(startpos, random());
+    }
     fillSmallCaves();
 
 
@@ -81,6 +84,8 @@ function Level(startpos) {
                 passable.delete(pos);
             }
         }
+
+        return mainCave.size;
     }
 
 
