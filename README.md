@@ -1,4 +1,4 @@
-# Many a Rogue
+# Hex Adventure
 
 A roguelike game.
 
