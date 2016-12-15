@@ -1,3 +1,5 @@
+// Keep track of future events
+
 function Schedule() {
     let now = 0;
     let heap = new Heap((a, b) => a.time - b.time || a.id - b.id);

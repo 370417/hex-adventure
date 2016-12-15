@@ -1,3 +1,5 @@
+// Helper functions for working with randomness
+
 function randint(min, max, random) {
     return min + Math.floor((max - min + 1) * random());
 }

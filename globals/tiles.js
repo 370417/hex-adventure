@@ -1,3 +1,5 @@
+// Constants for map tiles
+
 const keys = ['name'         ,'can-walk','transparent','can-fly'];
 const vals = [//             ,          ,             ,         ],
              ['WALL'         ,false     ,false        ,false    ],

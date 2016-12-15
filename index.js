@@ -1,3 +1,5 @@
+// Starts a new game or loads an old one
+
 const display = Display();
 
 const level = Level(xy2pos(24, 15), +Date.now());

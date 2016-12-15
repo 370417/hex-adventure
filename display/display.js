@@ -1,3 +1,5 @@
+// Creates a GUI for the game
+
 function Display() {
     const xu = 18;
     const smallyu = 16;

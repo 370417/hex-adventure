@@ -1,3 +1,5 @@
+// Constants for message commands
+
 (() => {
     const messages = ['OVER'];
 

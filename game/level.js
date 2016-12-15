@@ -1,3 +1,5 @@
+// Generates a new level
+
 function Level(startpos, seed) {
     const random = alea(seed);
     const positions = createPositions();

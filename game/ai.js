@@ -1,3 +1,5 @@
+// Describes actor behavior
+
 function extend(subproto, superproto, ...superprotos) {
     if (superprotos.length) {
         superproto = extend(superproto, ...superprotos);

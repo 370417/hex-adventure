@@ -1,3 +1,5 @@
+// Creates a game
+
 function Game(send) {
     function init(seed) {
 

@@ -1,3 +1,5 @@
+// Helper functions for working with positions
+
 const WIDTH = 48;
 const HEIGHT = 31;
 
