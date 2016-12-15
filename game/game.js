@@ -5,8 +5,18 @@ function Game(send) {
 
     }
 
+    function move() {
+
+    }
+
+    function rest() {
+        
+    }
+
     const commands = {
-        init,
+        [INIT]: init,
+        [MOVE]: move,
+        [REST]: rest,
     };
 
     function receive(commandName, ...args) {
