@@ -78,3 +78,37 @@ function forEachNeighbor(pos, callback) {
         callback(pos + directions[i]);
     }
 }
+
+
+function flowmap(startpos, range, forEachNeighbor, cost) {
+    const open = new Map(); // map of positions to net cost
+    open.set(startpos, 0);
+    const closed = new Map();
+    const openHeap = new Heap((a, b) => open.get(a) - open.get(b));
+
+    while (!openHeap.empty()) {
+        const pos = openHeap.pop();
+        const netCost = open.get(pos);
+        if (netCost > range) {
+            return closed;
+        }
+        open.delete(pos);
+        closed.set(pos, netCost);
+
+        forEachNeighbor(pos, neighbor => {
+            if (!closed.has(neighbor)) {
+                const altCost = netCost + cost(neighbor);
+                if (!open.has(neighbor)) {
+                    open.set(neighbor, altCost);
+                    openHeap.push(neighbor);
+                }
+                else if (altCost < open.get(neighbor)) {
+                    open.set(neighbor, altCost);
+                    openHeap.update(neighbor);
+                }
+            }
+        });
+    }
+    return closed;
+}
+

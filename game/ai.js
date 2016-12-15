@@ -8,12 +8,15 @@ function extend(subproto, superproto, ...superprotos) {
 }
 
 
-const AI = {
-    init(kwargs) {
-
-    },
-
+const Actor = {
     act() {
-
+        const action = null;
+        const delay = 12;
+        return {action, delay};
     },
+};
+
+
+const AI = {
+
 };
