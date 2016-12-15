@@ -1,27 +1,23 @@
 function Schedule() {
-    let time = 0;
-    let heap = [];
+    let now = 0;
+    let heap = new Heap((a, b) => a.time - b.time || a.id - b.id);
 
-    function peek() {
-        return heap[0];
-    }
+    const peek = heap.peek;
 
     function push(id, delay) {
-        Heap.push(heap, {time: time + delay, id}, cmp);
+        heap.push({time: now + delay, id});
     }
 
     function pop() {
-        {time, id} = Heap.pop(heap, cmp);
+        let {time, id} = heap.pop();
+        now = time;
         return id;
     }
 
     function pushpop(id, delay) {
-        {time, id} = Heap.pushpop(heap, {time: time + delay, id}, cmp);
-        return id;
-    }
-
-    function cmp(a, b) {
-        return a.time - b.time || a.id - b.id;
+        let event = heap.pushpop({time: time + delay, id});
+        now = event.time;
+        return event.id;
     }
 
     return {
