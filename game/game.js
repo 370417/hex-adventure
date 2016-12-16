@@ -21,8 +21,9 @@ function Game(send) {
             const id = level.actors[pos];
             schedule.push(id, 0);
         }
+        
         for (const pos of level.positions) {
-            const tile = level.passable.has(pos) ? FLOOR : WALL;
+            const tile = level.types.get(pos);
             send(SET_TILE, pos, tile);
         }
     }

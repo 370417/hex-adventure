@@ -41,7 +41,7 @@ function Display() {
         const realy = y * 16;
 
         const tile = tiles.get(pos);
-        tile.className = 'tile ' + type.toString();
+        tile.className = 'tile ' + type;
         //types.set(pos, type);
 
         tile.style.left = realx + 'px';
@@ -49,7 +49,7 @@ function Display() {
     }
 
     init();
-    send(INIT, 'seed');
+    send(INIT, +Date.now());
 
 
     return {

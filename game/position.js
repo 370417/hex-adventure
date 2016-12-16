@@ -87,6 +87,7 @@ function flowmap(startpos, range, forEachNeighbor, cost) {
     open.set(startpos, 0);
     const closed = new Map();
     const openHeap = new Heap((a, b) => open.get(a) - open.get(b));
+    openHeap.push(startpos);
 
     while (!openHeap.empty()) {
         const pos = openHeap.pop();

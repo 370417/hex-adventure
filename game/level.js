@@ -4,7 +4,10 @@ function Level(startpos, seed) {
     const random = alea(seed);
     const positions = createPositions();
     const innerPositions = createInnerPositions();
-    const passable = new Set([startpos]);
+    const types = createTypes();
+    const weights = createRandomWeights();
+
+    makeLakes();
     carveCaves();
     removeSmallWalls();
     const size = removeOtherCaves();
@@ -36,20 +39,69 @@ function Level(startpos, seed) {
     }
 
 
+    function createRandomWeights() {
+        const weights = new Map();
+        for (const pos of innerPositions) {
+            weights.set(pos, random());
+        }
+        return weights;
+    }
+
+
+    function createTypes() {
+        const types = new Map();
+        for (const pos of positions) {
+            if (pos === startpos) {
+                types.set(pos, FLOOR);
+            } else {
+                types.set(pos, WALL);
+            }
+        }
+        return types;
+    }
+
+
     function isFloor(pos) {
-        return passable.has(pos);
+        return types.get(pos) === FLOOR || types.get(pos) === SHALLOW_WATER;
     }
 
 
     function isWall(pos) {
-        return positions.has(pos) && !passable.has(pos);
+        return positions.has(pos) && types.get(pos) === WALL;
+    }
+
+
+    function makeLake() {
+        const center = shuffle(Array.from(innerPositions), random)[0];
+        const neighbors = (pos, callback) => {
+            forEachNeighbor(pos, neighbor => {
+                if (innerPositions.has(neighbor)) {
+                    callback(neighbor);
+                }
+            });
+        };
+        const cost = pos => 0.1 + 0.3 * weights.get(pos);
+        const lake = flowmap(center, 1, neighbors, cost);
+
+        for ([pos, val] of lake) {
+            const type = val < 0.67 ? DEEP_WATER : SHALLOW_WATER;
+            types.set(pos, type);
+            console.log(pos);
+        }
+
+        return lake;
+    }
+
+
+    function makeLakes() {
+        makeLake();
     }
 
 
     function carveCaves() {
         shuffle(Array.from(innerPositions), random).forEach(pos => {
-            if (countGroups(pos, isFloor) !== 1) {
-                passable.add(pos);
+            if (isWall(pos) && countGroups(pos, isFloor) !== 1) {
+                types.set(pos, FLOOR);
             }
         });
     }
@@ -70,7 +122,7 @@ function Level(startpos, seed) {
 
             if (wallGroup.size < 6) {
                 for (const pos of wallGroup) {
-                    passable.add(pos);
+                    types.set(pos, FLOOR);
                 }
             }
         }
@@ -82,8 +134,8 @@ function Level(startpos, seed) {
         floodfillSet(startpos, isFloor, mainCave);
 
         for (const pos of innerPositions) {
-            if (!mainCave.has(pos)) {
-                passable.delete(pos);
+            if (types.get(pos) === FLOOR && !mainCave.has(pos)) {
+                types.set(pos, WALL);
             }
         }
 
@@ -110,9 +162,9 @@ function Level(startpos, seed) {
 
     function fillDeadEnd(pos) {
         if (isDeadEnd(pos)) {
-            passable.delete(pos);
+            types.set(pos, WALL);
             forEachNeighbor(pos, neighbor => {
-                if (pos === startpos && passable.has(neighbor)) {
+                if (pos === startpos && isFloor(neighbor)) {
                     startpos = neighbor;
                 }
                 fillDeadEnd(neighbor);
@@ -130,7 +182,7 @@ function Level(startpos, seed) {
             floodfillSet(pos, isCave, cave);
 
             if (cave.size === 2 || cave.size === 3) {
-                passable.delete(pos);
+                types.set(pos, WALL);
                 for (const pos of cave) {
                     fillDeadEnd(pos);
                 }
@@ -142,6 +194,6 @@ function Level(startpos, seed) {
     return {
         positions,
         innerPositions,
-        passable,
+        types,
     };
 }
