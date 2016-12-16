@@ -17,13 +17,13 @@ html {
 
 /* Tiles */
 
-.wall {
+.WALL {
     -webkit-mask: url(tileset.png) 0em 0rem;
     mask: url(tileset.png) 0em 0rem;
     background: #FFF;
 }
 
-.floor {
+.FLOOR {
     -webkit-mask: url(tileset.png) -1em 0rem;
     mask: url(tileset.png) -1em 0rem;
     background: #FFF;

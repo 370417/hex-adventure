@@ -1,7 +1,7 @@
 // Constants for message commands
 
 (() => {
-    const messages = ['OVER', 'MOVE', 'REST'];
+    const messages = ['INIT', 'OVER', 'MOVE', 'REST', 'SET_TILE'];
 
     for (let i = 0; i < messages.length; i++) {
         const message = messages[i];

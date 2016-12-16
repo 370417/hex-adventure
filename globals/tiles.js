@@ -13,10 +13,11 @@ const vals = [//             ,          ,             ,         ],
 const Tiles = {};
 for (let i = 0; i < vals.length; i++) {
     const properties = vals[i];
-    const name = Symbol(properties[0]);
+    const name = properties[0];
     const tile = {};
     for (let j = 0; j < keys.length; j++) {
         tile[keys[j]] = properties[j];
     }
+    this[name] = name;
     Tiles[name] = tile;
 }
