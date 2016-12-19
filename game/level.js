@@ -62,6 +62,11 @@ function Level(startpos, seed) {
 
 
     function isFloor(pos) {
+        return types.get(pos) === FLOOR;
+    }
+
+
+    function passable(pos) {
         return types.get(pos) === FLOOR || types.get(pos) === SHALLOW_WATER;
     }
 
@@ -84,9 +89,8 @@ function Level(startpos, seed) {
         const lake = flowmap(center, 1, neighbors, cost);
 
         for ([pos, val] of lake) {
-            const type = val < 0.67 ? DEEP_WATER : SHALLOW_WATER;
+            const type = val < 0.6 ? DEEP_WATER : SHALLOW_WATER;
             types.set(pos, type);
-            console.log(pos);
         }
 
         return lake;
@@ -100,7 +104,7 @@ function Level(startpos, seed) {
 
     function carveCaves() {
         shuffle(Array.from(innerPositions), random).forEach(pos => {
-            if (isWall(pos) && countGroups(pos, isFloor) !== 1) {
+            if (isWall(pos) && countGroups(pos, passable) !== 1) {
                 types.set(pos, FLOOR);
             }
         });
@@ -131,7 +135,7 @@ function Level(startpos, seed) {
 
     function removeOtherCaves() {
         const mainCave = new Set();
-        floodfillSet(startpos, isFloor, mainCave);
+        floodfillSet(startpos, passable, mainCave);
 
         for (const pos of innerPositions) {
             if (types.get(pos) === FLOOR && !mainCave.has(pos)) {
@@ -144,18 +148,18 @@ function Level(startpos, seed) {
 
 
     function isCave(pos) {
-        return isFloor(pos) && countGroups(pos, isFloor) === 1;
+        return isFloor(pos) && countGroups(pos, passable) === 1;
     }
 
 
     function isNotCave(pos) {
-        return isWall(pos) || countGroups(pos, isFloor) !== 1;
+        return isWall(pos) || countGroups(pos, passable) !== 1;
     }
 
 
     function isDeadEnd(pos) {
         return isFloor(pos)
-            && countGroups(pos, isFloor) === 1
+            && countGroups(pos, passable) === 1
             && surrounded(pos, isNotCave);
     }
 
@@ -164,7 +168,7 @@ function Level(startpos, seed) {
         if (isDeadEnd(pos)) {
             types.set(pos, WALL);
             forEachNeighbor(pos, neighbor => {
-                if (pos === startpos && isFloor(neighbor)) {
+                if (pos === startpos && passable(neighbor)) {
                     startpos = neighbor;
                 }
                 fillDeadEnd(neighbor);

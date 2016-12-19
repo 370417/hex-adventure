@@ -5,14 +5,16 @@ function Display() {
     const smallyu = 16;
     const bigyu = 24;
 
+    const types = new Map();
+
     const tiles = new Map();
     const $tiles = document.getElementById('tiles');
 
     const send = Game(receive);
 
     const commands = {
-        [SET_TILE]: drawTile,
-        [OVER]: () => {},
+        [SET_TILE]: setTile,
+        [OVER]: drawTiles,
     };
 
     function receive(commandName, ...args) {
@@ -40,12 +42,35 @@ function Display() {
         const realx = (x - (HEIGHT - y - 1) / 2) * 18;
         const realy = y * 16;
 
+        if (type === WALL) {
+            const right = types.get(pos + dir5) === WALL;
+            const left = types.get(pos + dir7) === WALL;
+            if (right && left) {
+                // WALL
+            } else if (right) {
+                type = 'R_WALL';
+            } else if (left) {
+                type = 'L_WALL';
+            } else {
+                type = 'RL_WALL';
+            }
+        }
+
         const tile = tiles.get(pos);
         tile.className = 'tile ' + type;
-        //types.set(pos, type);
 
         tile.style.left = realx + 'px';
         tile.style.top = realy + 'px';
+    }
+
+    function drawTiles() {
+        for (const [pos, type] of types) {
+            drawTile(pos, type);
+        }
+    }
+
+    function setTile(pos, type) {
+        types.set(pos, type);
     }
 
     init();
