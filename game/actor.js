@@ -1,15 +1,6 @@
 // Describes actor behavior
 
-/*const Actors = {
-    Player() {
-        return {
-            ai: AI.Player,
-        };
-    },
-};
-
 const Actor = {
-
     act() {
         // execute an action then return delay until this actor's next turn
         const delay = this[this.state]();
@@ -17,7 +8,19 @@ const Actor = {
     },
 };
 
-const 
+const Viewer = {
+    act({fov}) {
+        fov(pos => {
+            this.visible.add(pos);
+        });
+    },
+}
+
+const Human = {
+    act({display}) {
+        return NaN;
+    },
+};
 
 function extend(subproto, superproto, ...superprotos) {
     if (superprotos.length) {
@@ -29,23 +32,3 @@ function extend(subproto, superproto, ...superprotos) {
 }
 
 const Player = extend(Actor, Object);
-*/
-
-// Tile
-// Floor         Walking  / Standing
-// Deep Water    Swimming / Treading
-// Shallow Water Wading   / Standing
-// 
-
-(() => {
-    function act(...env) {
-        return this[this.state].call(this, ...env);
-    }
-
-    this.Actors = {
-        Player: {
-            act,
-            senses: ['fov'],
-        },
-    };
-})();

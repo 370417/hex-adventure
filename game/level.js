@@ -6,6 +6,7 @@ function Level(startpos, seed) {
     const innerPositions = createInnerPositions();
     const types = createTypes();
     const weights = createRandomWeights();
+    const actors = new Map();
 
     makeLakes();
     carveCaves();
@@ -199,5 +200,6 @@ function Level(startpos, seed) {
         positions,
         innerPositions,
         types,
+        actors,
     };
 }

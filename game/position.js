@@ -1,7 +1,7 @@
 // Helper functions for working with positions
 
-const WIDTH = 48;
-const HEIGHT = 31;
+const WIDTH = 62;//48;
+const HEIGHT = 37;//31;
 
 const dir1 = 1 - WIDTH;
 const dir3 = 1;
@@ -20,7 +20,7 @@ function xy2pos(x, y) {
 
 function pos2xy(pos) {
     return {
-        x: pos % WIDTH,
+        x: (pos + WIDTH) % WIDTH,
         y: Math.floor(pos / WIDTH),
     };
 }
