@@ -7,98 +7,164 @@ html {
 
 /* 1 em = tile width */
 .tile {
-    font-size: 18px;
+    font-size: 16px;
     width: 1em;
     height: 1rem;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     position: absolute;
-    background: #EEE;
 }
 
 /* Tiles */
 
-.WALL, .WALL0, .dWALL0 {
+.WALL7, .dWALL7 {
+    display: none;
+}
+
+.WALL0, .dWALL0 {
+    -webkit-mask: url(tileset3.png) 0em 0rem;
     display: none;
 }
 
 .WALL1 {
-    -webkit-mask: url(tileset.png) -1em -9rem;
+    -webkit-mask: url(tileset3.png) -1em 0rem;
 }
 
 .WALL2 {
-    -webkit-mask: url(tileset.png) -2em -9rem;
+    -webkit-mask: url(tileset3.png) -2em 0rem;
 }
 
 .WALL3 {
-    -webkit-mask: url(tileset.png) -3em -9rem;
+    -webkit-mask: url(tileset3.png) -3em 0rem;
 }
 
 .WALL4 {
-    -webkit-mask: url(tileset.png) -4em -9rem;
+    -webkit-mask: url(tileset3.png) -4em 0rem;
 }
 
 .WALL5 {
-    -webkit-mask: url(tileset.png) -5em -9rem;
+    -webkit-mask: url(tileset3.png) -5em 0rem;
 }
 
 .WALL6 {
-    -webkit-mask: url(tileset.png) -6em -9rem;
+    -webkit-mask: url(tileset3.png) -6em 0rem;
 }
 
 .WALL7 {
-    -webkit-mask: url(tileset.png) -7em -9rem;
+    -webkit-mask: url(tileset3.png) -7em 0rem;
 }
 
 .dWALL1 {
-    -webkit-mask: url(tileset.png) -1em -10rem;
+    -webkit-mask: url(tileset3.png) -8em 0rem;
 }
 
 .dWALL2 {
-    -webkit-mask: url(tileset.png) -2em -10rem;
+    -webkit-mask: url(tileset3.png) -9em 0rem;
 }
 
 .dWALL3 {
-    -webkit-mask: url(tileset.png) -3em -10rem;
+    -webkit-mask: url(tileset3.png) -10em 0rem;
 }
 
 .dWALL4 {
-    -webkit-mask: url(tileset.png) -4em -10rem;
+    -webkit-mask: url(tileset3.png) -11em 0rem;
 }
 
 .dWALL5 {
-    -webkit-mask: url(tileset.png) -5em -10rem;
+    -webkit-mask: url(tileset3.png) -12em 0rem;
 }
 
 .dWALL6 {
-    -webkit-mask: url(tileset.png) -6em -10rem;
+    -webkit-mask: url(tileset3.png) -13em 0rem;
 }
 
 .dWALL7 {
-    -webkit-mask: url(tileset.png) -7em -10rem;
+    -webkit-mask: url(tileset3.png) -14em 0rem;
+}
+
+.WALL {
+    -webkit-mask: url(tileset3.png) -1rem 0rem;
 }
 
 .FLOOR {
-    -webkit-mask: url(tileset.png) -1em -4rem;
-    background: #FFF;
+    -webkit-mask: url(tileset3.png) 0em 0rem;
 }
 
 .DEEP_WATER {
-    -webkit-mask: url(tileset.png) -3em -4rem;
-    background: #44F;
+    -webkit-mask: url(tileset3.png) 0em -2rem;
 }
 
 .SHALLOW_WATER {
-    -webkit-mask: url(tileset.png) -3em -4rem;
-    background: #88F;
+    -webkit-mask: url(tileset3.png) -2em -1rem;
+}
+
+.RUBBLE {
+    -webkit-mask: url(tileset3.png) -3em -1rem;
 }
 
 /* Colors */
 
 .black {
-    background: #000;
+    background: #000 /*#140C1C*/;
+}
+
+.maroon {
+    background: #442434;
+}
+
+.dark-blue {
+    background: #30346D;
+}
+
+.dark-gray {
+    background: #4E4A4F;
+}
+
+.brown {
+    background: #854C30;
+}
+
+.dark-green {
+    background: #346524;
+}
+
+.red {
+    background: #D04648;
+}
+
+.gray {
+    background: #757161;
+}
+
+.blue {
+    background: #597DCE;
+}
+
+.orange {
+    background: #D27D2C;
+}
+
+.light-gray {
+    background: #8595A1;
+}
+
+.green {
+    background: #6DAA2C;
+}
+
+.peach {
+    background: #D2AA99;
+}
+
+.cyan {
+    background: #6DC2CA;
+}
+
+.yellow {
+    background: #DAD45E;
 }
 
 .white {
-    background: #FFF;
+    background: #FFF /*#DEEED6*/;
 }
+

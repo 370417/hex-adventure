@@ -12,13 +12,16 @@ function Game(send) {
         actor.id = nextActorId;
         actors.set(nextActorId, actor);
         nextActorId += 1;
+        return actor;
     }
 
     function init(seed) {
         player = createActor(Player);
-        level = Level(xy2pos(24, 15), seed);
-        for (const pos of level.actors) {
-            const id = level.actors[pos];
+        player.pos = Math.round(WIDTH * HEIGHT / 2);
+        player.send = send;
+        level = Level(player.pos, seed);
+        level.actors.set(player.pos, player.id);
+        for (const [pos, id] of level.actors) {
             schedule.push(id, 0);
         }
         
@@ -30,9 +33,7 @@ return;
         while (true) {
             const id = schedule.pop();
             const actor = actors.get(id);
-            const delay = actor.act({
-                fov: console.log,
-            });
+            const delay = actor.act(level);
             if (isNaN(delay)) {
                 break;
             } else {

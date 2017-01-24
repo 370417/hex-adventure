@@ -1,2 +1,3 @@
-tileset.xcf
+*.xcf
 ignore/
+.vim

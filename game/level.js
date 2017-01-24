@@ -87,10 +87,11 @@ function Level(startpos, seed) {
             });
         };
         const cost = pos => 0.1 + 0.3 * weights.get(pos);
-        const lake = flowmap(center, 1, neighbors, cost);
+        const radius = 1 + 0.5 * random();
+        const lake = flowmap(center, radius, neighbors, cost);
 
         for ([pos, val] of lake) {
-            const type = val < 0.6 ? DEEP_WATER : SHALLOW_WATER;
+            const type = val < (radius - 0.4) ? DEEP_WATER : SHALLOW_WATER;
             types.set(pos, type);
         }
 

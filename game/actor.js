@@ -9,15 +9,21 @@ const Actor = {
 };
 
 const Viewer = {
-    act({fov}) {
-        fov(pos => {
-            this.visible.add(pos);
-        });
+    act(level) {
+        //this.tiles = fov(this.pos, this.transparent.bind(null, level));
+        this.tiles = level.types;
+    },
+    transparent(level, pos) {
+        return level.types.get(pos) !== WALL;
     },
 }
 
 const Human = {
-    act({display}) {
+    act(level) {
+        this.super.act.call(this, level);
+        for (const pos of this.tiles) {
+            this.send(SET_TILE, pos, level.types.get(pos));
+        }
         return NaN;
     },
 };
@@ -31,4 +37,4 @@ function extend(subproto, superproto, ...superprotos) {
     return proto;
 }
 
-const Player = extend(Actor, Object);
+const Player = extend(Human, Viewer, Actor);

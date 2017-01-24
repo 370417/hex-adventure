@@ -1,7 +1,7 @@
 // Creates a GUI for the game
 
 function Display() {
-    const xu = 18;
+    const xu = 16;
     const smallyu = 16;
     const bigyu = 24;
 
@@ -60,12 +60,13 @@ function Display() {
     function drawTile(pos, type) {
         const {x, y} = pos2xy(pos);
 
-        const realx = (x - (HEIGHT - y - 1) / 2) * 18;
-        const realy = y * 16;
+        const realx = (x - (HEIGHT - y - 1) / 2) * xu;
+        const realy = y * smallyu;
 
         const tile = tiles.get(pos);
 
         tile.className = 'tile ' + type;
+        tile.classList.add(Tiles[type].color);
 
         tile.style.left = realx + 'px';
         tile.style.top = realy + 'px';
@@ -74,16 +75,21 @@ function Display() {
     function drawUpTriangle(SWpos, triangle) {
         const {x, y} = pos2xy(SWpos);
 
-        const SW = Number(types.get(SWpos) === WALL);
-        const N = Number(types.get(SWpos + dir1) === WALL);
-        const SE = Number(types.get(SWpos + dir3) === WALL);
+        const SW = Number(types.get(SWpos) === WALL/* || types.get(SWpos) === undefined*/);
+        const N = Number(types.get(SWpos + dir1) === WALL/* || types.get(SWpos + dir1) === undefined*/);
+        const SE = Number(types.get(SWpos + dir3) === WALL/* || types.get(SWpos + dir3) === undefined*/);
+
+        if (!types.get(SWpos) || !types.get(SWpos + dir1) || !types.get(SWpos + dir3)) {
+            return;
+        }
 
         const index = SW + 2 * SE + 4 * N;
 
-        const realx = (x + 0.5 - (HEIGHT - y - 1) / 2) * 18;
-        const realy = (y - 0.5) * 16;
+        const realx = (x + 0.5 - (HEIGHT - y - 1) / 2) * xu;
+        const realy = (y - 0.5) * smallyu;
 
         triangle.className = 'tile WALL' + index;
+        triangle.classList.add(Tiles[WALL].color);
 
         triangle.style.left = realx + 'px';
         triangle.style.top = realy + 'px';
@@ -92,23 +98,30 @@ function Display() {
     function drawDownTriangle(NWpos, triangle) {
         const {x, y} = pos2xy(NWpos);
 
-        const NW = Number(types.get(NWpos) === WALL);
-        const S = Number(types.get(NWpos + dir5) === WALL);
-        const NE = Number(types.get(NWpos + dir3) === WALL);
+        const NW = Number(types.get(NWpos) === WALL/* || types.get(NWpos) === undefined*/);
+        const S = Number(types.get(NWpos + dir5) === WALL/* || types.get(NWpos + dir5) === undefined*/);
+        const NE = Number(types.get(NWpos + dir3) === WALL/* || types.get(NWpos + dir3) === undefined*/);
+
+        if (!types.get(NWpos) || !types.get(NWpos + dir5) || !types.get(NWpos + dir3)) {
+            return;
+        }
 
         const index = NW + 2 * NE + 4 * S;
 
-        const realx = (x + 0.5 - (HEIGHT - y - 1) / 2) * 18;
-        const realy = (y + 0.5) * 16;
+        const realx = (x + 0.5 - (HEIGHT - y - 1) / 2) * xu;
+        const realy = (y + 0.5) * smallyu;
 
         triangle.className = 'tile dWALL' + index;
+        triangle.classList.add(Tiles[WALL].color);
 
         triangle.style.left = realx + 'px';
         triangle.style.top = realy + 'px';
     }
 
     function drawTiles() {
+        console.log(1);
         for (const [pos, type] of types) {
+            //console.warn(pos, type);
             drawTile(pos, type);
         }
         for (const [pos, triangle] of upTriangles) {
@@ -121,6 +134,8 @@ function Display() {
 
     function setTile(pos, type) {
         types.set(pos, type);
+//        drawTiles();
+//        debugger;
     }
 
     init();
