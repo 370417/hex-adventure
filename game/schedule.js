@@ -4,7 +4,7 @@ function Schedule() {
     let now = 0;
     let heap = new Heap((a, b) => a.time - b.time || a.id - b.id);
 
-    const peek = heap.peek.bind(heap);
+    const peek = heap.peek;
 
     function push(id, delay) {
         heap.push({time: now + delay, id});

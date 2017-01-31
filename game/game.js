@@ -12,33 +12,19 @@ function Game(send) {
         actor.id = nextActorId;
         actors.set(nextActorId, actor);
         nextActorId += 1;
-        return actor;
     }
 
     function init(seed) {
-        player = createActor(Player);
-        player.pos = Math.round(WIDTH * HEIGHT / 2);
-        player.send = send;
-        level = Level(player.pos, seed);
-        level.actors.set(player.pos, player.id);
-        for (const [pos, id] of level.actors) {
+        player = createActor(Actors.Player);
+        level = Level(xy2pos(24, 15), seed);
+        for (const pos in level.actors) {
+            const id = level.actors[pos];
             schedule.push(id, 0);
         }
         
         for (const pos of level.positions) {
             const tile = level.types.get(pos);
             send(SET_TILE, pos, tile);
-        }
-return;
-        while (true) {
-            const id = schedule.pop();
-            const actor = actors.get(id);
-            const delay = actor.act(level);
-            if (isNaN(delay)) {
-                break;
-            } else {
-                 schedule.push(id, delay);
-            }
         }
     }
 

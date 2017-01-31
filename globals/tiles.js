@@ -1,13 +1,12 @@
 // Constants for map tiles
 
-const keys = ['name'         , 'canWalk', 'transparent', 'canFly', 'color'];
-const vals = [//             ,          ,              ,         ,        ],
-             ['WALL'         , false    , false        , false   , 'white'],
-             ['FLOOR'        , true     , true         , true    , 'white'],
-             ['DEEP_WATER'   , false    , true         , true    , 'blue' ],
-             ['SHALLOW_WATER', true     , true         , true    , 'blue' ],
-             ['PIT'          , false    , true         , true    , 'gray' ],
-             ['RUBBLE'       , false    , true         , false   , 'peach'],
+const keys = ['name'         , 'canWalk', 'transparent', 'canFly'];
+const vals = [//             ,          ,              ,         ],
+             ['WALL'         , false    , false        , false   ],
+             ['FLOOR'        , true     , true         , true    ],
+             ['DEEP_WATER'   , false    , true         , true    ],
+             ['SHALLOW_WATER', true     , true         , true    ],
+             ['PIT'          , false    , true         , true    ],
 ];
 
 
