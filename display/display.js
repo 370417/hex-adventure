@@ -42,20 +42,6 @@ function Display() {
         const realx = (x - (HEIGHT - y - 1) / 2) * 18;
         const realy = y * 16;
 
-        if (type === WALL) {
-            const right = types.get(pos + dir5) === WALL;
-            const left = types.get(pos + dir7) === WALL;
-            if (right && left) {
-                // WALL
-            } else if (right) {
-                type = 'R_WALL';
-            } else if (left) {
-                type = 'L_WALL';
-            } else {
-                type = 'RL_WALL';
-            }
-        }
-
         const tile = tiles.get(pos);
         tile.className = 'tile ' + type;
 

@@ -21,38 +21,23 @@ html {
 .WALL {
     -webkit-mask: url(tileset.png) 0em 0rem;
     mask: url(tileset.png) 0em 0rem;
+    background: #999;
 }
 
-.RL_WALL {
+.FLOOR {
     -webkit-mask: url(tileset.png) -1em 0rem;
     mask: url(tileset.png) -1em 0rem;
 }
 
-.R_WALL {
-    -webkit-mask: url(tileset.png) -2em 0rem;
-    mask: url(tileset.png) -2em 0rem;
-}
-
-.L_WALL {
-    -webkit-mask: url(tileset.png) -3em 0rem;
-    mask: url(tileset.png) -3em 0rem;
-}
-
-.FLOOR {
-    -webkit-mask: url(tileset.png) -7em 0rem;
-    mask: url(tileset.png) -7em 0rem;
-    background: #666;
-}
-
 .DEEP_WATER {
-    -webkit-mask: url(tileset.png) -7em 0rem;
-    mask: url(tileset.png) -7em 0rem;
+    -webkit-mask: url(tileset.png) -5em 0rem;
+    mask: url(tileset.png) -5em 0rem;
     background: #44F;
 }
 
 .SHALLOW_WATER {
-    -webkit-mask: url(tileset.png) -7em 0rem;
-    mask: url(tileset.png) -7em 0rem;
+    -webkit-mask: url(tileset.png) -4em 0rem;
+    mask: url(tileset.png) -4em 0rem;
     background: #88F;
 }
 
