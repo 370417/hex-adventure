@@ -1,6 +1,6 @@
 // Creates a game
 
-function Game(send) {
+function Game(display) {
     let level;
     const schedule = Schedule();
     let player;
@@ -12,20 +12,30 @@ function Game(send) {
         actor.id = nextActorId;
         actors.set(nextActorId, actor);
         nextActorId += 1;
+        return actor;
+    }
+
+    function gameLoop() {
+        while (true) {
+            const id = schedule.pop();
+            const actor = actors.get(id);
+        }
     }
 
     function init(seed) {
         player = createActor(Actors.Player);
-        level = Level(xy2pos(24, 15), seed);
+        player.pos = xy2pos(24, 15);
+        level = Level(player, seed);
         for (const pos in level.actors) {
             const id = level.actors[pos];
             schedule.push(id, 0);
         }
-        
+
         for (const pos of level.positions) {
             const tile = level.types.get(pos);
-            send(SET_TILE, pos, tile);
+            display.setTile(pos, tile);
         }
+        display.over();
     }
 
     function move() {
@@ -36,20 +46,11 @@ function Game(send) {
 
     }
 
-    const commands = {
-        [INIT]: init,
-        [MOVE]: move,
-        [REST]: rest,
+    const gameAPI = {
+        init,
+        move,
+        rest,
     };
 
-    function receive(commandName, ...args) {
-        const command = commands[commandName];
-        if (!command) {
-            throw `${commandName.toString()} is not a valid command`;
-        }
-        command(...args);
-        send(OVER);
-    }
-
-    return receive;
+    return gameAPI;
 }

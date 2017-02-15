@@ -10,12 +10,12 @@ function Display() {
     const tiles = new Map();
     const $tiles = document.getElementById('tiles');
 
-    const send = Game(receive);
-
-    const commands = {
-        [SET_TILE]: setTile,
-        [OVER]: drawTiles,
+    const display = {
+        setTile,
+        over: drawTiles,
     };
+
+    const game = Game(display);
 
     function receive(commandName, ...args) {
         const command = commands[commandName];
@@ -60,10 +60,7 @@ function Display() {
     }
 
     init();
-    send(INIT, +Date.now());
-
-
-    return {
-        drawTile,
-    };
+	const seed = +Date.now();
+	console.log(seed);
+    game.init(seed);
 }

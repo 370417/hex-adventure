@@ -1,18 +1,18 @@
 // Generates a new level
 
-function Level(startpos, seed) {
+function Level(player, seed) {
     const random = alea(seed);
     const positions = createPositions();
     const innerPositions = createInnerPositions();
     const types = createTypes();
     const weights = createRandomWeights();
 
-    makeLakes();
+    //makeLakes();
     carveCaves();
     removeSmallWalls();
     const size = removeOtherCaves();
     if (size < WIDTH * HEIGHT / 4) {
-        return Level(startpos, random());
+        return Level(player, random());
     }
     fillSmallCaves();
 
@@ -51,7 +51,7 @@ function Level(startpos, seed) {
     function createTypes() {
         const types = new Map();
         for (const pos of positions) {
-            if (pos === startpos) {
+            if (pos === player.pos) {
                 types.set(pos, FLOOR);
             } else {
                 types.set(pos, WALL);
@@ -135,7 +135,7 @@ function Level(startpos, seed) {
 
     function removeOtherCaves() {
         const mainCave = new Set();
-        floodfillSet(startpos, passable, mainCave);
+        floodfillSet(player.pos, passable, mainCave);
 
         for (const pos of innerPositions) {
             if (types.get(pos) === FLOOR && !mainCave.has(pos)) {
@@ -168,8 +168,8 @@ function Level(startpos, seed) {
         if (isDeadEnd(pos)) {
             types.set(pos, WALL);
             forEachNeighbor(pos, neighbor => {
-                if (pos === startpos && passable(neighbor)) {
-                    startpos = neighbor;
+                if (pos === player.pos && passable(neighbor)) {
+                    player.pos = neighbor;
                 }
                 fillDeadEnd(neighbor);
             });
