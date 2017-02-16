@@ -5,13 +5,11 @@ function Game(display) {
     const schedule = Schedule();
     let player;
 
-    const actors = new Map();
-    let nextActorId = 1;
-    function createActor(proto) {
-        const actor = Object.create(proto);
-        actor.id = nextActorId;
-        actors.set(nextActorId, actor);
-        nextActorId += 1;
+    const entities = Entities();
+
+    // create an entity from a base actor
+    function createActor(base) {
+        const actor = Object.assign(entities.create(), base);
         return actor;
     }
 
@@ -25,7 +23,7 @@ function Game(display) {
     function init(seed) {
         player = createActor(Actors.Player);
         player.pos = xy2pos(24, 15);
-        level = Level(player, seed);
+        level = Level({player, seed, createActor});
         for (const pos in level.actors) {
             const id = level.actors[pos];
             schedule.push(id, 0);

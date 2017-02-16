@@ -1,6 +1,6 @@
 // Generates a new level
 
-function Level(player, seed) {
+function Level({player, seed, createActor}) {
     const random = alea(seed);
     const positions = createPositions();
     const innerPositions = createInnerPositions();

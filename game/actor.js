@@ -17,7 +17,7 @@ const Actor = {
     },
 };
 
-const 
+const
 
 function extend(subproto, superproto, ...superprotos) {
     if (superprotos.length) {
@@ -35,7 +35,7 @@ const Player = extend(Actor, Object);
 // Floor         Walking  / Standing
 // Deep Water    Swimming / Treading
 // Shallow Water Wading   / Standing
-// 
+//
 
 (() => {
     function act(...env) {
@@ -43,9 +43,6 @@ const Player = extend(Actor, Object);
     }
 
     this.Actors = {
-        Player: {
-            act,
-            senses: ['fov'],
-        },
+        Player: {},
     };
 })();
