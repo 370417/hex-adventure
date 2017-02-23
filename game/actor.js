@@ -4,31 +4,31 @@
     Player() {
         return {
             ai: AI.Player,
-        };
+        }
     },
-};
+}
 
 const Actor = {
 
     act() {
         // execute an action then return delay until this actor's next turn
-        const delay = this[this.state]();
-        return delay;
+        const delay = this[this.state]()
+        return delay
     },
-};
+}
 
 const
 
 function extend(subproto, superproto, ...superprotos) {
     if (superprotos.length) {
-        superproto = extend(superproto, ...superprotos);
+        superproto = extend(superproto, ...superprotos)
     }
-    const proto = Object.assign({}, superproto, subproto);
-    proto.super = superproto;
-    return proto;
+    const proto = Object.assign({}, superproto, subproto)
+    proto.super = superproto
+    return proto
 }
 
-const Player = extend(Actor, Object);
+const Player = extend(Actor, Object)
 */
 
 // Tile
@@ -39,10 +39,10 @@ const Player = extend(Actor, Object);
 
 (() => {
     function act(...env) {
-        return this[this.state].call(this, ...env);
+        return this[this.state].call(this, ...env)
     }
 
     this.Actors = {
         Player: {},
-    };
-})();
+    }
+})()

@@ -1,140 +1,140 @@
 // Generates a new level
 
 function Level({player, seed, createActor}) {
-    const random = alea(seed);
-    const positions = createPositions();
-    const innerPositions = createInnerPositions();
-    const types = createTypes();
-    const weights = createRandomWeights();
-    const actors = createActors();
+    const random = alea(seed)
+    const positions = createPositions()
+    const innerPositions = createInnerPositions()
+    const types = createTypes()
+    const weights = createRandomWeights()
+    const actors = createActors()
 
-    //makeLakes();
-    carveCaves();
-    removeSmallWalls();
-    const size = removeOtherCaves();
+    //makeLakes()
+    carveCaves()
+    removeSmallWalls()
+    const size = removeOtherCaves()
     if (size < WIDTH * HEIGHT / 4) {
-        return Level(player, random());
+        return Level(player, random())
     }
-    fillSmallCaves();
+    fillSmallCaves()
 
 
     function createPositions() {
-        const positions = new Set();
+        const positions = new Set()
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = Math.floor((HEIGHT - y) / 2); x < WIDTH - Math.floor(y / 2); x++) {
-                positions.add(xy2pos(x, y));
+                positions.add(xy2pos(x, y))
             }
         }
-        return positions;
+        return positions
     }
 
 
     function createInnerPositions() {
-        const innerPositions = new Set();
+        const innerPositions = new Set()
         for (let y = 1; y < HEIGHT - 1; y++) {
             for (let x = Math.floor((HEIGHT - y) / 2) + 1; x < WIDTH - Math.floor(y / 2) - 1; x++) {
-                innerPositions.add(xy2pos(x, y));
+                innerPositions.add(xy2pos(x, y))
             }
         }
-        return innerPositions;
+        return innerPositions
     }
 
 
     function createRandomWeights() {
-        const weights = new Map();
+        const weights = new Map()
         for (const pos of innerPositions) {
-            weights.set(pos, random());
+            weights.set(pos, random())
         }
-        return weights;
+        return weights
     }
 
 
     function createTypes() {
-        const types = new Map();
+        const types = new Map()
         for (const pos of positions) {
             if (pos === player.pos) {
-                types.set(pos, FLOOR);
+                types.set(pos, FLOOR)
             } else {
-                types.set(pos, WALL);
+                types.set(pos, WALL)
             }
         }
-        return types;
+        return types
     }
 
 
     function createActors() {
-        const actors = new Map();
-        actors.set(player.pos, player);
-        return actors;
+        const actors = new Map()
+        actors.set(player.pos, player)
+        return actors
     }
 
 
     function isFloor(pos) {
-        return types.get(pos) === FLOOR;
+        return types.get(pos) === FLOOR
     }
 
 
     function passable(pos) {
-        return types.get(pos) === FLOOR || types.get(pos) === SHALLOW_WATER;
+        return types.get(pos) === FLOOR || types.get(pos) === SHALLOW_WATER
     }
 
 
     function isWall(pos) {
-        return positions.has(pos) && types.get(pos) === WALL;
+        return positions.has(pos) && types.get(pos) === WALL
     }
 
 
     function makeLake() {
-        const center = shuffle(Array.from(innerPositions), random)[0];
+        const center = shuffle(Array.from(innerPositions), random)[0]
         const neighbors = (pos, callback) => {
             forEachNeighbor(pos, neighbor => {
                 if (innerPositions.has(neighbor)) {
-                    callback(neighbor);
+                    callback(neighbor)
                 }
-            });
-        };
-        const cost = pos => 0.1 + 0.3 * weights.get(pos);
-        const lake = flowmap(center, 1, neighbors, cost);
+            })
+        }
+        const cost = pos => 0.1 + 0.3 * weights.get(pos)
+        const lake = flowmap(center, 1, neighbors, cost)
 
         for ([pos, val] of lake) {
-            const type = val < 0.6 ? DEEP_WATER : SHALLOW_WATER;
-            types.set(pos, type);
+            const type = val < 0.6 ? DEEP_WATER : SHALLOW_WATER
+            types.set(pos, type)
         }
 
-        return lake;
+        return lake
     }
 
 
     function makeLakes() {
-        makeLake();
+        makeLake()
     }
 
 
     function carveCaves() {
         shuffle(Array.from(innerPositions), random).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
-                types.set(pos, FLOOR);
+                types.set(pos, FLOOR)
             }
-        });
+        })
     }
 
 
     function removeSmallWalls() {
-        const visited = new Set();
+        const visited = new Set()
         for (const pos of innerPositions) {
-            const wallGroup = new Set();
+            const wallGroup = new Set()
             const floodable = pos => isWall(pos)
                                   && !wallGroup.has(pos)
-                                  && !visited.has(pos);
+                                  && !visited.has(pos)
             const flood = pos => {
-                visited.add(pos);
-                wallGroup.add(pos);
-            };
-            floodfill(pos, floodable, flood);
+                visited.add(pos)
+                wallGroup.add(pos)
+            }
+            floodfill(pos, floodable, flood)
 
             if (wallGroup.size < 6) {
                 for (const pos of wallGroup) {
-                    types.set(pos, FLOOR);
+                    types.set(pos, FLOOR)
                 }
             }
         }
@@ -142,45 +142,45 @@ function Level({player, seed, createActor}) {
 
 
     function removeOtherCaves() {
-        const mainCave = new Set();
-        floodfillSet(player.pos, passable, mainCave);
+        const mainCave = new Set()
+        floodfillSet(player.pos, passable, mainCave)
 
         for (const pos of innerPositions) {
             if (types.get(pos) === FLOOR && !mainCave.has(pos)) {
-                types.set(pos, WALL);
+                types.set(pos, WALL)
             }
         }
 
-        return mainCave.size;
+        return mainCave.size
     }
 
 
     function isCave(pos) {
-        return isFloor(pos) && countGroups(pos, passable) === 1;
+        return isFloor(pos) && countGroups(pos, passable) === 1
     }
 
 
     function isNotCave(pos) {
-        return isWall(pos) || countGroups(pos, passable) !== 1;
+        return isWall(pos) || countGroups(pos, passable) !== 1
     }
 
 
     function isDeadEnd(pos) {
         return isFloor(pos)
             && countGroups(pos, passable) === 1
-            && surrounded(pos, isNotCave);
+            && surrounded(pos, isNotCave)
     }
 
 
     function fillDeadEnd(pos) {
         if (isDeadEnd(pos)) {
-            types.set(pos, WALL);
+            types.set(pos, WALL)
             forEachNeighbor(pos, neighbor => {
                 if (pos === player.pos && passable(neighbor)) {
-                    player.pos = neighbor;
+                    player.pos = neighbor
                 }
-                fillDeadEnd(neighbor);
-            });
+                fillDeadEnd(neighbor)
+            })
         }
     }
 
@@ -189,14 +189,14 @@ function Level({player, seed, createActor}) {
         // can't skip visited tiles here because previous caves can be affected
         // by the removal of later ones
         for (const pos of innerPositions) {
-            fillDeadEnd(pos);
-            const cave = new Set();
-            floodfillSet(pos, isCave, cave);
+            fillDeadEnd(pos)
+            const cave = new Set()
+            floodfillSet(pos, isCave, cave)
 
             if (cave.size === 2 || cave.size === 3) {
-                types.set(pos, WALL);
+                types.set(pos, WALL)
                 for (const pos of cave) {
-                    fillDeadEnd(pos);
+                    fillDeadEnd(pos)
                 }
             }
         }
@@ -208,5 +208,5 @@ function Level({player, seed, createActor}) {
         innerPositions,
         types,
         actors,
-    };
+    }
 }
