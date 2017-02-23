@@ -1,25 +1,31 @@
 // Keep track of future events
 
 class Schedule {
-    constructor() {
+    constructor(array = []) {
         this._now = 0
-        this._heap = new Heap((a, b) => a.time - b.time || a.id - b.id)
+        this._array = array
     }
 
     push(id, delay) {
-        this._heap.push({time: now + delay, id})
+        const event = {time: now + delay, id}
+        Heap.push(this._array, event, Schedule._cmp)
     }
 
     pop() {
-        let event = this._heap.pop()
-        this._now = event.time
-        return event.id
+        const {time, id} = Heap.pop(this._array, Schedule._cmp)
+        this._now = time
+        return id
     }
 
     pushpop(id, delay) {
-        let event = this._heap.pushpop({time: now + delay, id})
-        this._now = event.time
-        return event.id
+        const event = {time: now + delay, id}
+        const {time, id} = Heap.pushpop(this._array, event, Schedule._cmp)
+        this._now = time
+        return id
+    }
+
+    static _cmp(a, b) {
+        return a.time - b.time || a.id - b.id
     }
 }
 /*
