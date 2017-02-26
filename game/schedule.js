@@ -23,9 +23,6 @@ this.Schedule = {
         return a.time - b.time || a.id - b.id
     },
 
-    advance(game) {
-    }
-
     loop(game) {
         let actionCompleted = true
         while (actionCompleted) {

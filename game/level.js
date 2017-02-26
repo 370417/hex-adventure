@@ -7,9 +7,32 @@ function forEach(obj, fun, ...args) {
 }
 
 this.Level = {
+    WIDTH: 48,
+    HEIGHT: 31,
+
     create() {
 
-    }
+    },
+
+    forEachPos(fun) {
+        for (let y = 0; y < this.HEIGHT; y++) {
+            const xmin = Math.floor((this.HEIGHT - y) / 2)
+            const xmax = WIDTH - Math.floor(y / 2)
+            for (let x = xmin; x < xmax; x++) {
+                fun(xy2pos(x, y), x, y)
+            }
+        }
+    },
+
+    forEachInnerPos(fun) {
+        for (let y = 1; y < this.HEIGHT - 1; y++) {
+            const xmin = Math.floor((this.HEIGHT - y) / 2)
+            const xmax = WIDTH - Math.floor(y / 2)
+            for (let x = xmin + 1; x < xmax - 1; x++) {
+                fun(xy2pos(x, y), x, y)
+            }
+        }
+    },
 }
 
 function Level(params) {
@@ -138,8 +161,8 @@ function Level(params) {
         for (const pos of innerPositions) {
             const wallGroup = new Set()
             const floodable = pos => isWall(pos)
-                                  && !wallGroup.has(pos)
-                                  && !visited.has(pos)
+            && !wallGroup.has(pos)
+            && !visited.has(pos)
             const flood = pos => {
                 visited.add(pos)
                 wallGroup.add(pos)
@@ -181,8 +204,8 @@ function Level(params) {
 
     function isDeadEnd(pos) {
         return isFloor(pos)
-            && countGroups(pos, passable) === 1
-            && surrounded(pos, isNotCave)
+        && countGroups(pos, passable) === 1
+        && surrounded(pos, isNotCave)
     }
 
 

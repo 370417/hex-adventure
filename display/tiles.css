@@ -18,24 +18,28 @@ html {
 
 /* Tiles */
 
-.WALL {
+[data-type='NULL'] {
+    opacity: 0;
+}
+
+[data-type='WALL'] {
     -webkit-mask: url(tileset.png) 0em 0rem;
     mask: url(tileset.png) 0em 0rem;
     background: #999;
 }
 
-.FLOOR {
+[data-type='FLOOR'] {
     -webkit-mask: url(tileset.png) -1em 0rem;
     mask: url(tileset.png) -1em 0rem;
 }
 
-.DEEP_WATER {
+[data-type='DEEP_WATER'] {
     -webkit-mask: url(tileset.png) -5em 0rem;
     mask: url(tileset.png) -5em 0rem;
     background: #44F;
 }
 
-.SHALLOW_WATER {
+[data-type='SHALLOW_WATER'] {
     -webkit-mask: url(tileset.png) -4em 0rem;
     mask: url(tileset.png) -4em 0rem;
     background: #88F;

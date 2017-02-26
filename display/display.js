@@ -4,19 +4,33 @@ this.Display = {
     xu: 18,
     smallyu: 16,
     bigyu: 24,
-    $root: document.getElementById('game'),
+    root: document.getElementById('game'),
     game: Game.getGame(),
 
-    create() {
+    init() {
+        this.createTiles()
+    },
 
+    positionTile(tile, x, y) {
+        const realx = (x - (Level.HEIGHT - y - 1) / 2) * this.xu
+        const realy = (y - 1) * this.smallyu + this.bigyu
+        tile.style.left = realx + 'px'
+        tile.style.top = realy + 'px'
     },
 
     createTiles() {
-        const $tiles = document.createElement('div')
-        $tiles.setAttribute('id', 'tiles')
-        $root.appendChild($tiles)
+        const tiles = document.createElement('div')
+        tiles.id = 'tiles'
 
+        Level.forEachPos((pos, x, y) => {
+            const tile = document.createElement('div')
+            tile.classList.add('tile')
+            tile.dataset.type = 'NULL'
+            this.positionTile(tile, x, y)
+            tiles.appendChild(tile)
+        })
 
+        this.root.appendChild(tiles)
     },
 }
 
@@ -44,15 +58,6 @@ function oldDisplay() {
     }
 
     function init() {
-        let game = Game.load();
-        if (!game) {
-            game = Game.create(Date.now());
-        }
-        if (game.version !== Game.version) {
-            alert('Save game is out of date')
-        }
-        const seed = game.seed
-        console.log('Seed:', seed)
 
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = Math.floor((HEIGHT - y) / 2); x < WIDTH - Math.floor(y / 2); x++) {
