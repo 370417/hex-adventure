@@ -1,23 +1,19 @@
 // manages entities
 
-// create an entity manager
-function Entities() {
-    const entities = new Map()
-    let nextId = 1
+this.Entity = {
+    init(game) {
+        game.entities = {}
+        game.nextEntityId = 1
+    },
 
-    function create() {
-        const entity = {id: nextId}
-        entities.set(nextId, entity)
-        nextId++
+    create(game) {
+        const entity = {id: game.nextEntityId}
+        game.entities[entity.id] = entity
+        game.nextEntityId++
         return entity
-    }
+    },
 
-    function get(id) {
-        return entities.get(id)
-    }
-
-    return {
-        create,
-        get,
-    }
+    get(game, id) {
+        return game.entities[id]
+    },
 }

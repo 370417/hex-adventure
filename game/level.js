@@ -1,6 +1,19 @@
 // Generates a new level
 
-function Level({player, seed, createActor}) {
+function forEach(obj, fun, ...args) {
+    for (const key in obj) {
+        fun(Number(key), ...args)
+    }
+}
+
+this.Level = {
+    create() {
+
+    }
+}
+
+function Level(params) {
+    const {seed, player} = params
     const random = alea(seed)
     const positions = createPositions()
     const innerPositions = createInnerPositions()
@@ -13,7 +26,8 @@ function Level({player, seed, createActor}) {
     removeSmallWalls()
     const size = removeOtherCaves()
     if (size < WIDTH * HEIGHT / 4) {
-        return Level(player, random())
+        console.log(size)
+        //return Level({player, seed: random()})
     }
     fillSmallCaves()
 

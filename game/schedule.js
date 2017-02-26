@@ -1,61 +1,37 @@
 // Keep track of future events
 
-class Schedule {
-    constructor(array = []) {
-        this._now = 0
-        this._array = array
-    }
+this.Schedule = {
+    init(game) {
+        game.now = 0
+        game.schedule = []
+    },
 
-    push(id, delay) {
-        const event = {time: now + delay, id}
-        Heap.push(this._array, event, Schedule._cmp)
-    }
+    push(game, id, delay) {
+        if (delay === Infinity) return
+        const event = {id, time: game.now + delay}
+        Heap.push(game.schedule, event, this.cmp)
+    },
 
-    pop() {
-        const {time, id} = Heap.pop(this._array, Schedule._cmp)
-        this._now = time
-        return id
-    }
-
-    pushpop(id, delay) {
-        const event = {time: now + delay, id}
-        const {time, id} = Heap.pushpop(this._array, event, Schedule._cmp)
-        this._now = time
-        return id
-    }
-
-    static _cmp(a, b) {
-        return a.time - b.time || a.id - b.id
-    }
-}
-/*
-function Schedule() {
-    let now = 0
-    let heap = new Heap((a, b) => a.time - b.time || a.id - b.id)
-
-    const peek = heap.peek
-
-    function push(id, delay) {
-        heap.push({time: now + delay, id})
-    }
-
-    function pop() {
-        let {time, id} = heap.pop()
-        now = time
-        return id
-    }
-
-    function pushpop(id, delay) {
-        let event = heap.pushpop({time: time + delay, id})
-        now = event.time
+    pop(game) {
+        const event = Heap.pop(game.schedule, this.cmp)
+        game.now = event.time
         return event.id
+    },
+
+    // comparison function for the schedule heap
+    cmp(a, b) {
+        return a.time - b.time || a.id - b.id
+    },
+
+    advance(game) {
     }
 
-    return {
-        peek,
-        push,
-        pop,
-        pushpop,
-    }
+    loop(game) {
+        let actionCompleted = true
+        while (actionCompleted) {
+            const id = Schedule.pop(game)
+            const entity = Entity.get(game, id)
+            actionCompleted = Actor.act(game, entity)
+        }
+    },
 }
-*/

@@ -1,54 +1,50 @@
 // Creates a game
 
-function Game(display) {
-    let level
-    const schedule = Schedule()
-    let player
+this.Game = {
+    version: '0.1.0',
+    SAVE_NAME: 'hex adventure',
 
-    const entities = Entities()
+    // load save game if it exists, otherwise create a new game
+    getGame() {
+        let game = this.load()
+        if (!game) {
+            game = Game.create(Date.now())
+        }
+        if (game.version !== this.version) {
+            console.warn('Save game is out of date')
+        }
+        console.log('Seed:', game.seed)
+        return game
+    },
 
-    // create an entity from a base actor
-    function createActor(base) {
-        const actor = Object.assign(entities.create(), base)
-        return actor
-    }
+    create(seed) {
+        const game = {
+            version: this.version,
+            seed: seed,
+        }
 
-    function gameLoop() {
+        Entity.init(game)
+        Schedule.init(game)
+
+        return game
+    },
+
+    save(game) {
+        localStorage[this.SAVE_NAME] = JSON.stringify(game)
+    },
+
+    load() {
+        const saveFile = localStorage[this.SAVE_NAME]
+        return saveFile && JSON.parse(saveFile)
+    },
+
+    // precondition: player has just completed an action and has scheduled himself
+    loop(game) {
         while (true) {
-            const id = schedule.pop()
-            const actor = actors.get(id)
+            const id = Schedule.pop(game)
+            const delay = Actor.act(game, id)
+            if (delay === undefined) break // delay is undefined if the actor needs outside input
+            if (delay !== Infinity) Schedule.push(game, id, delay)
         }
-    }
-
-    function init(seed) {
-        player = createActor(Actors.Player)
-        player.pos = xy2pos(24, 15)
-        level = Level({player, seed, createActor})
-        for (const pos in level.actors) {
-            const id = level.actors[pos]
-            schedule.push(id, 0)
-        }
-
-        for (const pos of level.positions) {
-            const tile = level.types.get(pos)
-            display.setTile(pos, tile)
-        }
-        display.over()
-    }
-
-    function move() {
-
-    }
-
-    function rest() {
-
-    }
-
-    const gameAPI = {
-        init,
-        move,
-        rest,
-    }
-
-    return gameAPI
+    },
 }

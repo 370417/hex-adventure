@@ -1,3 +1,6 @@
 // Starts a new game or loads an old one
 
-Display()
+// developing mode
+window.DEVELOP = true
+
+Display.init()

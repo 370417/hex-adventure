@@ -1,6 +1,26 @@
 // Creates a GUI for the game
 
-function Display() {
+this.Display = {
+    xu: 18,
+    smallyu: 16,
+    bigyu: 24,
+    $root: document.getElementById('game'),
+    game: Game.getGame(),
+
+    create() {
+
+    },
+
+    createTiles() {
+        const $tiles = document.createElement('div')
+        $tiles.setAttribute('id', 'tiles')
+        $root.appendChild($tiles)
+
+
+    },
+}
+
+function oldDisplay() {
     const xu = 18;
     const smallyu = 16;
     const bigyu = 24;
@@ -15,8 +35,6 @@ function Display() {
         over: drawTiles,
     };
 
-    const game = Game(display);
-
     function receive(commandName, ...args) {
         const command = commands[commandName];
         if (!command) {
@@ -26,6 +44,16 @@ function Display() {
     }
 
     function init() {
+        let game = Game.load();
+        if (!game) {
+            game = Game.create(Date.now());
+        }
+        if (game.version !== Game.version) {
+            alert('Save game is out of date')
+        }
+        const seed = game.seed
+        console.log('Seed:', seed)
+
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = Math.floor((HEIGHT - y) / 2); x < WIDTH - Math.floor(y / 2); x++) {
                 const tile = document.createElement('div');
@@ -60,7 +88,4 @@ function Display() {
     }
 
     init();
-	const seed = +Date.now();
-	console.log(seed);
-    game.init(seed);
 }
