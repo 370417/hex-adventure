@@ -1,16 +1,11 @@
-// Creates a game
-
 this.Game = {
     version: '0.1.0',
     SAVE_NAME: 'hex adventure',
 
     // load save game if it exists, otherwise create a new game
     getGame() {
-        let game = this.load()
-        if (!game) {
-            game = Game.create(Date.now())
-        }
-        if (game.version !== this.version) {
+        let game = Game.load() || Game.create(Date.now())
+        if (game.version !== Game.version) {
             console.warn('Save game is out of date')
         }
         console.log('Seed:', game.seed)
@@ -19,32 +14,25 @@ this.Game = {
 
     create(seed) {
         const game = {
-            version: this.version,
+            version: Game.version,
             seed: seed,
+            schedule: Schedule.create(),
         }
 
         Entity.init(game)
-        Schedule.init(game)
+
+        game.player = {pos: 234}
+        game.level = Level.create(seed, game.player)
 
         return game
     },
 
     save(game) {
-        localStorage[this.SAVE_NAME] = JSON.stringify(game)
+        localStorage[Game.SAVE_NAME] = JSON.stringify(game)
     },
 
     load() {
-        const saveFile = localStorage[this.SAVE_NAME]
-        return saveFile && JSON.parse(saveFile)
-    },
-
-    // precondition: player has just completed an action and has scheduled himself
-    loop(game) {
-        while (true) {
-            const id = Schedule.pop(game)
-            const delay = Actor.act(game, id)
-            if (delay === undefined) break // delay is undefined if the actor needs outside input
-            if (delay !== Infinity) Schedule.push(game, id, delay)
-        }
+        const saveFile = localStorage[Game.SAVE_NAME]
+        return saveFile && JSON.parse(saveFile, Game.reviver)
     },
 }
