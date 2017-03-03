@@ -1,11 +1,5 @@
 // Generates a new level
 
-function forEach(obj, fun, ...args) {
-    for (const key in obj) {
-        fun(Number(key), ...args)
-    }
-}
-
 this.Level = {
     WIDTH: 48,
     HEIGHT: 31,
@@ -21,52 +15,49 @@ this.Level = {
         removeSmallWalls()
         const size = removeOtherCaves()
         if (size < WIDTH * HEIGHT / 4) {
-            return Level.create({player, seed: random()})
+            return Level.create(random(), player)
         }
         fillSmallCaves()
 
 
         function createRandomWeights() {
-            const weights = new Map()
+            const weights = {}
             Level.forEachInnerPos(pos => {
-                weights.set(pos, random())
+                weights[pos] = random()
             })
             return weights
         }
 
 
         function createTypes() {
-            const types = new Map()
+            const types = {}
             Level.forEachPos(pos => {
-                if (pos === player.pos) {
-                    types.set(pos, FLOOR)
-                } else {
-                    types.set(pos, WALL)
-                }
+                types[pos] = WALL
             })
+            types[player.pos] = FLOOR
             return types
         }
 
 
         function createActors() {
-            const actors = new Map()
-            actors.set(player.pos, player)
+            const actors = {}
+            actors[player.pos] = player
             return actors
         }
 
 
         function isFloor(pos) {
-            return types.get(pos) === FLOOR
+            return types[pos] === FLOOR
         }
 
 
         function passable(pos) {
-            return types.get(pos) === FLOOR || types.get(pos) === SHALLOW_WATER
+            return types[pos] === FLOOR || types[pos] === SHALLOW_WATER
         }
 
 
         function isWall(pos) {
-            return Level.inBounds(pos) && types.get(pos) === WALL
+            return Level.inBounds(pos) && types[pos] === WALL
         }
 
 
@@ -101,7 +92,7 @@ this.Level = {
             Level.forEachInnerPos(pos => innerPositions.push(pos))
             shuffle(Array.from(innerPositions), random).forEach(pos => {
                 if (isWall(pos) && countGroups(pos, passable) !== 1) {
-                    types.set(pos, FLOOR)
+                    types[pos] = FLOOR
                 }
             })
         }
@@ -111,9 +102,7 @@ this.Level = {
             const visited = new Set()
             Level.forEachInnerPos(pos => {
                 const wallGroup = new Set()
-                const floodable = pos => isWall(pos)
-                && !wallGroup.has(pos)
-                && !visited.has(pos)
+                const floodable = pos => isWall(pos) && !wallGroup.has(pos) && !visited.has(pos)
                 const flood = pos => {
                     visited.add(pos)
                     wallGroup.add(pos)
@@ -122,7 +111,7 @@ this.Level = {
 
                 if (wallGroup.size < 6) {
                     for (const pos of wallGroup) {
-                        types.set(pos, FLOOR)
+                        types[pos] = FLOOR
                     }
                 }
             })
@@ -134,8 +123,8 @@ this.Level = {
             floodfillSet(player.pos, passable, mainCave)
 
             Level.forEachInnerPos(pos => {
-                if (types.get(pos) === FLOOR && !mainCave.has(pos)) {
-                    types.set(pos, WALL)
+                if (types[pos] === FLOOR && !mainCave.has(pos)) {
+                    types[pos] = WALL
                 }
             })
 
@@ -162,7 +151,7 @@ this.Level = {
 
         function fillDeadEnd(pos) {
             if (isDeadEnd(pos)) {
-                types.set(pos, WALL)
+                types[pos] = WALL
                 forEachNeighbor(pos, neighbor => {
                     if (pos === player.pos && passable(neighbor)) {
                         player.pos = neighbor
@@ -182,7 +171,7 @@ this.Level = {
                 floodfillSet(pos, isCave, cave)
 
                 if (cave.size === 2 || cave.size === 3) {
-                    types.set(pos, WALL)
+                    types[pos] = WALL
                     for (const pos of cave) {
                         fillDeadEnd(pos)
                     }
