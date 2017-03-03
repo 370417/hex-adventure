@@ -1,19 +1,23 @@
 // manages entities
 
-this.Entity = {
-    init(game) {
-        game.entities = {}
-        game.nextEntityId = 1
-    },
+this.Entities = {
+    create() {
+        return {
+            collection: {},
+            nextEntityId: 1,
+        }
+    }
+}
 
-    create(game) {
-        const entity = {id: game.nextEntityId}
-        game.entities[entity.id] = entity
-        game.nextEntityId++
+this.Entity = {
+    create(entities) {
+        const entity = {id: entities.nextEntityId}
+        entities.collection[entity.id] = entity
+        entities.nextEntityId++
         return entity
     },
 
-    get(game, id) {
-        return game.entities[id]
+    get(entities, id) {
+        return entities.collection[id]
     },
 }

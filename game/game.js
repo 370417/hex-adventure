@@ -17,9 +17,8 @@ this.Game = {
             version: Game.version,
             seed: seed,
             schedule: Schedule.create(),
+            entities: Entities.create(),
         }
-
-        Entity.init(game)
 
         game.player = {pos: 234}
         game.level = Level.create(seed, game.player)
