@@ -12,8 +12,6 @@ this.Level = {
 
     create(seed, player) {
         const random = alea(seed)
-        const positions = createPositions()
-        const innerPositions = createInnerPositions()
         const types = createTypes()
         const weights = createRandomWeights()
         const actors = createActors()
@@ -28,46 +26,24 @@ this.Level = {
         fillSmallCaves()
 
 
-        function createPositions() {
-            const positions = new Set()
-            for (let y = 0; y < HEIGHT; y++) {
-                for (let x = Math.floor((HEIGHT - y) / 2); x < WIDTH - Math.floor(y / 2); x++) {
-                    positions.add(xy2pos(x, y))
-                }
-            }
-            return positions
-        }
-
-
-        function createInnerPositions() {
-            const innerPositions = new Set()
-            for (let y = 1; y < HEIGHT - 1; y++) {
-                for (let x = Math.floor((HEIGHT - y) / 2) + 1; x < WIDTH - Math.floor(y / 2) - 1; x++) {
-                    innerPositions.add(xy2pos(x, y))
-                }
-            }
-            return innerPositions
-        }
-
-
         function createRandomWeights() {
             const weights = new Map()
-            for (const pos of innerPositions) {
+            Level.forEachInnerPos(pos => {
                 weights.set(pos, random())
-            }
+            })
             return weights
         }
 
 
         function createTypes() {
             const types = new Map()
-            for (const pos of positions) {
+            Level.forEachPos(pos => {
                 if (pos === player.pos) {
                     types.set(pos, FLOOR)
                 } else {
                     types.set(pos, WALL)
                 }
-            }
+            })
             return types
         }
 
@@ -90,7 +66,7 @@ this.Level = {
 
 
         function isWall(pos) {
-            return positions.has(pos) && types.get(pos) === WALL
+            return Level.inBounds(pos) && types.get(pos) === WALL
         }
 
 
@@ -121,6 +97,8 @@ this.Level = {
 
 
         function carveCaves() {
+            const innerPositions = [];
+            Level.forEachInnerPos(pos => innerPositions.push(pos))
             shuffle(Array.from(innerPositions), random).forEach(pos => {
                 if (isWall(pos) && countGroups(pos, passable) !== 1) {
                     types.set(pos, FLOOR)
@@ -131,7 +109,7 @@ this.Level = {
 
         function removeSmallWalls() {
             const visited = new Set()
-            for (const pos of innerPositions) {
+            Level.forEachInnerPos(pos => {
                 const wallGroup = new Set()
                 const floodable = pos => isWall(pos)
                 && !wallGroup.has(pos)
@@ -147,7 +125,7 @@ this.Level = {
                         types.set(pos, FLOOR)
                     }
                 }
-            }
+            })
         }
 
 
@@ -155,11 +133,11 @@ this.Level = {
             const mainCave = new Set()
             floodfillSet(player.pos, passable, mainCave)
 
-            for (const pos of innerPositions) {
+            Level.forEachInnerPos(pos => {
                 if (types.get(pos) === FLOOR && !mainCave.has(pos)) {
                     types.set(pos, WALL)
                 }
-            }
+            })
 
             return mainCave.size
         }
@@ -198,7 +176,7 @@ this.Level = {
         function fillSmallCaves() {
             // can't skip visited tiles here because previous caves can be affected
             // by the removal of later ones
-            for (const pos of innerPositions) {
+            Level.forEachInnerPos(pos => {
                 fillDeadEnd(pos)
                 const cave = new Set()
                 floodfillSet(pos, isCave, cave)
@@ -209,22 +187,38 @@ this.Level = {
                         fillDeadEnd(pos)
                     }
                 }
-            }
+            })
         }
 
 
         return {
-            positions,
-            innerPositions,
             types,
             actors,
         }
     },
 
+    xmin(y) {
+        return Math.floor((this.HEIGHT - y) / 2)
+    },
+
+    xmax(y) {
+        return WIDTH - Math.floor(y / 2)
+    },
+
+    inBounds(pos) {
+        const {x, y} = pos2xy(pos)
+        return y >= 0 && y < Level.HEIGHT && x >= Level.xmin(y) && x < Level.xmax(y)
+    },
+
+    inInnerBounds(pos) {
+        const {x, y} = pos2xy(pos)
+        return y > 0 && y < Level.HEIGHT - 1 && x > Level.xmin(y) && x < Level.xmax(y) - 1
+    },
+
     forEachPos(fun) {
-        for (let y = 0; y < this.HEIGHT; y++) {
-            const xmin = Math.floor((this.HEIGHT - y) / 2)
-            const xmax = WIDTH - Math.floor(y / 2)
+        for (let y = 0; y < Level.HEIGHT; y++) {
+            const xmin = Level.xmin(y)
+            const xmax = Level.xmax(y)
             for (let x = xmin; x < xmax; x++) {
                 fun(xy2pos(x, y), x, y)
             }
@@ -232,10 +226,10 @@ this.Level = {
     },
 
     forEachInnerPos(fun) {
-        for (let y = 1; y < this.HEIGHT - 1; y++) {
-            const xmin = Math.floor((this.HEIGHT - y) / 2)
-            const xmax = WIDTH - Math.floor(y / 2)
-            for (let x = xmin + 1; x < xmax - 1; x++) {
+        for (let y = 1; y < Level.HEIGHT - 1; y++) {
+            const xmin = Level.xmin(y) + 1
+            const xmax = Level.xmax(y) - 1
+            for (let x = xmin; x < xmax; x++) {
                 fun(xy2pos(x, y), x, y)
             }
         }
