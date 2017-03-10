@@ -19,7 +19,6 @@ this.Level = {
         }
         fillSmallCaves()
 
-
         function createRandomWeights() {
             const weights = {}
             Level.forEachInnerPos(pos => {
@@ -27,7 +26,6 @@ this.Level = {
             })
             return weights
         }
-
 
         function createTypes() {
             const types = {}
@@ -38,28 +36,23 @@ this.Level = {
             return types
         }
 
-
         function createActors() {
             const actors = {}
             actors[player.pos] = player
             return actors
         }
 
-
         function isFloor(pos) {
             return types[pos] === Tiles.FLOOR
         }
-
 
         function passable(pos) {
             return types[pos] === Tiles.FLOOR || types[pos] === Tiles.SHALLOW_WATER
         }
 
-
         function isWall(pos) {
             return Level.inBounds(pos) && types[pos] === Tiles.WALL
         }
-
 
         function makeLake() {
             const center = shuffle(Array.from(innerPositions), random)[0]
@@ -81,11 +74,9 @@ this.Level = {
             return lake
         }
 
-
         function makeLakes() {
             makeLake()
         }
-
 
         function carveCaves() {
             const innerPositions = [];
@@ -96,7 +87,6 @@ this.Level = {
                 }
             })
         }
-
 
         function removeSmallWalls() {
             const visited = new Set()
@@ -117,7 +107,6 @@ this.Level = {
             })
         }
 
-
         function removeOtherCaves() {
             const mainCave = new Set()
             floodfillSet(player.pos, passable, mainCave)
@@ -131,23 +120,19 @@ this.Level = {
             return mainCave.size
         }
 
-
         function isCave(pos) {
             return isFloor(pos) && countGroups(pos, passable) === 1
         }
 
-
         function isNotCave(pos) {
             return isWall(pos) || countGroups(pos, passable) !== 1
         }
-
 
         function isDeadEnd(pos) {
             return isFloor(pos)
             && countGroups(pos, passable) === 1
             && surrounded(pos, isNotCave)
         }
-
 
         function fillDeadEnd(pos) {
             if (isDeadEnd(pos)) {
@@ -160,7 +145,6 @@ this.Level = {
                 })
             }
         }
-
 
         function fillSmallCaves() {
             // can't skip visited tiles here because previous caves can be affected
@@ -178,7 +162,6 @@ this.Level = {
                 }
             })
         }
-
 
         return {
             types,
