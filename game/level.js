@@ -32,9 +32,9 @@ this.Level = {
         function createTypes() {
             const types = {}
             Level.forEachPos(pos => {
-                types[pos] = WALL
+                types[pos] = Tiles.WALL
             })
-            types[player.pos] = FLOOR
+            types[player.pos] = Tiles.FLOOR
             return types
         }
 
@@ -47,17 +47,17 @@ this.Level = {
 
 
         function isFloor(pos) {
-            return types[pos] === FLOOR
+            return types[pos] === Tiles.FLOOR
         }
 
 
         function passable(pos) {
-            return types[pos] === FLOOR || types[pos] === SHALLOW_WATER
+            return types[pos] === Tiles.FLOOR || types[pos] === Tiles.SHALLOW_WATER
         }
 
 
         function isWall(pos) {
-            return Level.inBounds(pos) && types[pos] === WALL
+            return Level.inBounds(pos) && types[pos] === Tiles.WALL
         }
 
 
@@ -74,7 +74,7 @@ this.Level = {
             const lake = flowmap(center, 1, neighbors, cost)
 
             for ([pos, val] of lake) {
-                const type = val < 0.6 ? DEEP_WATER : SHALLOW_WATER
+                const type = val < 0.6 ? Tiles.DEEP_WATER : Tiles.SHALLOW_WATER
                 types.set(pos, type)
             }
 
@@ -92,7 +92,7 @@ this.Level = {
             Level.forEachInnerPos(pos => innerPositions.push(pos))
             shuffle(Array.from(innerPositions), random).forEach(pos => {
                 if (isWall(pos) && countGroups(pos, passable) !== 1) {
-                    types[pos] = FLOOR
+                    types[pos] = Tiles.FLOOR
                 }
             })
         }
@@ -111,7 +111,7 @@ this.Level = {
 
                 if (wallGroup.size < 6) {
                     for (const pos of wallGroup) {
-                        types[pos] = FLOOR
+                        types[pos] = Tiles.FLOOR
                     }
                 }
             })
@@ -123,8 +123,8 @@ this.Level = {
             floodfillSet(player.pos, passable, mainCave)
 
             Level.forEachInnerPos(pos => {
-                if (types[pos] === FLOOR && !mainCave.has(pos)) {
-                    types[pos] = WALL
+                if (types[pos] === Tiles.FLOOR && !mainCave.has(pos)) {
+                    types[pos] = Tiles.WALL
                 }
             })
 
@@ -151,7 +151,7 @@ this.Level = {
 
         function fillDeadEnd(pos) {
             if (isDeadEnd(pos)) {
-                types[pos] = WALL
+                types[pos] = Tiles.WALL
                 forEachNeighbor(pos, neighbor => {
                     if (pos === player.pos && passable(neighbor)) {
                         player.pos = neighbor
@@ -171,7 +171,7 @@ this.Level = {
                 floodfillSet(pos, isCave, cave)
 
                 if (cave.size === 2 || cave.size === 3) {
-                    types[pos] = WALL
+                    types[pos] = Tiles.WALL
                     for (const pos of cave) {
                         fillDeadEnd(pos)
                     }
