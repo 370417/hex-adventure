@@ -16,7 +16,7 @@ this.Game = {
         const game = {
             version: Game.version,
             seed: seed,
-            schedule: Schedule.create(),
+            schedule: [],
             entities: Entities.create(),
         }
 

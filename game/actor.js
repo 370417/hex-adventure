@@ -1,6 +1,6 @@
 this.Behavior = {
     player(game) {
-
+        return true
     },
 }
 
@@ -11,10 +11,11 @@ this.Actor = {
         return actor
     },
 
-    act(game, id) {
+    step(game) {
+        const id = game.schedule.shift()
         const entity = Entity.get(game, id)
         // Actor.behaviors[entity.behavior](game)
-        Behavior[entity.type](game)
+        return Behavior[entity.type](game)
     },
 
     loop(game) {

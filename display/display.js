@@ -11,6 +11,14 @@ this.Display = {
         this.createTiles()
     },
 
+    loop() {
+        let waitForInput = false
+        let waitForAnimation = false
+        while (!waitForInput && !waitForAnimation) {
+            waitForInput = Actor.step(Display.game)
+        }
+    },
+
     positionTile(tile, x, y) {
         const realx = (x - (Level.HEIGHT - y - 1) / 2) * this.xu
         const realy = (y - 1) * this.smallyu + this.bigyu
