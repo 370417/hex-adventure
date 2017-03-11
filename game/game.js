@@ -17,10 +17,13 @@ this.Game = {
             version: Game.version,
             seed: seed,
             schedule: [],
-            entities: Entities.create(),
+            entities: {nextId: 1},
         }
 
-        game.player = {pos: 234}
+        game.player = Entity.create(game.entities)
+        game.player.pos = 234
+        game.player.type = 'player'
+        game.schedule.unshift(game.player.id)
         game.level = Level.create(seed, game.player)
 
         return game

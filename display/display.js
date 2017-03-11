@@ -8,15 +8,25 @@ this.Display = {
     game: Game.getGame(),
 
     init() {
-        this.createTiles()
+        Display.createTiles()
+        Display.loop()
     },
 
     loop() {
-        let waitForInput = false
-        let waitForAnimation = false
-        while (!waitForInput && !waitForAnimation) {
-            waitForInput = Actor.step(Display.game)
+        let delay = 0
+        while (!delay) {
+            delay = Actor.step(Display.game)
         }
+        Display.render(Display.game)
+        if (delay === Infinity) {
+            save()
+        } else {
+            Display.defer(loop, delay)
+        }
+    },
+
+    defer(fun, frames) {
+
     },
 
     positionTile(tile, x, y) {
