@@ -1,0 +1,1 @@
+export declare function alea(seed: number): () => number

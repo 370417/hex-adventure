@@ -11,6 +11,14 @@ const vals = [//             ,          ,              ,         ],
 ]
 
 
+export enum Tile  {
+    null,
+    wall,
+    floor,
+}
+
+
+
 // const Tiles = {}
 // for (let i = 0; i < vals.length; i++) {
 //     const properties = vals[i]
@@ -22,8 +30,3 @@ const vals = [//             ,          ,              ,         ],
 //     this[name] = name
 //     Tiles[name] = tile
 // }
-
-const Tiles = {}
-for (let i = 0; i < vals.length; i++) {
-    Tiles[vals[i][0]] = i;
-}

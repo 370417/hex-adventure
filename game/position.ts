@@ -1,5 +1,7 @@
 // Helper functions for working with positions
 
+import { Heap } from '../lib/heap'
+
 const WIDTH = 48
 const HEIGHT = 31
 
@@ -13,12 +15,12 @@ const dir11 = -WIDTH
 const directions = [dir1, dir3, dir5, dir7, dir9, dir11]
 
 
-function xy2pos(x, y) {
+export function xy2pos(x, y) {
     return x + y * WIDTH
 }
 
 
-function pos2xy(pos) {
+export function pos2xy(pos) {
     return {
         x: pos % WIDTH,
         y: Math.floor(pos / WIDTH),
@@ -26,7 +28,7 @@ function pos2xy(pos) {
 }
 
 
-function countGroups(pos, ingroup) {
+export function countGroups(pos, ingroup) {
     // use var instead of let because
     // chrome can't optimize compound let assignment
     var groupcount = 0
@@ -45,7 +47,7 @@ function countGroups(pos, ingroup) {
 }
 
 
-function floodfill(pos, floodable, flood) {
+export function floodfill(pos, floodable, flood) {
     if (floodable(pos)) {
         flood(pos)
         for (let i = 0; i < 6; i++) {
@@ -55,7 +57,7 @@ function floodfill(pos, floodable, flood) {
 }
 
 
-function floodfillSet(pos, passable, visited) {
+export function floodfillSet(pos, passable, visited) {
     if (passable(pos) && !visited.has(pos)) {
         visited.add(pos)
         forEachNeighbor(pos, neighbor => {
@@ -65,7 +67,7 @@ function floodfillSet(pos, passable, visited) {
 }
 
 
-function surrounded(pos, istype) {
+export function surrounded(pos, istype) {
     for (let i = 0; i < 6; i++) {
         if (!istype(pos + directions[i])) {
             return false
@@ -75,18 +77,18 @@ function surrounded(pos, istype) {
 }
 
 
-function forEachNeighbor(pos, callback) {
+export function forEachNeighbor(pos, callback) {
     for (let i = 0; i < 6; i++) {
         callback(pos + directions[i])
     }
 }
 
 
-function flowmap(startpos, range, forEachNeighbor, cost) {
+export function flowmap(startpos, range, forEachNeighbor, cost) {
     const open = new Map(); // map of positions to net cost
     open.set(startpos, 0)
     const closed = new Map()
-    const openHeap = new Heap((a, b) => open.get(a) - open.get(b))
+    const openHeap = new Heap<number>((a, b) => open.get(a) - open.get(b))
     openHeap.push(startpos)
 
     while (!openHeap.empty()) {

@@ -5,7 +5,7 @@ function randint(min, max, random) {
 }
 
 
-function shuffle(array, random) {
+export function shuffle(array, random) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = randint(0, i, random)
         const tempi = array[i]
