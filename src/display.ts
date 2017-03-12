@@ -11,7 +11,6 @@ const tiles: {[pos: number]: HTMLDivElement} = {}
 const game = getGame()
 
 export function init(): void {
-    console.log('hid')
     createTiles()
     loop()
 }
