@@ -1,5 +1,5 @@
 export default {
-    entry: 'js/src/index.js',
+    entry: 'js/index.js',
     format: 'iife',
     dest: 'build/script.js',
     external: ['alea', 'heap'],
