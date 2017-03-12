@@ -5,6 +5,7 @@ this.Display = {
     smallyu: 16,
     bigyu: 24,
     root: document.getElementById('game'),
+    tiles: {},
     game: Game.getGame(),
 
     init() {
@@ -19,14 +20,25 @@ this.Display = {
         }
         Display.render(Display.game)
         if (delay === Infinity) {
-            save()
+            Game.save(Display.game)
         } else {
             Display.defer(loop, delay)
         }
     },
 
     defer(fun, frames) {
+        if (frames) {
+            requestAnimationFrame(() => defer(fun, frames - 1))
+        }
+        fun()
+    },
 
+    render(game) {
+        Level.forEachPos(pos => {
+            const type = game.level.types[pos]
+            const tile = Display.tiles[pos]
+            tile.dataset.type = vals[type][0]
+        })
     },
 
     positionTile(tile, x, y) {
@@ -46,6 +58,7 @@ this.Display = {
             tile.dataset.type = 'NULL'
             this.positionTile(tile, x, y)
             tiles.appendChild(tile)
+            Display.tiles[pos] = tile
         })
 
         this.root.appendChild(tiles)

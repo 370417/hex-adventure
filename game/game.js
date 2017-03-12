@@ -37,4 +37,8 @@ this.Game = {
         const saveFile = localStorage[Game.SAVE_NAME]
         return saveFile && JSON.parse(saveFile, Game.reviver)
     },
+
+    reset() {
+        localStorage.removeItem(Game.SAVE_NAME)
+    },
 }

@@ -16,7 +16,7 @@ this.Actor = {
     },
 
     step(game) {
-        const id = game.schedule.shift()
+        const id = game.schedule[0]
         const entity = game.entities[id]
         return Behavior[entity.type](game)
     },
