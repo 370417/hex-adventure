@@ -1,6 +1,6 @@
 // Helper functions for working with positions
 
-import { Heap } from '../lib/heap'
+import Heap from 'heap'
 
 const WIDTH = 48
 const HEIGHT = 31
@@ -15,12 +15,12 @@ const dir11 = -WIDTH
 const directions = [dir1, dir3, dir5, dir7, dir9, dir11]
 
 
-export function xy2pos(x, y) {
+export function xy2pos(x: number, y: number): number {
     return x + y * WIDTH
 }
 
 
-export function pos2xy(pos) {
+export function pos2xy(pos: number): {x: number, y: number} {
     return {
         x: pos % WIDTH,
         y: Math.floor(pos / WIDTH),
@@ -28,7 +28,7 @@ export function pos2xy(pos) {
 }
 
 
-export function countGroups(pos, ingroup) {
+export function countGroups(pos: number, ingroup: (pos: number) => boolean): number {
     // use var instead of let because
     // chrome can't optimize compound let assignment
     var groupcount = 0
@@ -47,7 +47,7 @@ export function countGroups(pos, ingroup) {
 }
 
 
-export function floodfill(pos, floodable, flood) {
+export function floodfill(pos: number, floodable: (pos: number) => boolean, flood: (pos: number) => void): void {
     if (floodable(pos)) {
         flood(pos)
         for (let i = 0; i < 6; i++) {
@@ -57,7 +57,7 @@ export function floodfill(pos, floodable, flood) {
 }
 
 
-export function floodfillSet(pos, passable, visited) {
+export function floodfillSet(pos: number, passable: (pos: number) => boolean, visited: Set<number>) {
     if (passable(pos) && !visited.has(pos)) {
         visited.add(pos)
         forEachNeighbor(pos, neighbor => {
@@ -67,7 +67,7 @@ export function floodfillSet(pos, passable, visited) {
 }
 
 
-export function surrounded(pos, istype) {
+export function surrounded(pos: number, istype: (pos: number) => boolean) {
     for (let i = 0; i < 6; i++) {
         if (!istype(pos + directions[i])) {
             return false
@@ -77,17 +77,17 @@ export function surrounded(pos, istype) {
 }
 
 
-export function forEachNeighbor(pos, callback) {
+export function forEachNeighbor(pos: number, callback: (pos: number) => void): void {
     for (let i = 0; i < 6; i++) {
         callback(pos + directions[i])
     }
 }
 
 
-export function flowmap(startpos, range, forEachNeighbor, cost) {
-    const open = new Map(); // map of positions to net cost
+export function flowmap(startpos: number, range: number, forEachNeighbor: (pos: number, callback: (pos: number) => void) => void, cost: (pos: number) => number): Map<number, number> {
+    const open = new Map<number, number>() // map of positions to net cost
     open.set(startpos, 0)
-    const closed = new Map()
+    const closed = new Map<number, number>()
     const openHeap = new Heap<number>((a, b) => open.get(a) - open.get(b))
     openHeap.push(startpos)
 

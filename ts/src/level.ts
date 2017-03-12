@@ -1,8 +1,8 @@
 import { Tile } from './tile'
-import { Entity } from './entity'
+import { Entity } from 'entity'
 import { floodfill, floodfillSet, countGroups, surrounded, forEachNeighbor, xy2pos, pos2xy } from './position'
 import { shuffle } from './random'
-import { alea } from '../lib/alea'
+import Alea from 'alea'
 
 export interface Level {
     types: {[pos: number]: Tile},
@@ -12,8 +12,8 @@ export interface Level {
 export const WIDTH = 48
 export const HEIGHT = 31
 
-export function createLevel(seed: number, player): Level {
-    const random = alea(seed)
+export function createLevel(seed: number, player: Entity): Level {
+    const random = Alea(seed)
     const types = createTypes()
     const weights = createRandomWeights()
     const actors = createActors()
@@ -28,7 +28,7 @@ export function createLevel(seed: number, player): Level {
     fillSmallCaves()
 
     function createRandomWeights() {
-        const weights = {}
+        const weights: {[pos: number]: number} = {}
         forEachInnerPos(pos => {
             weights[pos] = random()
         })
@@ -36,7 +36,7 @@ export function createLevel(seed: number, player): Level {
     }
 
     function createTypes() {
-        const types = {}
+        const types: {[pos: number]: Tile} = {}
         forEachPos(pos => {
             types[pos] = Tile.wall
         })
@@ -45,7 +45,7 @@ export function createLevel(seed: number, player): Level {
     }
 
     function createActors() {
-        const actors = {}
+        const actors: {[pos: number]: Entity} = {}
         actors[player.pos] = player
         return actors
     }
@@ -87,7 +87,7 @@ export function createLevel(seed: number, player): Level {
     // }
 
     function carveCaves(): void {
-        const innerPositions = [];
+        const innerPositions: Array<number> = [];
         forEachInnerPos(pos => innerPositions.push(pos))
         shuffle(Array.from(innerPositions), random).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
@@ -97,11 +97,11 @@ export function createLevel(seed: number, player): Level {
     }
 
     function removeSmallWalls(): void {
-        const visited = new Set()
+        const visited = new Set<number>()
         forEachInnerPos(pos => {
-            const wallGroup = new Set()
-            const floodable = pos => isWall(pos) && !wallGroup.has(pos) && !visited.has(pos)
-            const flood = pos => {
+            const wallGroup = new Set<number>()
+            const floodable = (pos: number): boolean => isWall(pos) && !wallGroup.has(pos) && !visited.has(pos)
+            const flood = (pos: number): void => {
                 visited.add(pos)
                 wallGroup.add(pos)
             }
@@ -178,7 +178,7 @@ export function createLevel(seed: number, player): Level {
 }
 
 function xmin(y: number): number {
-    return Math.floor((this.HEIGHT - y) / 2)
+    return Math.floor((HEIGHT - y) / 2)
 }
 
 function xmax(y: number): number {

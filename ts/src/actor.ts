@@ -1,6 +1,6 @@
 import { Game } from './game'
 
-const Behavior = {
+const Behavior: {[actorType: string]: (game: Game) => number} = {
     player(game) {
         return Infinity
     },

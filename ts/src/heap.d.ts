@@ -1,4 +1,4 @@
-export declare class Heap<T> {
+export default class Heap<T> {
     constructor(compareFunction?: (a: T, b: T) => number)
     empty(): boolean
     push(item: T): void

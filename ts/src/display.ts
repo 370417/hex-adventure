@@ -1,16 +1,17 @@
-import { Game, getGame, save } from '../game/game'
-import * as Level from '../game/level'
-import { step } from '../game/actor'
-import { Tile } from '../game/tile'
+import { Game, getGame, save } from './game'
+import * as Level from './level'
+import { step } from './actor'
+import { Tile } from './tile'
 
 const xu = 18
 const smallyu = 16
 const bigyu = 24
 const root = document.getElementById('game')
-const tiles = {}
+const tiles: {[pos: number]: HTMLDivElement} = {}
 const game = getGame()
 
 export function init(): void {
+    console.log('hid')
     createTiles()
     loop()
 }
@@ -43,25 +44,25 @@ function render(game: Game): void {
     })
 }
 
-function positionTile(tile, x, y) {
-    const realx = (x - (Level.HEIGHT - y - 1) / 2) * this.xu
-    const realy = (y - 1) * this.smallyu + this.bigyu
+function positionTile(tile: HTMLDivElement, x: number, y: number): void {
+    const realx = (x - (Level.HEIGHT - y - 1) / 2) * xu
+    const realy = (y - 1) * smallyu + bigyu
     tile.style.left = realx + 'px'
     tile.style.top = realy + 'px'
 }
 
-function createTiles() {
-    const tiles = document.createElement('div')
-    tiles.id = 'tiles'
+function createTiles(): void {
+    const $tiles = document.createElement('div')
+    $tiles.id = 'tiles'
 
     Level.forEachPos((pos, x, y) => {
         const tile = document.createElement('div')
         tile.classList.add('tile')
         tile.dataset.type = 'NULL'
-        this.positionTile(tile, x, y)
-        tiles.appendChild(tile)
+        positionTile(tile, x, y)
+        $tiles.appendChild(tile)
         tiles[pos] = tile
     })
 
-    this.root.appendChild(tiles)
+    root.appendChild($tiles)
 }
