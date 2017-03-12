@@ -1,0 +1,23 @@
+{
+  "name": "hex-adventure",
+  "version": "0.1.0",
+  "description": "Hex-based roguelike game",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/as-f/hex-adventure.git"
+  },
+  "author": "as-f",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/as-f/hex-adventure/issues"
+  },
+  "homepage": "https://github.com/as-f/hex-adventure#readme",
+  "devDependencies": {
+    "rollup": "^0.41.5",
+    "typescript": "^2.2.1"
+  }
+}
