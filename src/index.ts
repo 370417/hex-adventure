@@ -1,3 +1,3 @@
-import { init } from './display'
+import { loop } from './display'
 
-init()
+loop()

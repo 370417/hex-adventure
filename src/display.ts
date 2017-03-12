@@ -7,15 +7,10 @@ const xu = 18
 const smallyu = 16
 const bigyu = 24
 const root = document.getElementById('game')
-const tiles: {[pos: number]: HTMLDivElement} = {}
+const tiles = createTiles()
 const game = getGame()
 
-export function init(): void {
-    createTiles()
-    loop()
-}
-
-function loop(): void {
+export function loop(): void {
     let delay = 0
     while (!delay) {
         delay = step(game)
@@ -50,18 +45,20 @@ function positionTile(tile: HTMLDivElement, x: number, y: number): void {
     tile.style.top = realy + 'px'
 }
 
-function createTiles(): void {
+function createTiles() {
+    const tiles: {[pos: number]: HTMLDivElement} = {}
     const $tiles = document.createElement('div')
     $tiles.id = 'tiles'
 
     Level.forEachPos((pos, x, y) => {
         const tile = document.createElement('div')
         tile.classList.add('tile')
-        tile.dataset.type = 'NULL'
+        tile.dataset.type = 'null'
         positionTile(tile, x, y)
         $tiles.appendChild(tile)
         tiles[pos] = tile
     })
 
     root.appendChild($tiles)
+    return tiles
 }
