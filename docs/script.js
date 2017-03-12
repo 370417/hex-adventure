@@ -330,13 +330,8 @@ const xu = 18;
 const smallyu = 16;
 const bigyu = 24;
 const root = document.getElementById('game');
-const tiles = {};
+const tiles = createTiles();
 const game = getGame();
-function init() {
-    console.log('hid');
-    createTiles();
-    loop();
-}
 function loop() {
     let delay = 0;
     while (!delay) {
@@ -370,20 +365,21 @@ function positionTile(tile, x, y) {
     tile.style.top = realy + 'px';
 }
 function createTiles() {
+    const tiles = {};
     const $tiles = document.createElement('div');
     $tiles.id = 'tiles';
     forEachPos((pos, x, y) => {
         const tile = document.createElement('div');
         tile.classList.add('tile');
-        tile.dataset.type = 'NULL';
+        tile.dataset.type = 'null';
         positionTile(tile, x, y);
         $tiles.appendChild(tile);
         tiles[pos] = tile;
     });
     root.appendChild($tiles);
+    return tiles;
 }
 
-console.log('yo');
-init();
+loop();
 
 }(Heap,Alea));
