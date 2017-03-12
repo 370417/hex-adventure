@@ -18,28 +18,28 @@ html {
 
 /* Tiles */
 
-[data-type='NULL'] {
+[data-type='null'] {
     opacity: 0;
 }
 
-[data-type='WALL'] {
+[data-type='wall'] {
     -webkit-mask: url(tileset.png) 0em 0rem;
     mask: url(tileset.png) 0em 0rem;
     background: #999;
 }
 
-[data-type='FLOOR'] {
+[data-type='floor'] {
     -webkit-mask: url(tileset.png) -1em 0rem;
     mask: url(tileset.png) -1em 0rem;
 }
 
-[data-type='DEEP_WATER'] {
+[data-type='deepWater'] {
     -webkit-mask: url(tileset.png) -5em 0rem;
     mask: url(tileset.png) -5em 0rem;
     background: #44F;
 }
 
-[data-type='SHALLOW_WATER'] {
+[data-type='shallowWater'] {
     -webkit-mask: url(tileset.png) -4em 0rem;
     mask: url(tileset.png) -4em 0rem;
     background: #88F;
