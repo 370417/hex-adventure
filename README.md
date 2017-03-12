@@ -8,7 +8,7 @@ Notable features:
 * Tileset by Oryx
 * Has no gameplay
 
-When the game has gameplay, you will be able to play it [online]().
+When the game has gameplay, you will be able to play it [online](http://as-f.github.io/hex-adventure/).
 
 ## Build and run from source
 
