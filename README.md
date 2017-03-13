@@ -27,4 +27,4 @@ To build:
 npm run build
 ```
 
-To run, open `build/index.html` in a browser.
+To run, open `docs/index.html` in a browser.
