@@ -1,4 +1,4 @@
-// Helper functions for working with positions
+/// helper functions for working with positions
 
 import Heap from 'heap'
 
@@ -14,12 +14,12 @@ const dir11 = -WIDTH
 
 const directions = [dir1, dir3, dir5, dir7, dir9, dir11]
 
-
+/// convert the coordinate pair [x], [y] into an integer position
 export function xy2pos(x: number, y: number): number {
     return x + y * WIDTH
 }
 
-
+/// convert an integer [pos] into the coordinate pair x, y
 export function pos2xy(pos: number): {x: number, y: number} {
     return {
         x: pos % WIDTH,
@@ -27,7 +27,7 @@ export function pos2xy(pos: number): {x: number, y: number} {
     }
 }
 
-
+/// return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup]
 export function countGroups(pos: number, ingroup: (pos: number) => boolean): number {
     // use var instead of let because
     // chrome can't optimize compound let assignment
@@ -46,7 +46,7 @@ export function countGroups(pos: number, ingroup: (pos: number) => boolean): num
     }
 }
 
-
+/// 
 export function floodfill(pos: number, floodable: (pos: number) => boolean, flood: (pos: number) => void): void {
     if (floodable(pos)) {
         flood(pos)
@@ -84,7 +84,12 @@ export function forEachNeighbor(pos: number, callback: (pos: number) => void): v
 }
 
 
-export function flowmap(startpos: number, range: number, forEachNeighbor: (pos: number, callback: (pos: number) => void) => void, cost: (pos: number) => number): Map<number, number> {
+export function flowmap(
+    startpos: number,
+    range: number,
+    forEachNeighbor: (pos: number, callback: (pos: number) => void) => void,
+    cost: (pos: number) => number
+): Map<number, number> {
     const open = new Map<number, number>() // map of positions to net cost
     open.set(startpos, 0)
     const closed = new Map<number, number>()

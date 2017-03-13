@@ -1,3 +1,4 @@
+/// binary heap
 export default class Heap<T> {
     constructor(compareFunction?: (a: T, b: T) => number)
     empty(): boolean

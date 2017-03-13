@@ -1,6 +1,8 @@
 import { Entity, Entities, createEntity } from './entity'
 import { Level, createLevel } from './level'
 
+/// handles game creation, saving, and loading
+
 export interface Game {
     version: string,
     seed: number,

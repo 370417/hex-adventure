@@ -3,6 +3,8 @@ import * as Level from './level'
 import { step } from './actor'
 import { Tile } from './tile'
 
+/// handles displaying the game and the game loop
+
 const xu = 18
 const smallyu = 16
 const bigyu = 24
@@ -10,6 +12,7 @@ const root = document.getElementById('game')
 const tiles = createTiles()
 const game = getGame()
 
+/// advance the gamestate until player input is needed
 export function loop(): void {
     let delay = 0
     while (!delay) {
@@ -23,6 +26,7 @@ export function loop(): void {
     }
 }
 
+/// call [fun] after waiting for [frames]
 function defer(fun: Function, frames: number): void {
     if (frames) {
         requestAnimationFrame(() => defer(fun, frames - 1))
@@ -30,6 +34,7 @@ function defer(fun: Function, frames: number): void {
     fun()
 }
 
+/// render the [game]
 function render(game: Game): void {
     Level.forEachPos(pos => {
         const type = game.level.types[pos]
@@ -38,6 +43,7 @@ function render(game: Game): void {
     })
 }
 
+/// put the [tile] element in the position [x], [y]
 function positionTile(tile: HTMLDivElement, x: number, y: number): void {
     const realx = (x - (Level.HEIGHT - y - 1) / 2) * xu
     const realy = (y - 1) * smallyu + bigyu
@@ -45,6 +51,7 @@ function positionTile(tile: HTMLDivElement, x: number, y: number): void {
     tile.style.top = realy + 'px'
 }
 
+/// create tile elements and return a dict of them by position
 function createTiles() {
     const tiles: {[pos: number]: HTMLDivElement} = {}
     const $tiles = document.createElement('div')
