@@ -19,11 +19,7 @@
   },
   "homepage": "https://github.com/as-f/hex-adventure#readme",
   "devDependencies": {
-    "alea": "0.0.9",
-    "heap": "^0.2.6",
     "rollup": "^0.41.5",
-    "rollup-plugin-commonjs": "^8.0.2",
-    "rollup-plugin-node-resolve": "^2.0.0",
     "typescript": "^2.2.1"
   }
 }
