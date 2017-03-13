@@ -1,4 +1,4 @@
-// Constants for map tiles
+/// constants for map tiles
 
 const keys = ['name'         , 'canWalk', 'transparent', 'canFly']
 const vals = [//             ,          ,              ,         ],

@@ -46,7 +46,8 @@ export function countGroups(pos: number, ingroup: (pos: number) => boolean): num
     }
 }
 
-/// 
+/// [flood] from [pos] as long as neighbors are [floodable]
+/// it is up to [flood] to make sure that [floodable] returns false for visited positions
 export function floodfill(pos: number, floodable: (pos: number) => boolean, flood: (pos: number) => void): void {
     if (floodable(pos)) {
         flood(pos)
@@ -56,7 +57,8 @@ export function floodfill(pos: number, floodable: (pos: number) => boolean, floo
     }
 }
 
-
+/// flood from [pos] as long as neighbors are [passable]
+/// [visited] keeps track of what positions have already been flooded, and is normally set to empty
 export function floodfillSet(pos: number, passable: (pos: number) => boolean, visited: Set<number>) {
     if (passable(pos) && !visited.has(pos)) {
         visited.add(pos)
@@ -66,7 +68,7 @@ export function floodfillSet(pos: number, passable: (pos: number) => boolean, vi
     }
 }
 
-
+/// whether [istype] is true for all positions surrounding [pos]
 export function surrounded(pos: number, istype: (pos: number) => boolean) {
     for (let i = 0; i < 6; i++) {
         if (!istype(pos + directions[i])) {
@@ -76,14 +78,15 @@ export function surrounded(pos: number, istype: (pos: number) => boolean) {
     return true
 }
 
-
+/// calls [callback] for each position neighboring [pos]
 export function forEachNeighbor(pos: number, callback: (pos: number) => void): void {
     for (let i = 0; i < 6; i++) {
         callback(pos + directions[i])
     }
 }
 
-
+/// A* with limited range and no heuristic
+/// returns a map of visited positions to net cost
 export function flowmap(
     startpos: number,
     range: number,
