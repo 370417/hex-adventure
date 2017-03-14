@@ -101,7 +101,7 @@ export function flowmap(
 
     while (!openHeap.empty()) {
         const pos = openHeap.pop()
-        const netCost = open.get(pos)
+        const netCost = <number> open.get(pos)
         if (netCost > range) {
             return closed
         }

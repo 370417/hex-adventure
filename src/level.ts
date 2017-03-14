@@ -218,7 +218,7 @@ function inInnerBounds(pos: number): boolean {
 }
 
 interface posCallback {
-    (pos: number, x?: number, y?: number): any
+    (pos: number, x: number, y: number): any
 }
 
 /// call [fun] for each position in the level

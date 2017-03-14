@@ -1,5 +1,6 @@
 import { Entity, Entities, createEntity } from './entity'
-import { Level, createLevel } from './level'
+import { Level, createLevel, HEIGHT, WIDTH } from './level'
+import { xy2pos } from './position'
 
 /// handles game creation, saving, and loading
 
@@ -18,7 +19,7 @@ export interface Game {
 const version = '0.1.0'
 const SAVE_NAME = 'hex adventure'
 
-// load save game if it exists, otherwise create a new game
+/// load save game if it exists, otherwise create a new game
 export function getGame(): Game {
     let game = load() || create(Date.now())
     if (game.version !== version) {
@@ -32,7 +33,7 @@ function create(seed:number): Game {
     const schedule = []
     const entities = {nextId: 1}
     const player = createEntity(entities)
-    player.pos = 234
+    player.pos = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2))
     player.type = 'player'
     schedule.unshift(player.id)
     const level = createLevel(seed, player)
