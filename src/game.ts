@@ -50,6 +50,6 @@ function load(): Game | void {
     return saveFile && JSON.parse(saveFile)
 }
 
-function reset(): void {
+function deleteSave(): void {
     localStorage.removeItem(SAVE_NAME)
 }
