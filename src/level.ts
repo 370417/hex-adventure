@@ -8,7 +8,7 @@ import Alea from 'alea'
 
 export interface Level {
     types: {[pos: number]: Tile},
-    actors: {[pos: number]: Entity},
+    actors: {[pos: number]: number},
 }
 
 export const WIDTH = 48
@@ -25,6 +25,7 @@ export function createLevel(seed: number, player: Entity): Level {
     carveCaves()
     removeSmallWalls()
     const size = removeOtherCaves()
+    console.log(size)
     if (size < WIDTH * HEIGHT / 4) {
         return createLevel(random(), player)
     }
@@ -44,32 +45,32 @@ export function createLevel(seed: number, player: Entity): Level {
     function createTypes() {
         const types: {[pos: number]: Tile} = {}
         forEachPos(pos => {
-            types[pos] = Tile.wall
+            types[pos] = 'wall'
         })
-        types[player.pos] = Tile.floor
+        types[player.pos] = 'floor'
         return types
     }
 
     /// return a dict of positions to actor ids
     function createActors() {
-        const actors: {[pos: number]: Entity} = {}
-        actors[player.pos] = player
+        const actors: {[pos: number]: number} = {}
+        actors[player.pos] = player.id
         return actors
     }
 
     /// whether the tile at [pos] is a floor tile
     function isFloor(pos: number): boolean {
-        return types[pos] === Tile.floor
+        return types[pos] === 'floor'
     }
 
     /// whether the tile at [pos] is passable
     function passable(pos: number): boolean {
-        return types[pos] === Tile.floor// || types[pos] === Tiles.SHALLOW_WATER
+        return types[pos] === 'floor'// || types[pos] === '.'SHALLOW_WATER
     }
 
     /// whether the tile at [pos] is a wall tile
     function isWall(pos: number): boolean {
-        return inBounds(pos) && types[pos] === Tile.wall
+        return inBounds(pos) && types[pos] === 'wall'
     }
 
     // function makeLake() {
@@ -85,7 +86,7 @@ export function createLevel(seed: number, player: Entity): Level {
     //     const lake = flowmap(center, 1, neighbors, cost)
 
     //     for ([pos, val] of lake) {
-    //         const type = val < 0.6 ? Tiles.DEEP_WATER : Tiles.SHALLOW_WATER
+    //         const type = val < 0.6 ? '.'DEEP_WATER : '.'SHALLOW_WATER
     //         types.set(pos, type)
     //     }
 
@@ -102,7 +103,7 @@ export function createLevel(seed: number, player: Entity): Level {
         forEachInnerPos(pos => innerPositions.push(pos))
         shuffle(Array.from(innerPositions), random).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
-                types[pos] = Tile.floor
+                types[pos] = 'floor'
             }
         })
     }
@@ -121,7 +122,7 @@ export function createLevel(seed: number, player: Entity): Level {
 
             if (wallGroup.size < 6) {
                 for (const pos of wallGroup) {
-                    types[pos] = Tile.floor
+                    types[pos] = 'floor'
                 }
             }
         })
@@ -133,8 +134,8 @@ export function createLevel(seed: number, player: Entity): Level {
         floodfillSet(player.pos, passable, mainCave)
 
         forEachInnerPos(pos => {
-            if (types[pos] === Tile.floor && !mainCave.has(pos)) {
-                types[pos] = Tile.wall
+            if (types[pos] === 'floor' && !mainCave.has(pos)) {
+                types[pos] = 'wall'
             }
         })
 
@@ -161,7 +162,7 @@ export function createLevel(seed: number, player: Entity): Level {
     /// recursively fill a dead end
     function fillDeadEnd(pos: number): void {
         if (isDeadEnd(pos)) {
-            types[pos] = Tile.wall
+            types[pos] = 'wall'
             forEachNeighbor(pos, neighbor => {
                 if (pos === player.pos && passable(neighbor)) {
                     player.pos = neighbor
@@ -181,7 +182,7 @@ export function createLevel(seed: number, player: Entity): Level {
             floodfillSet(pos, isCave, cave)
 
             if (cave.size === 2 || cave.size === 3) {
-                types[pos] = Tile.wall
+                types[pos] = 'wall'
                 for (const pos of cave) {
                     fillDeadEnd(pos)
                 }

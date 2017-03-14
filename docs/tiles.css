@@ -45,6 +45,11 @@ html {
     background: #88F;
 }
 
+[data-type='player'] {
+    -webkit-mask: url(tileset.png) 0em -1rem;
+    mask: url(tileset.png) 0em -1rem;
+}
+
 /* Colors */
 
 .black {

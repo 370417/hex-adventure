@@ -37,9 +37,15 @@ function defer(fun: Function, frames: number): void {
 /// render the [game]
 function render(game: Game): void {
     Level.forEachPos(pos => {
-        const type = game.level.types[pos]
-        const tile = tiles[pos]
-        tile.dataset.type = Tile[type]
+        const $tile = tiles[pos]
+        const actorId = game.level.actors[pos]
+        if (actorId) {
+            const actor = game.entities[actorId]
+            $tile.dataset.type = actor.type
+        } else {
+            const type = game.level.types[pos]
+            $tile.dataset.type = type
+        }
     })
 }
 
