@@ -1,13 +1,11 @@
+import { WIDTH, HEIGHT } from './constants'
 import { floodfill, floodfillSet, countGroups, surrounded, forEachNeighbor, xy2pos, pos2xy } from './position'
 import { shuffle } from './random'
 
 /** @file handles level generation and iteration */
 
-export const WIDTH = 48
-export const HEIGHT = 31
-
 /** create a new level */
-export function createLevel(seed, player) {
+export function create(seed, player) {
     const random = Alea(seed)
     const types = createTypes()
     // const weights = createRandomWeights() // for lakes
@@ -17,7 +15,7 @@ export function createLevel(seed, player) {
     removeSmallWalls()
     const size = removeOtherCaves()
     if (size < WIDTH * HEIGHT / 4) {
-        return createLevel(random(), player)
+        return create(random(), player)
     }
     fillSmallCaves()
 

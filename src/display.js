@@ -1,3 +1,4 @@
+import { HEIGHT } from './constants'
 import { getGame, save } from './game'
 import * as Level from './level'
 import { step } from './actor'
@@ -53,7 +54,7 @@ function render(game) {
 
 /** put a tile element in the position (x, y) */
 function positionTile($tile, x, y) {
-    const realx = (x - (Level.HEIGHT - y - 1) / 2) * xu
+    const realx = (x - (HEIGHT - y - 1) / 2) * xu
     const realy = (y - 1) * smallyu + bigyu
     $tile.style.left = realx + 'px'
     $tile.style.top = realy + 'px'

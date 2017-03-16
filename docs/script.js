@@ -1,38 +1,30 @@
 (function () {
 'use strict';
 
-/** create an entity */
-function create$1(entities) {
-    const entity = {id: entities.nextId};
-    entities[entity.id] = entity;
-    entities.nextId++;
-    return entity
-}
+const WIDTH = 48;
+const HEIGHT = 31;
+
+const dir1 = 1 - WIDTH;
+const dir3 = 1;
+const dir5 = WIDTH;
+const dir7 = -1 + WIDTH;
+const dir9 = -1;
+const dir11 = -WIDTH;
 
 /** @file helper functions for working with positions */
-
-// import Heap from 'heap'
-
-const WIDTH$1 = 48;
-const dir1 = 1 - WIDTH$1;
-const dir3 = 1;
-const dir5 = WIDTH$1;
-const dir7 = -1 + WIDTH$1;
-const dir9 = -1;
-const dir11 = -WIDTH$1;
 
 const directions = [dir1, dir3, dir5, dir7, dir9, dir11];
 
 /** convert the coordinate pair [x], [y] into an integer position */
 function xy2pos(x, y) {
-    return x + y * WIDTH$1
+    return x + y * WIDTH
 }
 
 /** convert an integer [pos] into the coordinate pair x, y */
 function pos2xy(pos) {
     return {
-        x: pos % WIDTH$1,
-        y: Math.floor(pos / WIDTH$1),
+        x: pos % WIDTH,
+        y: Math.floor(pos / WIDTH),
     }
 }
 
@@ -45,7 +37,7 @@ function countGroups(pos, ingroup) {
         const curr = directions[i];
         const next = directions[(i+1)%6];
         if (!ingroup(pos + curr) && ingroup(pos + next)) {
-            groupcount += 1;
+            groupcount += 1
         }
     }
     if (groupcount) {
@@ -61,9 +53,9 @@ function countGroups(pos, ingroup) {
  */
 function floodfill(pos, floodable, flood) {
     if (floodable(pos)) {
-        flood(pos);
+        flood(pos)
         for (let i = 0; i < 6; i++) {
-            floodfill(pos + directions[i], floodable, flood);
+            floodfill(pos + directions[i], floodable, flood)
         }
     }
 }
@@ -74,10 +66,10 @@ function floodfill(pos, floodable, flood) {
  */
 function floodfillSet(pos, passable, visited) {
     if (passable(pos) && !visited.has(pos)) {
-        visited.add(pos);
+        visited.add(pos)
         forEachNeighbor(pos, neighbor => {
-            floodfillSet(neighbor, passable, visited);
-        });
+            floodfillSet(neighbor, passable, visited)
+        })
     }
 }
 
@@ -94,7 +86,7 @@ function surrounded(pos, istype) {
 /** calls [callback] for each position neighboring [pos] */
 function forEachNeighbor(pos, callback) {
     for (let i = 0; i < 6; i++) {
-        callback(pos + directions[i]);
+        callback(pos + directions[i])
     }
 }
 
@@ -150,42 +142,39 @@ function shuffle(array, random) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = randint(0, i, random);
         const tempi = array[i];
-        array[i] = array[j];
-        array[j] = tempi;
+        array[i] = array[j]
+        array[j] = tempi
     }
     return array
 }
 
 /** @file handles level generation and iteration */
 
-const WIDTH = 48;
-const HEIGHT = 31;
-
 /** create a new level */
-function createLevel(seed, player) {
+function create$1(seed, player) {
     const random = Alea(seed);
     const types = createTypes();
-    const weights = createRandomWeights();
+    // const weights = createRandomWeights() // for lakes
 
     //makeLakes()
-    carveCaves();
-    removeSmallWalls();
+    carveCaves()
+    removeSmallWalls()
     const size = removeOtherCaves();
     if (size < WIDTH * HEIGHT / 4) {
-        return createLevel(random(), player)
+        return create$1(random(), player)
     }
-    fillSmallCaves();
+    fillSmallCaves()
 
     const actors = createActors();
 
     /** return a dict of positions to a random number */
-    function createRandomWeights() {
-        const weights = {};
-        forEachInnerPos(pos => {
-            weights[pos] = random();
-        });
-        return weights
-    }
+    // function createRandomWeights() {
+    //     const weights = {}
+    //     forEachInnerPos(pos => {
+    //         weights[pos] = random()
+    //     })
+    //     return weights
+    // }
 
     /**
      * return a dict of positions to tile types
@@ -194,16 +183,16 @@ function createLevel(seed, player) {
     function createTypes() {
         const types = {};
         forEachPos(pos => {
-            types[pos] = 'wall';
-        });
-        types[player.pos] = 'floor';
+            types[pos] = 'wall'
+        })
+        types[player.pos] = 'floor'
         return types
     }
 
     /** return a dict of positions to actor ids */
     function createActors() {
         const actors = {};
-        actors[player.pos] = player.id;
+        actors[player.pos] = player.id
         return actors
     }
 
@@ -249,12 +238,12 @@ function createLevel(seed, player) {
     /** use an (almost) cellular automaton to generate caves */
     function carveCaves() {
         const innerPositions = [];
-        forEachInnerPos(pos => innerPositions.push(pos));
+        forEachInnerPos(pos => innerPositions.push(pos))
         shuffle(Array.from(innerPositions), random).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
-                types[pos] = 'floor';
+                types[pos] = 'floor'
             }
-        });
+        })
     }
 
     /** remove groups of 5 or fewer walls */
@@ -264,29 +253,29 @@ function createLevel(seed, player) {
             const wallGroup = new Set();
             const floodable = (pos) => isWall(pos) && !wallGroup.has(pos) && !visited.has(pos);
             const flood = (pos) => {
-                visited.add(pos);
-                wallGroup.add(pos);
+                visited.add(pos)
+                wallGroup.add(pos)
             };
-            floodfill(pos, floodable, flood);
+            floodfill(pos, floodable, flood)
 
             if (wallGroup.size < 6) {
                 for (const pos of wallGroup) {
-                    types[pos] = 'floor';
+                    types[pos] = 'floor'
                 }
             }
-        });
+        })
     }
 
     /** remove disconnected caves */
     function removeOtherCaves() {
         const mainCave = new Set();
-        floodfillSet(player.pos, passable, mainCave);
+        floodfillSet(player.pos, passable, mainCave)
 
         forEachInnerPos(pos => {
             if (types[pos] === 'floor' && !mainCave.has(pos)) {
-                types[pos] = 'wall';
+                types[pos] = 'wall'
             }
-        });
+        })
 
         return mainCave.size
     }
@@ -311,13 +300,13 @@ function createLevel(seed, player) {
     /** recursively fill a dead end */
     function fillDeadEnd(pos) {
         if (isDeadEnd(pos)) {
-            types[pos] = 'wall';
+            types[pos] = 'wall'
             forEachNeighbor(pos, neighbor => {
                 if (pos === player.pos && passable(neighbor)) {
-                    player.pos = neighbor;
+                    player.pos = neighbor
                 }
-                fillDeadEnd(neighbor);
-            });
+                fillDeadEnd(neighbor)
+            })
         }
     }
 
@@ -326,17 +315,17 @@ function createLevel(seed, player) {
         // can't skip visited tiles here because previous caves can be affected
         // by the removal of later ones
         forEachInnerPos(pos => {
-            fillDeadEnd(pos);
+            fillDeadEnd(pos)
             const cave = new Set();
-            floodfillSet(pos, isCave, cave);
+            floodfillSet(pos, isCave, cave)
 
             if (cave.size === 2 || cave.size === 3) {
-                types[pos] = 'wall';
+                types[pos] = 'wall'
                 for (const pos of cave) {
-                    fillDeadEnd(pos);
+                    fillDeadEnd(pos)
                 }
             }
-        });
+        })
     }
 
     return {
@@ -361,13 +350,19 @@ function inBounds(pos) {
     return y >= 0 && y < HEIGHT && x >= xmin(y) && x < xmax(y)
 }
 
+/** whether [pos] is inside the level and not on the outer edge */
+function inInnerBounds(pos) {
+    const {x, y} = pos2xy(pos);
+    return y > 0 && y < HEIGHT - 1 && x > xmin(y) && x < xmax(y) - 1
+}
+
 /** call [fun] for each position in the level */
 function forEachPos(fun) {
     for (let y = 0; y < HEIGHT; y++) {
         const min = xmin(y);
         const max = xmax(y);
         for (let x = min; x < max; x++) {
-            fun(xy2pos(x, y), x, y);
+            fun(xy2pos(x, y), x, y)
         }
     }
 }
@@ -378,17 +373,25 @@ function forEachInnerPos(fun) {
         const min = xmin(y) + 1;
         const max = xmax(y) - 1;
         for (let x = min; x < max; x++) {
-            fun(xy2pos(x, y), x, y);
+            fun(xy2pos(x, y), x, y)
         }
     }
 }
 
+/** create an entity */
+function create$3(entities) {
+    const entity = {id: entities.nextId};
+    entities[entity.id] = entity
+    entities.nextId++
+    return entity
+}
+
 /** create a new player */
-function create$2(game) {
-    const player = create$1(game);
-    player.type = 'player';
-    player.pos = xy2pos(half(WIDTH), helf(HEIGHT));
-    player.fov = {};
+function create$2(entities) {
+    const player = create$3(entities);
+    player.type = 'player'
+    player.pos = xy2pos(half(WIDTH), half(HEIGHT))
+    player.fov = {}
     return player
 }
 
@@ -397,6 +400,8 @@ function half(n) {
     return Math.round(n / 2)
 }
 
+// import * as Entity from './entity'
+// import { xy2pos } from './position'
 /** handles game creation, saving, and loading */
 
 const VERSION = '0.1.0';
@@ -406,10 +411,10 @@ const SAVE_NAME = 'hex adventure';
 function getGame() {
     let game = load() || create$$1(Date.now());
     if (game.version !== VERSION) {
-        console.warn('Save game is out of date');
+        console.warn('Save game is out of date')
     }
-    console.log('Seed:', game.seed);
-    window.game = game;
+    console.log('Seed:', game.seed)
+    window.game = game
     return game
 }
 
@@ -418,20 +423,20 @@ function create$$1(seed) {
     const version = VERSION;
     const schedule = [];
     const entities = {nextId: 1};
-    const player = create$2(game);
+    const player = create$2(entities);
     // createEntity(entities)
     // player.fov = {}
     // player.pos = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2))
     // player.type = 'player'
-    schedule.unshift(player.id);
-    const level = createLevel(seed, player);
+    schedule.unshift(player.id)
+    const level = create$1(seed, player);
 
     return {version, seed, schedule, entities, player, level}
 }
 
 /** save a game */
 function save(game) {
-    localStorage[SAVE_NAME] = JSON.stringify(game);
+    localStorage[SAVE_NAME] = JSON.stringify(game)
 }
 
 /** load the saved game if it exists */
@@ -440,19 +445,24 @@ function load() {
     return saveFile && JSON.parse(saveFile)
 }
 
+/** delete the current savefile */
+// function deleteSave() {
+//     localStorage.removeItem(SAVE_NAME)
+// }
+
 /** calculates fov */
 
 const normals = [dir1, dir3, dir5, dir7, dir9, dir11];
 const tangents = [dir5, dir7, dir9, dir11, dir1, dir3];
 
 function fov(center, transparent, reveal) {
-    reveal(center);
+    reveal(center)
     for (let i = 0; i < 6; i++) {
         const transform = (x, y) => center + x * normals[i] + y * tangents[i];
         const transformedTransparent = (x, y) => transparent(transform(x, y));
         const transformedReveal = (x, y) => reveal(transform(x, y));
-        transformedReveal(0, 1);
-        scan(1, 0, 1, transformedTransparent, transformedReveal);
+        transformedReveal(0, 1)
+        scan(1, 0, 1, transformedTransparent, transformedReveal)
     }
 }
 
@@ -480,21 +490,21 @@ function scan(y, start, end, transparent, reveal) {
     for (let x = xmin; x <= xmax; x++) {
         if (transparent(x, y)) {
             if (x >= y * start && x <= y * end) {
-                reveal(x, y);
-                revealCalled = true;
-                if (!transparent(x, y + 1)) reveal(x, y + 1);
-                if (!transparent(x + 1, y + 1)) reveal(x + 1, y + 1);
+                reveal(x, y)
+                revealCalled = true
+                if (!transparent(x, y + 1)) reveal(x, y + 1)
+                if (!transparent(x + 1, y + 1)) reveal(x + 1, y + 1)
             }
         } else {
             if (revealCalled) {
-                scan(y + 1, start, (x - 0.5) / y, transparent, reveal);
+                scan(y + 1, start, (x - 0.5) / y, transparent, reveal)
             }
-            start = (x + 0.5) / y;
+            start = (x + 0.5) / y
             if (start >= end) return
         }
     }
     if (revealCalled) {
-        scan(y + 1, start, end, transparent, reveal);
+        scan(y + 1, start, end, transparent, reveal)
     }
 }
 
@@ -507,9 +517,9 @@ const Behavior = {
             return game.level.types[pos] === 'floor'
         }
         function reveal(pos) {
-            self.fov[pos] = true;
+            self.fov[pos] = true
         }
-        fov(self.pos, transparent, reveal);
+        fov(self.pos, transparent, reveal)
         return Infinity
     },
 };
@@ -527,6 +537,17 @@ function step(game) {
     return Behavior[entity.type](entity, game)
 }
 
+/** end current actor's turn and setup its next turn */
+function reschedule(game) {
+    const id = game.schedule.shift();
+    game.schedule.push(id)
+}
+
+/** end current actor's turn and remove it from the schedule */
+function unschedule(game) {
+    game.schedule.shift()
+}
+
 /** handles displaying the game and the game loop */
 
 const xu = 18;
@@ -534,28 +555,28 @@ const smallyu = 16;
 const bigyu = 24;
 const root = document.getElementById('game');
 const tiles = createTiles();
-const game$1 = getGame();
+const game = getGame();
 
 /** advance the gamestate until player input is needed */
 function loop() {
     let delay = 0;
     while (!delay) {
-        delay = step(game$1);
+        delay = step(game)
     }
-    render(game$1);
+    render(game)
     if (delay === Infinity) {
-        save(game$1);
+        save(game)
     } else {
-        defer(loop, delay);
+        defer(loop, delay)
     }
 }
 
 /** call [fun] after waiting for [frames] */
 function defer(fun, frames) {
     if (frames) {
-        requestAnimationFrame(() => defer(fun, frames - 1));
+        requestAnimationFrame(() => defer(fun, frames - 1))
     }
-    fun();
+    fun()
 }
 
 /** render a game */
@@ -565,46 +586,46 @@ function render(game) {
         const actorId = game.level.actors[pos];
         if (game.player.fov[pos]) {
             if (actorId) {
-                $tile.dataset.type = game.entities[actorId].type;
+                $tile.dataset.type = game.entities[actorId].type
             } else {
-                $tile.dataset.type = game.level.types[pos];
+                $tile.dataset.type = game.level.types[pos]
             }
         } else {
-            $tile.dataset.type = game.level.types[pos];
-            $tile.style.opacity = '0.5';
+            $tile.dataset.type = game.level.types[pos]
+            $tile.style.opacity = '0.5'
         }
-    });
+    })
 }
 
 /** put a tile element in the position (x, y) */
 function positionTile($tile, x, y) {
     const realx = (x - (HEIGHT - y - 1) / 2) * xu;
     const realy = (y - 1) * smallyu + bigyu;
-    $tile.style.left = realx + 'px';
-    $tile.style.top = realy + 'px';
+    $tile.style.left = realx + 'px'
+    $tile.style.top = realy + 'px'
 }
 
 /** create tile elements and return a dict of them by position */
 function createTiles() {
     const tiles = {};
     const $tiles = document.createElement('div');
-    $tiles.id = 'tiles';
+    $tiles.id = 'tiles'
 
     forEachPos((pos, x, y) => {
         const tile = document.createElement('div');
-        tile.classList.add('tile');
-        tile.dataset.type = 'null';
-        positionTile(tile, x, y);
-        $tiles.appendChild(tile);
-        tiles[pos] = tile;
-    });
+        tile.classList.add('tile')
+        tile.dataset.type = 'null'
+        positionTile(tile, x, y)
+        $tiles.appendChild(tile)
+        tiles[pos] = tile
+    })
 
-    root.appendChild($tiles);
+    root.appendChild($tiles)
     return tiles
 }
 
 /** @file entry point */
 
-loop();
+loop()
 
 }());

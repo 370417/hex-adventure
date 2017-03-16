@@ -1,4 +1,4 @@
-import { dir1, dir3, dir5, dir7, dir9, dir11 } from './position'
+import { dir1, dir3, dir5, dir7, dir9, dir11 } from './constants'
 
 /** calculates fov */
 

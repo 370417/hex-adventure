@@ -1,5 +1,5 @@
 // import * as Entity from './entity'
-import { createLevel } from './level'
+import * as Level from './level'
 // import { xy2pos } from './position'
 import * as Player from './player'
 
@@ -30,7 +30,7 @@ function create(seed) {
     // player.pos = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2))
     // player.type = 'player'
     schedule.unshift(player.id)
-    const level = createLevel(seed, player)
+    const level = Level.create(seed, player)
 
     return {version, seed, schedule, entities, player, level}
 }

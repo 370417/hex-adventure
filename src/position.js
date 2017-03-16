@@ -1,15 +1,6 @@
-import { WIDTH } from './level'
+import { WIDTH, dir1, dir3, dir5, dir7, dir9, dir11 } from './constants'
 
 /** @file helper functions for working with positions */
-
-// import Heap from 'heap'
-
-export const dir1 = 1 - WIDTH
-export const dir3 = 1
-export const dir5 = WIDTH
-export const dir7 = -1 + WIDTH
-export const dir9 = -1
-export const dir11 = -WIDTH
 
 const directions = [dir1, dir3, dir5, dir7, dir9, dir11]
 
