@@ -1,14 +1,15 @@
 (function () {
 'use strict';
 
-function createEntity(entities) {
+/** create an entity */
+function create$1(entities) {
     const entity = {id: entities.nextId};
     entities[entity.id] = entity;
     entities.nextId++;
     return entity
 }
 
-/// helper functions for working with positions
+/** @file helper functions for working with positions */
 
 // import Heap from 'heap'
 
@@ -22,12 +23,12 @@ const dir11 = -WIDTH$1;
 
 const directions = [dir1, dir3, dir5, dir7, dir9, dir11];
 
-/// convert the coordinate pair [x], [y] into an integer position
+/** convert the coordinate pair [x], [y] into an integer position */
 function xy2pos(x, y) {
     return x + y * WIDTH$1
 }
 
-/// convert an integer [pos] into the coordinate pair x, y
+/** convert an integer [pos] into the coordinate pair x, y */
 function pos2xy(pos) {
     return {
         x: pos % WIDTH$1,
@@ -35,7 +36,7 @@ function pos2xy(pos) {
     }
 }
 
-/// return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup]
+/** return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup] */
 function countGroups(pos, ingroup) {
     // use var instead of let because
     // chrome can't optimize compound let assignment
@@ -54,8 +55,10 @@ function countGroups(pos, ingroup) {
     }
 }
 
-/// [flood] from [pos] as long as neighbors are [floodable]
-/// it is up to [flood] to make sure that [floodable] returns false for visited positions
+/**
+ * [flood] from [pos] as long as neighbors are [floodable]
+ * it is up to [flood] to make sure that [floodable] returns false for visited positions
+ */
 function floodfill(pos, floodable, flood) {
     if (floodable(pos)) {
         flood(pos);
@@ -65,8 +68,10 @@ function floodfill(pos, floodable, flood) {
     }
 }
 
-/// flood from [pos] as long as neighbors are [passable]
-/// [visited] keeps track of what positions have already been flooded, and is normally set to empty
+/**
+ * flood from [pos] as long as neighbors are [passable]
+ * [visited] keeps track of what positions have already been flooded, and is normally set to empty
+ */
 function floodfillSet(pos, passable, visited) {
     if (passable(pos) && !visited.has(pos)) {
         visited.add(pos);
@@ -76,7 +81,7 @@ function floodfillSet(pos, passable, visited) {
     }
 }
 
-/// whether [istype] is true for all positions surrounding [pos]
+/** whether [istype] is true for all positions surrounding [pos] */
 function surrounded(pos, istype) {
     for (let i = 0; i < 6; i++) {
         if (!istype(pos + directions[i])) {
@@ -86,7 +91,7 @@ function surrounded(pos, istype) {
     return true
 }
 
-/// calls [callback] for each position neighboring [pos]
+/** calls [callback] for each position neighboring [pos] */
 function forEachNeighbor(pos, callback) {
     for (let i = 0; i < 6; i++) {
         callback(pos + directions[i]);
@@ -133,14 +138,14 @@ function forEachNeighbor(pos, callback) {
 //     return closed
 // }
 
-/// helper functions for working with randomness
+/** @file helper functions for working with randomness */
 
-/// return a random integer in the range [min], [max] inclusive
+/** return a random integer in the range [min, max] inclusive */
 function randint(min, max, random) {
     return min + Math.floor((max - min + 1) * random())
 }
 
-/// randomly shuffle an [array] in place
+/** randomly shuffle an array in place */
 function shuffle(array, random) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = randint(0, i, random);
@@ -151,12 +156,12 @@ function shuffle(array, random) {
     return array
 }
 
-/// handles level generation and iteration
+/** @file handles level generation and iteration */
 
 const WIDTH = 48;
 const HEIGHT = 31;
 
-/// create a new level
+/** create a new level */
 function createLevel(seed, player) {
     const random = Alea(seed);
     const types = createTypes();
@@ -166,7 +171,6 @@ function createLevel(seed, player) {
     carveCaves();
     removeSmallWalls();
     const size = removeOtherCaves();
-    console.log(size);
     if (size < WIDTH * HEIGHT / 4) {
         return createLevel(random(), player)
     }
@@ -174,7 +178,7 @@ function createLevel(seed, player) {
 
     const actors = createActors();
 
-    /// return a dict of positions to a random number
+    /** return a dict of positions to a random number */
     function createRandomWeights() {
         const weights = {};
         forEachInnerPos(pos => {
@@ -183,8 +187,10 @@ function createLevel(seed, player) {
         return weights
     }
 
-    /// return a dict of positions to tile types
-    /// all tiles are initially walls except for the player's position, which is a floor
+    /**
+     * return a dict of positions to tile types
+     * all tiles are initially walls except for the player's position, which is a floor
+     */
     function createTypes() {
         const types = {};
         forEachPos(pos => {
@@ -194,24 +200,24 @@ function createLevel(seed, player) {
         return types
     }
 
-    /// return a dict of positions to actor ids
+    /** return a dict of positions to actor ids */
     function createActors() {
         const actors = {};
         actors[player.pos] = player.id;
         return actors
     }
 
-    /// whether the tile at [pos] is a floor tile
+    /** whether the tile at [pos] is a floor tile */
     function isFloor(pos) {
         return types[pos] === 'floor'
     }
 
-    /// whether the tile at [pos] is passable
+    /** whether the tile at [pos] is passable */
     function passable(pos) {
         return types[pos] === 'floor'// || types[pos] === '.'SHALLOW_WATER
     }
 
-    /// whether the tile at [pos] is a wall tile
+    /** whether the tile at [pos] is a wall tile */
     function isWall(pos) {
         return inBounds(pos) && types[pos] === 'wall'
     }
@@ -240,7 +246,7 @@ function createLevel(seed, player) {
     //     makeLake()
     // }
 
-    /// use an (almost) cellular automaton to generate caves
+    /** use an (almost) cellular automaton to generate caves */
     function carveCaves() {
         const innerPositions = [];
         forEachInnerPos(pos => innerPositions.push(pos));
@@ -251,7 +257,7 @@ function createLevel(seed, player) {
         });
     }
 
-    /// remove groups of 5 or fewer walls
+    /** remove groups of 5 or fewer walls */
     function removeSmallWalls() {
         const visited = new Set();
         forEachInnerPos(pos => {
@@ -271,7 +277,7 @@ function createLevel(seed, player) {
         });
     }
 
-    /// remove disconnected caves
+    /** remove disconnected caves */
     function removeOtherCaves() {
         const mainCave = new Set();
         floodfillSet(player.pos, passable, mainCave);
@@ -285,24 +291,24 @@ function createLevel(seed, player) {
         return mainCave.size
     }
 
-    /// whether the tile at [pos] is part of a cave
+    /** whether the tile at [pos] is part of a cave */
     function isCave(pos) {
         return isFloor(pos) && countGroups(pos, passable) === 1
     }
 
-    /// whether the tile at [pos] is not part of a cave
+    /** whether the tile at [pos] is not part of a cave */
     function isNotCave(pos) {
         return isWall(pos) || countGroups(pos, passable) !== 1
     }
 
-    /// whether the tile at [pos] is a dead end
+    /** whether the tile at [pos] is a dead end */
     function isDeadEnd(pos) {
         return isFloor(pos)
         && countGroups(pos, passable) === 1
         && surrounded(pos, isNotCave)
     }
 
-    /// recursively fill a dead end
+    /** recursively fill a dead end */
     function fillDeadEnd(pos) {
         if (isDeadEnd(pos)) {
             types[pos] = 'wall';
@@ -315,7 +321,7 @@ function createLevel(seed, player) {
         }
     }
 
-    /// remove 2-3 tile caves that are connected to the main cave
+    /** remove 2-3 tile caves that are connected to the main cave */
     function fillSmallCaves() {
         // can't skip visited tiles here because previous caves can be affected
         // by the removal of later ones
@@ -339,23 +345,23 @@ function createLevel(seed, player) {
     }
 }
 
-/// return the minimum x coordinate for a given [y], inclusive
+/** return the minimum x coordinate for a given [y], inclusive */
 function xmin(y) {
     return Math.floor((HEIGHT - y) / 2)
 }
 
-/// return the maximum x coordinate for a given [y], exclusive
+/** return the maximum x coordinate for a given [y], exclusive */
 function xmax(y) {
     return WIDTH - Math.floor(y / 2)
 }
 
-/// whether [pos] is inside the level
+/** whether [pos] is inside the level */
 function inBounds(pos) {
     const {x, y} = pos2xy(pos);
     return y >= 0 && y < HEIGHT && x >= xmin(y) && x < xmax(y)
 }
 
-/// call [fun] for each position in the level
+/** call [fun] for each position in the level */
 function forEachPos(fun) {
     for (let y = 0; y < HEIGHT; y++) {
         const min = xmin(y);
@@ -366,7 +372,7 @@ function forEachPos(fun) {
     }
 }
 
-/// call [fun] for each position in the level except the outer edge
+/** call [fun] for each position in the level except the outer edge */
 function forEachInnerPos(fun) {
     for (let y = 1; y < HEIGHT - 1; y++) {
         const min = xmin(y) + 1;
@@ -377,14 +383,28 @@ function forEachInnerPos(fun) {
     }
 }
 
-/// handles game creation, saving, and loading
+/** create a new player */
+function create$2(game) {
+    const player = create$1(game);
+    player.type = 'player';
+    player.pos = xy2pos(half(WIDTH), helf(HEIGHT));
+    player.fov = {};
+    return player
+}
+
+/** return half of n rounded to an int */
+function half(n) {
+    return Math.round(n / 2)
+}
+
+/** handles game creation, saving, and loading */
 
 const VERSION = '0.1.0';
 const SAVE_NAME = 'hex adventure';
 
-/// load save game if it exists, otherwise create a new game
+/** load save game if it exists, otherwise create a new game */
 function getGame() {
-    let game = load() || create(Date.now());
+    let game = load() || create$$1(Date.now());
     if (game.version !== VERSION) {
         console.warn('Save game is out of date');
     }
@@ -393,33 +413,40 @@ function getGame() {
     return game
 }
 
-function create(seed) {
+/** create a new game */
+function create$$1(seed) {
     const version = VERSION;
     const schedule = [];
     const entities = {nextId: 1};
-    const player = createEntity(entities);
-    player.fov = {};
-    player.pos = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2));
-    player.type = 'player';
+    const player = create$2(game);
+    // createEntity(entities)
+    // player.fov = {}
+    // player.pos = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2))
+    // player.type = 'player'
     schedule.unshift(player.id);
     const level = createLevel(seed, player);
 
     return {version, seed, schedule, entities, player, level}
 }
 
+/** save a game */
 function save(game) {
     localStorage[SAVE_NAME] = JSON.stringify(game);
 }
 
+/** load the saved game if it exists */
 function load() {
     const saveFile = localStorage[SAVE_NAME];
     return saveFile && JSON.parse(saveFile)
 }
 
+/** calculates fov */
+
+const normals = [dir1, dir3, dir5, dir7, dir9, dir11];
+const tangents = [dir5, dir7, dir9, dir11, dir1, dir3];
+
 function fov(center, transparent, reveal) {
     reveal(center);
-    const normals = [dir1, dir3, dir5, dir7, dir9, dir11];
-    const tangents = [dir5, dir7, dir9, dir11, dir1, dir3];
     for (let i = 0; i < 6; i++) {
         const transform = (x, y) => center + x * normals[i] + y * tangents[i];
         const transformedTransparent = (x, y) => transparent(transform(x, y));
@@ -429,16 +456,22 @@ function fov(center, transparent, reveal) {
     }
 }
 
-/// round a number, rounding up if it ends in .5
+/** round a number, rounding up if it ends in .5 */
 function roundHigh(n) {
     return Math.round(n)
 }
 
-/// round a number, rounding down if it ends in .5
+/** round a number, rounding down if it ends in .5 */
 function roundLow(n) {
     return Math.ceil(n - 0.5)
 }
 
+/**
+ * compute 60 degrees of fov
+ * @param {number} y - distance
+ * @param {number} start - proportion of 
+ * @param {number} end - 
+ */
 function scan(y, start, end, transparent, reveal) {
     if (start >= end) return
     const xmin = roundHigh((y - 0.5) * start);
@@ -465,9 +498,9 @@ function scan(y, start, end, transparent, reveal) {
     }
 }
 
-/// handles actor behavior and scheduling (turn order)
+/** @file handles actor behavior and scheduling (turn order) */
 
-/// dict of actor behaviors
+/** dict of actor behaviors */
 const Behavior = {
     player(self, game) {
         function transparent(pos) {
@@ -487,37 +520,37 @@ const Behavior = {
 //     return actor
 // }
 
-/// advance [game]state by an atomic step
+/** advance gamestate by an atomic step */
 function step(game) {
     const id = game.schedule[0];
     const entity = game.entities[id];
     return Behavior[entity.type](entity, game)
 }
 
-/// handles displaying the game and the game loop
+/** handles displaying the game and the game loop */
 
 const xu = 18;
 const smallyu = 16;
 const bigyu = 24;
 const root = document.getElementById('game');
 const tiles = createTiles();
-const game = getGame();
+const game$1 = getGame();
 
-/// advance the gamestate until player input is needed
+/** advance the gamestate until player input is needed */
 function loop() {
     let delay = 0;
     while (!delay) {
-        delay = step(game);
+        delay = step(game$1);
     }
-    render(game);
+    render(game$1);
     if (delay === Infinity) {
-        save(game);
+        save(game$1);
     } else {
         defer(loop, delay);
     }
 }
 
-/// call [fun] after waiting for [frames]
+/** call [fun] after waiting for [frames] */
 function defer(fun, frames) {
     if (frames) {
         requestAnimationFrame(() => defer(fun, frames - 1));
@@ -525,7 +558,7 @@ function defer(fun, frames) {
     fun();
 }
 
-/// render the [game]
+/** render a game */
 function render(game) {
     forEachPos(pos => {
         const $tile = tiles[pos];
@@ -543,15 +576,15 @@ function render(game) {
     });
 }
 
-/// put the [tile] element in the position [x], [y]
-function positionTile(tile, x, y) {
+/** put a tile element in the position (x, y) */
+function positionTile($tile, x, y) {
     const realx = (x - (HEIGHT - y - 1) / 2) * xu;
     const realy = (y - 1) * smallyu + bigyu;
-    tile.style.left = realx + 'px';
-    tile.style.top = realy + 'px';
+    $tile.style.left = realx + 'px';
+    $tile.style.top = realy + 'px';
 }
 
-/// create tile elements and return a dict of them by position
+/** create tile elements and return a dict of them by position */
 function createTiles() {
     const tiles = {};
     const $tiles = document.createElement('div');
@@ -570,7 +603,7 @@ function createTiles() {
     return tiles
 }
 
-/// entry point
+/** @file entry point */
 
 loop();
 

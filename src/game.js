@@ -1,6 +1,7 @@
-import { createEntity } from './entity'
-import { createLevel, HEIGHT, WIDTH } from './level'
-import { xy2pos } from './position'
+// import * as Entity from './entity'
+import { createLevel } from './level'
+// import { xy2pos } from './position'
+import * as Player from './player'
 
 /** handles game creation, saving, and loading */
 
@@ -23,10 +24,11 @@ function create(seed) {
     const version = VERSION
     const schedule = []
     const entities = {nextId: 1}
-    const player = createEntity(entities)
-    player.fov = {}
-    player.pos = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2))
-    player.type = 'player'
+    const player = Player.create(entities)
+    // createEntity(entities)
+    // player.fov = {}
+    // player.pos = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2))
+    // player.type = 'player'
     schedule.unshift(player.id)
     const level = createLevel(seed, player)
 
@@ -45,6 +47,6 @@ function load() {
 }
 
 /** delete the current savefile */
-function deleteSave() {
-    localStorage.removeItem(SAVE_NAME)
-}
+// function deleteSave() {
+//     localStorage.removeItem(SAVE_NAME)
+// }

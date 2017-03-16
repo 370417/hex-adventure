@@ -1,5 +1,5 @@
 /** create an entity */
-export function createEntity(entities) {
+export function create(entities) {
     const entity = {id: entities.nextId}
     entities[entity.id] = entity
     entities.nextId++
