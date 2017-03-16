@@ -2,7 +2,7 @@ import { getGame, save } from './game'
 import * as Level from './level'
 import { step } from './actor'
 
-/// handles displaying the game and the game loop
+/** handles displaying the game and the game loop */
 
 const xu = 18
 const smallyu = 16
@@ -11,7 +11,7 @@ const root = document.getElementById('game')
 const tiles = createTiles()
 const game = getGame()
 
-/// advance the gamestate until player input is needed
+/** advance the gamestate until player input is needed */
 export function loop() {
     let delay = 0
     while (!delay) {
@@ -25,7 +25,7 @@ export function loop() {
     }
 }
 
-/// call [fun] after waiting for [frames]
+/** call [fun] after waiting for [frames] */
 function defer(fun, frames) {
     if (frames) {
         requestAnimationFrame(() => defer(fun, frames - 1))
@@ -33,7 +33,7 @@ function defer(fun, frames) {
     fun()
 }
 
-/// render the [game]
+/** render a game */
 function render(game) {
     Level.forEachPos(pos => {
         const $tile = tiles[pos]
@@ -51,15 +51,15 @@ function render(game) {
     })
 }
 
-/// put the [tile] element in the position [x], [y]
-function positionTile(tile, x, y) {
+/** put a tile element in the position (x, y) */
+function positionTile($tile, x, y) {
     const realx = (x - (Level.HEIGHT - y - 1) / 2) * xu
     const realy = (y - 1) * smallyu + bigyu
-    tile.style.left = realx + 'px'
-    tile.style.top = realy + 'px'
+    $tile.style.left = realx + 'px'
+    $tile.style.top = realy + 'px'
 }
 
-/// create tile elements and return a dict of them by position
+/** create tile elements and return a dict of them by position */
 function createTiles() {
     const tiles = {}
     const $tiles = document.createElement('div')

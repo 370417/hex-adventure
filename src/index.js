@@ -1,5 +1,5 @@
 import { loop } from './display'
 
-/// entry point
+/** @file entry point */
 
 loop()

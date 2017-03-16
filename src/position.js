@@ -1,4 +1,4 @@
-/// helper functions for working with positions
+/** @file helper functions for working with positions */
 
 // import Heap from 'heap'
 
@@ -14,12 +14,12 @@ export const dir11 = -WIDTH
 
 const directions = [dir1, dir3, dir5, dir7, dir9, dir11]
 
-/// convert the coordinate pair [x], [y] into an integer position
+/** convert the coordinate pair [x], [y] into an integer position */
 export function xy2pos(x, y) {
     return x + y * WIDTH
 }
 
-/// convert an integer [pos] into the coordinate pair x, y
+/** convert an integer [pos] into the coordinate pair x, y */
 export function pos2xy(pos) {
     return {
         x: pos % WIDTH,
@@ -27,7 +27,7 @@ export function pos2xy(pos) {
     }
 }
 
-/// return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup]
+/** return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup] */
 export function countGroups(pos, ingroup) {
     // use var instead of let because
     // chrome can't optimize compound let assignment
@@ -46,8 +46,10 @@ export function countGroups(pos, ingroup) {
     }
 }
 
-/// [flood] from [pos] as long as neighbors are [floodable]
-/// it is up to [flood] to make sure that [floodable] returns false for visited positions
+/**
+ * [flood] from [pos] as long as neighbors are [floodable]
+ * it is up to [flood] to make sure that [floodable] returns false for visited positions
+ */
 export function floodfill(pos, floodable, flood) {
     if (floodable(pos)) {
         flood(pos)
@@ -57,8 +59,10 @@ export function floodfill(pos, floodable, flood) {
     }
 }
 
-/// flood from [pos] as long as neighbors are [passable]
-/// [visited] keeps track of what positions have already been flooded, and is normally set to empty
+/**
+ * flood from [pos] as long as neighbors are [passable]
+ * [visited] keeps track of what positions have already been flooded, and is normally set to empty
+ */
 export function floodfillSet(pos, passable, visited) {
     if (passable(pos) && !visited.has(pos)) {
         visited.add(pos)
@@ -68,7 +72,7 @@ export function floodfillSet(pos, passable, visited) {
     }
 }
 
-/// whether [istype] is true for all positions surrounding [pos]
+/** whether [istype] is true for all positions surrounding [pos] */
 export function surrounded(pos, istype) {
     for (let i = 0; i < 6; i++) {
         if (!istype(pos + directions[i])) {
@@ -78,7 +82,7 @@ export function surrounded(pos, istype) {
     return true
 }
 
-/// calls [callback] for each position neighboring [pos]
+/** calls [callback] for each position neighboring [pos] */
 export function forEachNeighbor(pos, callback) {
     for (let i = 0; i < 6; i++) {
         callback(pos + directions[i])

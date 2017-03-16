@@ -1,1 +1,1 @@
-/// constants for map tiles
+/** @file constants for map tiles */

@@ -1,5 +1,7 @@
 import { dir1, dir3, dir5, dir7, dir9, dir11 } from './position'
 
+/** calculates fov */
+
 const normals = [dir1, dir3, dir5, dir7, dir9, dir11]
 const tangents = [dir5, dir7, dir9, dir11, dir1, dir3]
 
@@ -27,7 +29,8 @@ function roundLow(n) {
 /**
  * compute 60 degrees of fov
  * @param {number} y - distance
- * @param {number} start - sdaf
+ * @param {number} start - proportion of 
+ * @param {number} end - 
  */
 function scan(y, start, end, transparent, reveal) {
     if (start >= end) return

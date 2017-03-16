@@ -1,3 +1,4 @@
+/** create an entity */
 export function createEntity(entities) {
     const entity = {id: entities.nextId}
     entities[entity.id] = entity

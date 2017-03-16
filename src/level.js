@@ -1,12 +1,12 @@
 import { floodfill, floodfillSet, countGroups, surrounded, forEachNeighbor, xy2pos, pos2xy } from './position'
 import { shuffle } from './random'
 
-/// handles level generation and iteration
+/** @file handles level generation and iteration */
 
 export const WIDTH = 48
 export const HEIGHT = 31
 
-/// create a new level
+/** create a new level */
 export function createLevel(seed, player) {
     const random = Alea(seed)
     const types = createTypes()
@@ -23,7 +23,7 @@ export function createLevel(seed, player) {
 
     const actors = createActors()
 
-    /// return a dict of positions to a random number
+    /** return a dict of positions to a random number */
     function createRandomWeights() {
         const weights = {}
         forEachInnerPos(pos => {
@@ -32,8 +32,10 @@ export function createLevel(seed, player) {
         return weights
     }
 
-    /// return a dict of positions to tile types
-    /// all tiles are initially walls except for the player's position, which is a floor
+    /**
+     * return a dict of positions to tile types
+     * all tiles are initially walls except for the player's position, which is a floor
+     */
     function createTypes() {
         const types = {}
         forEachPos(pos => {
@@ -43,24 +45,24 @@ export function createLevel(seed, player) {
         return types
     }
 
-    /// return a dict of positions to actor ids
+    /** return a dict of positions to actor ids */
     function createActors() {
         const actors = {}
         actors[player.pos] = player.id
         return actors
     }
 
-    /// whether the tile at [pos] is a floor tile
+    /** whether the tile at [pos] is a floor tile */
     function isFloor(pos) {
         return types[pos] === 'floor'
     }
 
-    /// whether the tile at [pos] is passable
+    /** whether the tile at [pos] is passable */
     function passable(pos) {
         return types[pos] === 'floor'// || types[pos] === '.'SHALLOW_WATER
     }
 
-    /// whether the tile at [pos] is a wall tile
+    /** whether the tile at [pos] is a wall tile */
     function isWall(pos) {
         return inBounds(pos) && types[pos] === 'wall'
     }
@@ -89,7 +91,7 @@ export function createLevel(seed, player) {
     //     makeLake()
     // }
 
-    /// use an (almost) cellular automaton to generate caves
+    /** use an (almost) cellular automaton to generate caves */
     function carveCaves() {
         const innerPositions = [];
         forEachInnerPos(pos => innerPositions.push(pos))
@@ -100,7 +102,7 @@ export function createLevel(seed, player) {
         })
     }
 
-    /// remove groups of 5 or fewer walls
+    /** remove groups of 5 or fewer walls */
     function removeSmallWalls() {
         const visited = new Set()
         forEachInnerPos(pos => {
@@ -120,7 +122,7 @@ export function createLevel(seed, player) {
         })
     }
 
-    /// remove disconnected caves
+    /** remove disconnected caves */
     function removeOtherCaves() {
         const mainCave = new Set()
         floodfillSet(player.pos, passable, mainCave)
@@ -134,24 +136,24 @@ export function createLevel(seed, player) {
         return mainCave.size
     }
 
-    /// whether the tile at [pos] is part of a cave
+    /** whether the tile at [pos] is part of a cave */
     function isCave(pos) {
         return isFloor(pos) && countGroups(pos, passable) === 1
     }
 
-    /// whether the tile at [pos] is not part of a cave
+    /** whether the tile at [pos] is not part of a cave */
     function isNotCave(pos) {
         return isWall(pos) || countGroups(pos, passable) !== 1
     }
 
-    /// whether the tile at [pos] is a dead end
+    /** whether the tile at [pos] is a dead end */
     function isDeadEnd(pos) {
         return isFloor(pos)
         && countGroups(pos, passable) === 1
         && surrounded(pos, isNotCave)
     }
 
-    /// recursively fill a dead end
+    /** recursively fill a dead end */
     function fillDeadEnd(pos) {
         if (isDeadEnd(pos)) {
             types[pos] = 'wall'
@@ -164,7 +166,7 @@ export function createLevel(seed, player) {
         }
     }
 
-    /// remove 2-3 tile caves that are connected to the main cave
+    /** remove 2-3 tile caves that are connected to the main cave */
     function fillSmallCaves() {
         // can't skip visited tiles here because previous caves can be affected
         // by the removal of later ones
@@ -188,29 +190,29 @@ export function createLevel(seed, player) {
     }
 }
 
-/// return the minimum x coordinate for a given [y], inclusive
+/** return the minimum x coordinate for a given [y], inclusive */
 function xmin(y) {
     return Math.floor((HEIGHT - y) / 2)
 }
 
-/// return the maximum x coordinate for a given [y], exclusive
+/** return the maximum x coordinate for a given [y], exclusive */
 function xmax(y) {
     return WIDTH - Math.floor(y / 2)
 }
 
-/// whether [pos] is inside the level
+/** whether [pos] is inside the level */
 function inBounds(pos) {
     const {x, y} = pos2xy(pos)
     return y >= 0 && y < HEIGHT && x >= xmin(y) && x < xmax(y)
 }
 
-/// whether [pos] is inside the level and not on the outer edge
+/** whether [pos] is inside the level and not on the outer edge */
 function inInnerBounds(pos) {
     const {x, y} = pos2xy(pos)
     return y > 0 && y < HEIGHT - 1 && x > xmin(y) && x < xmax(y) - 1
 }
 
-/// call [fun] for each position in the level
+/** call [fun] for each position in the level */
 export function forEachPos(fun) {
     for (let y = 0; y < HEIGHT; y++) {
         const min = xmin(y)
@@ -221,7 +223,7 @@ export function forEachPos(fun) {
     }
 }
 
-/// call [fun] for each position in the level except the outer edge
+/** call [fun] for each position in the level except the outer edge */
 function forEachInnerPos(fun) {
     for (let y = 1; y < HEIGHT - 1; y++) {
         const min = xmin(y) + 1
