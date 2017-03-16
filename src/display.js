@@ -1,7 +1,6 @@
-import { Game, getGame, save } from './game'
+import { getGame, save } from './game'
 import * as Level from './level'
 import { step } from './actor'
-import { Tile } from './tile'
 
 /// handles displaying the game and the game loop
 
@@ -13,7 +12,7 @@ const tiles = createTiles()
 const game = getGame()
 
 /// advance the gamestate until player input is needed
-export function loop(): void {
+export function loop() {
     let delay = 0
     while (!delay) {
         delay = step(game)
@@ -27,7 +26,7 @@ export function loop(): void {
 }
 
 /// call [fun] after waiting for [frames]
-function defer(fun: Function, frames: number): void {
+function defer(fun, frames) {
     if (frames) {
         requestAnimationFrame(() => defer(fun, frames - 1))
     }
@@ -35,22 +34,25 @@ function defer(fun: Function, frames: number): void {
 }
 
 /// render the [game]
-function render(game: Game): void {
+function render(game) {
     Level.forEachPos(pos => {
         const $tile = tiles[pos]
         const actorId = game.level.actors[pos]
-        if (actorId) {
-            const actor = game.entities[actorId]
-            $tile.dataset.type = actor.type
+        if (game.player.fov[pos]) {
+            if (actorId) {
+                $tile.dataset.type = game.entities[actorId].type
+            } else {
+                $tile.dataset.type = game.level.types[pos]
+            }
         } else {
-            const type = game.level.types[pos]
-            $tile.dataset.type = type
+            $tile.dataset.type = game.level.types[pos]
+            $tile.style.opacity = '0.5'
         }
     })
 }
 
 /// put the [tile] element in the position [x], [y]
-function positionTile(tile: HTMLDivElement, x: number, y: number): void {
+function positionTile(tile, x, y) {
     const realx = (x - (Level.HEIGHT - y - 1) / 2) * xu
     const realy = (y - 1) * smallyu + bigyu
     tile.style.left = realx + 'px'
@@ -59,7 +61,7 @@ function positionTile(tile: HTMLDivElement, x: number, y: number): void {
 
 /// create tile elements and return a dict of them by position
 function createTiles() {
-    const tiles: {[pos: number]: HTMLDivElement} = {}
+    const tiles = {}
     const $tiles = document.createElement('div')
     $tiles.id = 'tiles'
 

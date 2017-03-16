@@ -1,38 +1,29 @@
-import { Entity, Entities, createEntity } from './entity'
-import { Level, createLevel, HEIGHT, WIDTH } from './level'
+import { createEntity } from './entity'
+import { createLevel, HEIGHT, WIDTH } from './level'
 import { xy2pos } from './position'
 
 /// handles game creation, saving, and loading
 
-export interface Game {
-    version: string,
-    seed: number,
-    schedule: Array<number>,
-    entities: {
-        nextId: number,
-        [id: number]: Entity,
-    },
-    player: Entity,
-    level: Level,
-}
-
-const version = '0.1.0'
+const VERSION = '0.1.0'
 const SAVE_NAME = 'hex adventure'
 
 /// load save game if it exists, otherwise create a new game
-export function getGame(): Game {
+export function getGame() {
     let game = load() || create(Date.now())
-    if (game.version !== version) {
+    if (game.version !== VERSION) {
         console.warn('Save game is out of date')
     }
     console.log('Seed:', game.seed)
+    window.game = game
     return game
 }
 
-function create(seed:number): Game {
+function create(seed) {
+    const version = VERSION
     const schedule = []
     const entities = {nextId: 1}
     const player = createEntity(entities)
+    player.fov = {}
     player.pos = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2))
     player.type = 'player'
     schedule.unshift(player.id)
@@ -41,15 +32,15 @@ function create(seed:number): Game {
     return {version, seed, schedule, entities, player, level}
 }
 
-export function save(game: Game): void {
+export function save(game) {
     localStorage[SAVE_NAME] = JSON.stringify(game)
 }
 
-function load(): Game | void {
+function load() {
     const saveFile = localStorage[SAVE_NAME]
     return saveFile && JSON.parse(saveFile)
 }
 
-function deleteSave(): void {
+function deleteSave() {
     localStorage.removeItem(SAVE_NAME)
 }

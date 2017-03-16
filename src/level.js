@@ -1,39 +1,31 @@
-import { Tile } from './tile'
-import { Entity } from './entity'
 import { floodfill, floodfillSet, countGroups, surrounded, forEachNeighbor, xy2pos, pos2xy } from './position'
 import { shuffle } from './random'
-import Alea from 'alea'
 
 /// handles level generation and iteration
-
-export interface Level {
-    types: {[pos: number]: Tile},
-    actors: {[pos: number]: number},
-}
 
 export const WIDTH = 48
 export const HEIGHT = 31
 
 /// create a new level
-export function createLevel(seed: number, player: Entity): Level {
+export function createLevel(seed, player) {
     const random = Alea(seed)
     const types = createTypes()
     const weights = createRandomWeights()
-    const actors = createActors()
 
     //makeLakes()
     carveCaves()
     removeSmallWalls()
     const size = removeOtherCaves()
-    console.log(size)
     if (size < WIDTH * HEIGHT / 4) {
         return createLevel(random(), player)
     }
     fillSmallCaves()
 
+    const actors = createActors()
+
     /// return a dict of positions to a random number
     function createRandomWeights() {
-        const weights: {[pos: number]: number} = {}
+        const weights = {}
         forEachInnerPos(pos => {
             weights[pos] = random()
         })
@@ -43,7 +35,7 @@ export function createLevel(seed: number, player: Entity): Level {
     /// return a dict of positions to tile types
     /// all tiles are initially walls except for the player's position, which is a floor
     function createTypes() {
-        const types: {[pos: number]: Tile} = {}
+        const types = {}
         forEachPos(pos => {
             types[pos] = 'wall'
         })
@@ -53,23 +45,23 @@ export function createLevel(seed: number, player: Entity): Level {
 
     /// return a dict of positions to actor ids
     function createActors() {
-        const actors: {[pos: number]: number} = {}
+        const actors = {}
         actors[player.pos] = player.id
         return actors
     }
 
     /// whether the tile at [pos] is a floor tile
-    function isFloor(pos: number): boolean {
+    function isFloor(pos) {
         return types[pos] === 'floor'
     }
 
     /// whether the tile at [pos] is passable
-    function passable(pos: number): boolean {
+    function passable(pos) {
         return types[pos] === 'floor'// || types[pos] === '.'SHALLOW_WATER
     }
 
     /// whether the tile at [pos] is a wall tile
-    function isWall(pos: number): boolean {
+    function isWall(pos) {
         return inBounds(pos) && types[pos] === 'wall'
     }
 
@@ -98,8 +90,8 @@ export function createLevel(seed: number, player: Entity): Level {
     // }
 
     /// use an (almost) cellular automaton to generate caves
-    function carveCaves(): void {
-        const innerPositions: Array<number> = [];
+    function carveCaves() {
+        const innerPositions = [];
         forEachInnerPos(pos => innerPositions.push(pos))
         shuffle(Array.from(innerPositions), random).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
@@ -109,12 +101,12 @@ export function createLevel(seed: number, player: Entity): Level {
     }
 
     /// remove groups of 5 or fewer walls
-    function removeSmallWalls(): void {
-        const visited = new Set<number>()
+    function removeSmallWalls() {
+        const visited = new Set()
         forEachInnerPos(pos => {
-            const wallGroup = new Set<number>()
-            const floodable = (pos: number): boolean => isWall(pos) && !wallGroup.has(pos) && !visited.has(pos)
-            const flood = (pos: number): void => {
+            const wallGroup = new Set()
+            const floodable = (pos) => isWall(pos) && !wallGroup.has(pos) && !visited.has(pos)
+            const flood = (pos) => {
                 visited.add(pos)
                 wallGroup.add(pos)
             }
@@ -129,7 +121,7 @@ export function createLevel(seed: number, player: Entity): Level {
     }
 
     /// remove disconnected caves
-    function removeOtherCaves(): number {
+    function removeOtherCaves() {
         const mainCave = new Set()
         floodfillSet(player.pos, passable, mainCave)
 
@@ -143,24 +135,24 @@ export function createLevel(seed: number, player: Entity): Level {
     }
 
     /// whether the tile at [pos] is part of a cave
-    function isCave(pos: number): boolean {
+    function isCave(pos) {
         return isFloor(pos) && countGroups(pos, passable) === 1
     }
 
     /// whether the tile at [pos] is not part of a cave
-    function isNotCave(pos: number): boolean {
+    function isNotCave(pos) {
         return isWall(pos) || countGroups(pos, passable) !== 1
     }
 
     /// whether the tile at [pos] is a dead end
-    function isDeadEnd(pos: number): boolean {
+    function isDeadEnd(pos) {
         return isFloor(pos)
         && countGroups(pos, passable) === 1
         && surrounded(pos, isNotCave)
     }
 
     /// recursively fill a dead end
-    function fillDeadEnd(pos: number): void {
+    function fillDeadEnd(pos) {
         if (isDeadEnd(pos)) {
             types[pos] = 'wall'
             forEachNeighbor(pos, neighbor => {
@@ -173,7 +165,7 @@ export function createLevel(seed: number, player: Entity): Level {
     }
 
     /// remove 2-3 tile caves that are connected to the main cave
-    function fillSmallCaves(): void {
+    function fillSmallCaves() {
         // can't skip visited tiles here because previous caves can be affected
         // by the removal of later ones
         forEachInnerPos(pos => {
@@ -197,33 +189,29 @@ export function createLevel(seed: number, player: Entity): Level {
 }
 
 /// return the minimum x coordinate for a given [y], inclusive
-function xmin(y: number): number {
+function xmin(y) {
     return Math.floor((HEIGHT - y) / 2)
 }
 
 /// return the maximum x coordinate for a given [y], exclusive
-function xmax(y: number): number {
+function xmax(y) {
     return WIDTH - Math.floor(y / 2)
 }
 
 /// whether [pos] is inside the level
-function inBounds(pos: number): boolean {
+function inBounds(pos) {
     const {x, y} = pos2xy(pos)
     return y >= 0 && y < HEIGHT && x >= xmin(y) && x < xmax(y)
 }
 
 /// whether [pos] is inside the level and not on the outer edge
-function inInnerBounds(pos: number): boolean {
+function inInnerBounds(pos) {
     const {x, y} = pos2xy(pos)
     return y > 0 && y < HEIGHT - 1 && x > xmin(y) && x < xmax(y) - 1
 }
 
-interface posCallback {
-    (pos: number, x: number, y: number): any
-}
-
 /// call [fun] for each position in the level
-export function forEachPos(fun: posCallback): void {
+export function forEachPos(fun) {
     for (let y = 0; y < HEIGHT; y++) {
         const min = xmin(y)
         const max = xmax(y)
@@ -234,7 +222,7 @@ export function forEachPos(fun: posCallback): void {
 }
 
 /// call [fun] for each position in the level except the outer edge
-function forEachInnerPos(fun: posCallback): void {
+function forEachInnerPos(fun) {
     for (let y = 1; y < HEIGHT - 1; y++) {
         const min = xmin(y) + 1
         const max = xmax(y) - 1

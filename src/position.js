@@ -5,22 +5,22 @@
 const WIDTH = 48
 const HEIGHT = 31
 
-const dir1 = 1 - WIDTH
-const dir3 = 1
-const dir5 = WIDTH
-const dir7 = -1 + WIDTH
-const dir9 = -1
-const dir11 = -WIDTH
+export const dir1 = 1 - WIDTH
+export const dir3 = 1
+export const dir5 = WIDTH
+export const dir7 = -1 + WIDTH
+export const dir9 = -1
+export const dir11 = -WIDTH
 
 const directions = [dir1, dir3, dir5, dir7, dir9, dir11]
 
 /// convert the coordinate pair [x], [y] into an integer position
-export function xy2pos(x: number, y: number): number {
+export function xy2pos(x, y) {
     return x + y * WIDTH
 }
 
 /// convert an integer [pos] into the coordinate pair x, y
-export function pos2xy(pos: number): {x: number, y: number} {
+export function pos2xy(pos) {
     return {
         x: pos % WIDTH,
         y: Math.floor(pos / WIDTH),
@@ -28,7 +28,7 @@ export function pos2xy(pos: number): {x: number, y: number} {
 }
 
 /// return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup]
-export function countGroups(pos: number, ingroup: (pos: number) => boolean): number {
+export function countGroups(pos, ingroup) {
     // use var instead of let because
     // chrome can't optimize compound let assignment
     var groupcount = 0
@@ -48,7 +48,7 @@ export function countGroups(pos: number, ingroup: (pos: number) => boolean): num
 
 /// [flood] from [pos] as long as neighbors are [floodable]
 /// it is up to [flood] to make sure that [floodable] returns false for visited positions
-export function floodfill(pos: number, floodable: (pos: number) => boolean, flood: (pos: number) => void): void {
+export function floodfill(pos, floodable, flood) {
     if (floodable(pos)) {
         flood(pos)
         for (let i = 0; i < 6; i++) {
@@ -59,7 +59,7 @@ export function floodfill(pos: number, floodable: (pos: number) => boolean, floo
 
 /// flood from [pos] as long as neighbors are [passable]
 /// [visited] keeps track of what positions have already been flooded, and is normally set to empty
-export function floodfillSet(pos: number, passable: (pos: number) => boolean, visited: Set<number>) {
+export function floodfillSet(pos, passable, visited) {
     if (passable(pos) && !visited.has(pos)) {
         visited.add(pos)
         forEachNeighbor(pos, neighbor => {
@@ -69,7 +69,7 @@ export function floodfillSet(pos: number, passable: (pos: number) => boolean, vi
 }
 
 /// whether [istype] is true for all positions surrounding [pos]
-export function surrounded(pos: number, istype: (pos: number) => boolean) {
+export function surrounded(pos, istype) {
     for (let i = 0; i < 6; i++) {
         if (!istype(pos + directions[i])) {
             return false
@@ -79,7 +79,7 @@ export function surrounded(pos: number, istype: (pos: number) => boolean) {
 }
 
 /// calls [callback] for each position neighboring [pos]
-export function forEachNeighbor(pos: number, callback: (pos: number) => void): void {
+export function forEachNeighbor(pos, callback) {
     for (let i = 0; i < 6; i++) {
         callback(pos + directions[i])
     }
