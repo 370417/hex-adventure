@@ -1,11 +1,18 @@
+import replace from 'rollup-plugin-replace'
+import commonjs from 'rollup-plugin-commonjs'
+import nodeResolve from 'rollup-plugin-node-resolve'
+
 export default {
-    entry: 'src/index.js',
+    entry: 'temp/index.js',
     format: 'iife',
     dest: 'docs/script.js',
-    external: ['alea', 'heap'],
-    treeshake: false,
-    globals: {
-        alea: 'Alea',
-        heap: 'Heap',
-    },
+    plugins: [
+        replace({
+            'process.env.NODE_ENV': JSON.stringify('development')
+        }),
+        commonjs(),
+        nodeResolve({
+            jsnext: true,
+        }),
+    ],
 }

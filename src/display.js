@@ -3,14 +3,40 @@ import { getGame, save } from './game'
 import * as Level from './level'
 import { step } from './actor'
 
+import React from 'react'
+import ReactDOM from 'react-dom'
+
 /** handles displaying the game and the game loop */
 
 const xu = 18
 const smallyu = 16
 const bigyu = 24
 const root = document.getElementById('game')
-const tiles = createTiles()
+// const tiles = createTiles()
 const game = getGame()
+
+function Tile(props) {
+    const realx = (props.x - (HEIGHT - props.y - 1) / 2) * xu
+    const realy = props.y * smallyu
+    const style = {
+        left: realx + 'px',
+        top: realy + 'px',
+    }
+    return <div className={`tile ${props.type}`} style={style} />
+}
+
+const positions = generatePositions()
+function generatePositions() {
+    const positions = []
+    Level.forEachPos((pos, x, y) => {
+        positions.push({pos, x, y})
+    })
+    return positions
+}
+
+function Display({game}) {
+    return <div>{positions.map(({pos, x, y}) => <Tile key={pos} type={game.level.types[pos]} x={x} y={y} />)}</div>
+}
 
 /** advance the gamestate until player input is needed */
 export function loop() {
@@ -18,7 +44,7 @@ export function loop() {
     while (!delay) {
         delay = step(game)
     }
-    render(game)
+    ReactDOM.render(<Display game={game} />, root)
     if (delay === Infinity) {
         save(game)
     } else {
@@ -32,49 +58,4 @@ function defer(fun, frames) {
         requestAnimationFrame(() => defer(fun, frames - 1))
     }
     fun()
-}
-
-/** render a game */
-function render(game) {
-    Level.forEachPos(pos => {
-        const $tile = tiles[pos]
-        const actorId = game.level.actors[pos]
-        if (game.player.fov[pos]) {
-            if (actorId) {
-                $tile.dataset.type = game.entities[actorId].type
-            } else {
-                $tile.dataset.type = game.level.types[pos]
-            }
-        } else {
-            $tile.dataset.type = game.level.types[pos]
-            $tile.style.opacity = '0.5'
-        }
-    })
-}
-
-/** put a tile element in the position (x, y) */
-function positionTile($tile, x, y) {
-    const realx = (x - (HEIGHT - y - 1) / 2) * xu
-    const realy = (y - 1) * smallyu + bigyu
-    $tile.style.left = realx + 'px'
-    $tile.style.top = realy + 'px'
-}
-
-/** create tile elements and return a dict of them by position */
-function createTiles() {
-    const tiles = {}
-    const $tiles = document.createElement('div')
-    $tiles.id = 'tiles'
-
-    Level.forEachPos((pos, x, y) => {
-        const tile = document.createElement('div')
-        tile.classList.add('tile')
-        tile.dataset.type = 'null'
-        positionTile(tile, x, y)
-        $tiles.appendChild(tile)
-        tiles[pos] = tile
-    })
-
-    root.appendChild($tiles)
-    return tiles
 }

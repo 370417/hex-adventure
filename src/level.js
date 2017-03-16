@@ -1,6 +1,7 @@
 import { WIDTH, HEIGHT } from './constants'
 import { floodfill, floodfillSet, countGroups, surrounded, forEachNeighbor, xy2pos, pos2xy } from './position'
 import { shuffle } from './random'
+import Alea from 'alea'
 
 /** @file handles level generation and iteration */
 
