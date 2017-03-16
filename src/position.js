@@ -1,9 +1,8 @@
+import { WIDTH } from './level'
+
 /** @file helper functions for working with positions */
 
 // import Heap from 'heap'
-
-const WIDTH = 48
-const HEIGHT = 31
 
 export const dir1 = 1 - WIDTH
 export const dir3 = 1

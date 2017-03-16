@@ -10,7 +10,7 @@ export const HEIGHT = 31
 export function createLevel(seed, player) {
     const random = Alea(seed)
     const types = createTypes()
-    const weights = createRandomWeights()
+    // const weights = createRandomWeights() // for lakes
 
     //makeLakes()
     carveCaves()
@@ -24,13 +24,13 @@ export function createLevel(seed, player) {
     const actors = createActors()
 
     /** return a dict of positions to a random number */
-    function createRandomWeights() {
-        const weights = {}
-        forEachInnerPos(pos => {
-            weights[pos] = random()
-        })
-        return weights
-    }
+    // function createRandomWeights() {
+    //     const weights = {}
+    //     forEachInnerPos(pos => {
+    //         weights[pos] = random()
+    //     })
+    //     return weights
+    // }
 
     /**
      * return a dict of positions to tile types
