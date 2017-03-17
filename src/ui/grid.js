@@ -8,8 +8,18 @@ import React from 'react'
 const positions = createPositions()
 
 export default function Grid({game}) {
-    const {types} = game.level
-    return <div>{positions.map(({pos, x, y}) => <Tile key={pos} type={types[pos]} x={x} y={y} />)}</div>
+    const {types, actors} = game.level
+    const fov = game.player.fov
+    return <div>{
+        positions.map(({pos, x, y}) => <Tile
+            key={pos}
+            type={types[pos]}
+            actor={fov[pos] && actors[pos] && game.entities[actors[pos]]}
+            visible={fov[pos]}
+            x={x}
+            y={y}
+        />)
+    }</div>
 }
 
 function createPositions() {
