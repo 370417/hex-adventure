@@ -1,4 +1,4 @@
-import { loop } from './display'
+import { loop } from './ui/display'
 
 /** @file entry point */
 

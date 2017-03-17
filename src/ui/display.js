@@ -1,29 +1,19 @@
 import { HEIGHT } from '../data/constants'
+import { xu, bigyu, smallyu } from '../data/style'
 
 import { getGame, save } from '../engine/game'
 import * as Level from '../engine/level'
 import { step } from '../engine/actor'
+
+import Grid from './grid'
 
 import React from 'react'
 import ReactDOM from 'react-dom'
 
 /** @file handles displaying the game and the game loop */
 
-const xu = 18
-const smallyu = 16
-const bigyu = 24
 const root = document.getElementById('game')
 const game = getGame()
-
-function Tile(props) {
-    const realx = (props.x - (HEIGHT - props.y - 1) / 2) * xu
-    const realy = props.y * smallyu
-    const style = {
-        left: realx + 'px',
-        top: realy + 'px',
-    }
-    return <div className={`tile ${props.type}`} style={style} />
-}
 
 const positions = generatePositions()
 function generatePositions() {
@@ -34,17 +24,13 @@ function generatePositions() {
     return positions
 }
 
-function Display({game}) {
-    return <div>{positions.map(({pos, x, y}) => <Tile key={pos} type={game.level.types[pos]} x={x} y={y} />)}</div>
-}
-
 /** advance the gamestate until player input is needed */
 export function loop() {
     let delay = 0
     while (!delay) {
         delay = step(game)
     }
-    ReactDOM.render(<Display game={game} />, root)
+    ReactDOM.render(<Grid game={game} />, root)
     if (delay === Infinity) {
         save(game)
     } else {
