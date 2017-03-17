@@ -1,6 +1,3 @@
-import { HEIGHT } from '../data/constants'
-import { xu, bigyu, smallyu } from '../data/style'
-
 import { getGame, save } from '../engine/game'
 import * as Level from '../engine/level'
 import { step } from '../engine/actor'
