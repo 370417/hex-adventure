@@ -1,6 +1,4 @@
-// import * as Entity from './entity'
 import * as Level from './level'
-// import { xy2pos } from './position'
 import * as Player from './player'
 
 /** handles game creation, saving, and loading */

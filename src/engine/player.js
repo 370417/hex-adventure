@@ -1,4 +1,5 @@
-import { WIDTH, HEIGHT } from './constants'
+import { WIDTH, HEIGHT } from '../data/constants'
+
 import * as Entity from './entity'
 import { xy2pos } from './position'
 

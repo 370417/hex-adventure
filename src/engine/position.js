@@ -1,4 +1,4 @@
-import { WIDTH, dir1, dir3, dir5, dir7, dir9, dir11 } from './constants'
+import { WIDTH, dir1, dir3, dir5, dir7, dir9, dir11 } from '../data/constants'
 
 /** @file helper functions for working with positions */
 

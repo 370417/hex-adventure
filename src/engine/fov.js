@@ -1,6 +1,6 @@
-import { dir1, dir3, dir5, dir7, dir9, dir11 } from './constants'
+import { dir1, dir3, dir5, dir7, dir9, dir11 } from '../data/constants'
 
-/** calculates fov */
+/** @file calculates fov */
 
 const normals = [dir1, dir3, dir5, dir7, dir9, dir11]
 const tangents = [dir5, dir7, dir9, dir11, dir1, dir3]

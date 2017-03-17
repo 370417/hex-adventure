@@ -1,18 +1,18 @@
-import { HEIGHT } from './constants'
-import { getGame, save } from './game'
-import * as Level from './level'
-import { step } from './actor'
+import { HEIGHT } from '../data/constants'
+
+import { getGame, save } from '../engine/game'
+import * as Level from '../engine/level'
+import { step } from '../engine/actor'
 
 import React from 'react'
 import ReactDOM from 'react-dom'
 
-/** handles displaying the game and the game loop */
+/** @file handles displaying the game and the game loop */
 
 const xu = 18
 const smallyu = 16
 const bigyu = 24
 const root = document.getElementById('game')
-// const tiles = createTiles()
 const game = getGame()
 
 function Tile(props) {
