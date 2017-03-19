@@ -13,9 +13,8 @@ export default function Grid({game}) {
     return <div>{
         positions.map(({pos, x, y}) => <Tile
             key={pos}
-            type={types[pos]}
-            actor={fov[pos] && actors[pos] && game.entities[actors[pos]]}
-            visible={fov[pos]}
+            type={actors[pos] && fov[pos] && game.entities[actors[pos]].type || types[pos]}
+            opacity={fov[pos] ? 1.0 : 0.5}
             x={x}
             y={y}
         />)
