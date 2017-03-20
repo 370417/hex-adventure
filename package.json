@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "babel src -d temp; rollup -c"
+    "build": "tsc; rollup -c"
   },
   "repository": {
     "type": "git",
@@ -18,12 +18,11 @@
   },
   "homepage": "https://github.com/as-f/hex-adventure#readme",
   "devDependencies": {
-    "babel-cli": "^6.24.0",
-    "babel-preset-react": "^6.23.0",
     "rollup": "^0.41.5",
     "rollup-plugin-commonjs": "^8.0.2",
     "rollup-plugin-node-resolve": "^2.0.0",
-    "rollup-plugin-replace": "^1.1.1"
+    "rollup-plugin-replace": "^1.1.1",
+    "typescript": "^2.2.1"
   },
   "dependencies": {
     "alea": "0.0.9",

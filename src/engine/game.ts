@@ -13,12 +13,11 @@ export function getGame() {
         console.warn('Save game is out of date')
     }
     console.log('Seed:', game.seed)
-    window.game = game
     return game
 }
 
 /** create a new game */
-function create(seed) {
+function create(seed: number) {
     const version = VERSION
     const schedule = []
     const entities = {nextId: 1}
