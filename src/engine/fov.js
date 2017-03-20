@@ -33,25 +33,26 @@ function roundLow(n) {
  */
 function scan(y, start, end, transparent, reveal) {
     if (start >= end) return
-    const xmin = roundHigh((y - 0.5) * start)
-    const xmax = roundLow((y + 0.5) * end)
-    let revealCalled = false
+    const xmin = roundHigh(y * start)
+    const xmax = roundLow(y * end)
+    let fovExists = false
     for (let x = xmin; x <= xmax; x++) {
         if (transparent(x, y)) {
             if (x >= y * start && x <= y * end) {
                 reveal(x, y)
-                revealCalled = true
+                fovExists = true
             }
         } else {
-            reveal(x, y)
-            if (revealCalled) {
+            if (fovExists) {
                 scan(y + 1, start, (x - 0.5) / y, transparent, reveal)
             }
+            reveal(x, y)
+            fovExists = false
             start = (x + 0.5) / y
             if (start >= end) return
         }
     }
-    if (revealCalled) {
+    if (fovExists) {
         scan(y + 1, start, end, transparent, reveal)
     }
 }
