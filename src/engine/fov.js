@@ -11,7 +11,6 @@ export function fov(center, transparent, reveal) {
         const transform = (x, y) => center + x * normals[i] + y * tangents[i]
         const transformedTransparent = (x, y) => transparent(transform(x, y))
         const transformedReveal = (x, y) => reveal(transform(x, y))
-        transformedReveal(0, 1)
         scan(1, 0, 1, transformedTransparent, transformedReveal)
     }
 }
@@ -42,10 +41,9 @@ function scan(y, start, end, transparent, reveal) {
             if (x >= y * start && x <= y * end) {
                 reveal(x, y)
                 revealCalled = true
-                if (!transparent(x, y + 1)) reveal(x, y + 1)
-                if (!transparent(x + 1, y + 1)) reveal(x + 1, y + 1)
             }
         } else {
+            reveal(x, y)
             if (revealCalled) {
                 scan(y + 1, start, (x - 0.5) / y, transparent, reveal)
             }
