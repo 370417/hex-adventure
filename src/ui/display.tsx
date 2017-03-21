@@ -29,6 +29,7 @@ export function loop() {
 function defer(fun: () => void, frames: number) {
     if (frames) {
         requestAnimationFrame(() => defer(fun, frames - 1))
+    } else {
+        fun()
     }
-    fun()
 }
