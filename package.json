@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc; rollup -c"
+    "build": "tsc; rollup -c; rm -rf temp"
   },
   "repository": {
     "type": "git",
@@ -19,15 +19,8 @@
   "homepage": "https://github.com/as-f/hex-adventure#readme",
   "devDependencies": {
     "rollup": "^0.41.5",
-    "rollup-plugin-commonjs": "^8.0.2",
-    "rollup-plugin-node-resolve": "^2.0.0",
-    "rollup-plugin-replace": "^1.1.1",
-    "typescript": "^2.2.1"
-  },
-  "dependencies": {
-    "alea": "0.0.9",
-    "heap": "^0.2.6",
-    "react": "^15.4.2",
-    "react-dom": "^15.4.2"
+    "typescript": "^2.2.1",
+    "@types/react": "^15.0.16",
+    "@types/react-dom": "^0.14.23"
   }
 }

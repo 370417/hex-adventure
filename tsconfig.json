@@ -2,7 +2,8 @@
     "compilerOptions": {
         "noImplicitAny": true,
         "outDir": "temp/",
-        "target": "es6"
+        "target": "es6",
+        "jsx": "react"
     },
     "files": [
         "src/index.ts"

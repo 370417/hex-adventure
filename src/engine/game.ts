@@ -1,7 +1,17 @@
 import * as Level from './level'
 import * as Player from './player'
+import { Entities } from './entity'
 
-/** handles game creation, saving, and loading */
+/** @file handles game creation, saving, and loading */
+
+export interface Game {
+    version: string
+    seed: number
+    schedule: number[]
+    entities: Entities
+    player: any
+    level: any
+}
 
 const VERSION = '0.1.0'
 const SAVE_NAME = 'hex adventure'
@@ -17,9 +27,9 @@ export function getGame() {
 }
 
 /** create a new game */
-function create(seed: number) {
+function create(seed: number): Game {
     const version = VERSION
-    const schedule = []
+    const schedule: number[] = []
     const entities = {nextId: 1}
     const player = Player.create(entities)
     // createEntity(entities)
@@ -33,7 +43,7 @@ function create(seed: number) {
 }
 
 /** save a game */
-export function save(game) {
+export function save(game: Game) {
     localStorage[SAVE_NAME] = JSON.stringify(game)
 }
 

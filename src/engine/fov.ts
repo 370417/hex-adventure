@@ -5,33 +5,34 @@ import { dir1, dir3, dir5, dir7, dir9, dir11 } from '../data/constants'
 const normals = [dir1, dir3, dir5, dir7, dir9, dir11]
 const tangents = [dir5, dir7, dir9, dir11, dir1, dir3]
 
-export function fov(center, transparent, reveal) {
+export function fov(center: number, transparent: (pos: number) => boolean, reveal: (pos: number) => void) {
     reveal(center)
     for (let i = 0; i < 6; i++) {
-        const transform = (x, y) => center + x * normals[i] + y * tangents[i]
-        const transformedTransparent = (x, y) => transparent(transform(x, y))
-        const transformedReveal = (x, y) => reveal(transform(x, y))
+        const transform = (x: number, y: number) => center + x * normals[i] + y * tangents[i]
+        const transformedTransparent = (x: number, y: number) => transparent(transform(x, y))
+        const transformedReveal = (x: number, y: number) => reveal(transform(x, y))
         scan(1, 0, 1, transformedTransparent, transformedReveal)
     }
 }
 
 /** round a number, rounding up if it ends in .5 */
-function roundHigh(n) {
+function roundHigh(n: number) {
     return Math.round(n)
 }
 
 /** round a number, rounding down if it ends in .5 */
-function roundLow(n) {
+function roundLow(n: number) {
     return Math.ceil(n - 0.5)
 }
 
-/**
- * compute 60 degrees of fov
- * @param {number} y - distance
- * @param {number} start - proportion of 
- * @param {number} end - 
- */
-function scan(y, start, end, transparent, reveal) {
+/** Recursively scan one row spanning 60 degrees of fov */
+function scan(
+    y: number,
+    start: number,
+    end: number,
+    transparent: (x: number, y: number) => boolean,
+    reveal: (x: number, y: number) => void,
+) {
     if (start >= end) return
     const xmin = roundHigh(y * start)
     const xmax = roundLow(y * end)

@@ -1,25 +1,15 @@
 import { getGame, save } from '../engine/game'
-import * as Level from '../engine/level'
 import { step } from '../engine/actor'
 
 import Grid from './grid'
 
-import React from 'react'
-import ReactDOM from 'react-dom'
+import * as React from 'react'
+import * as ReactDOM from 'react-dom'
 
 /** @file handles displaying the game and the game loop */
 
 const root = document.getElementById('game')
 const game = getGame()
-
-const positions = generatePositions()
-function generatePositions() {
-    const positions = []
-    Level.forEachPos((pos, x, y) => {
-        positions.push({pos, x, y})
-    })
-    return positions
-}
 
 /** advance the gamestate until player input is needed */
 export function loop() {
@@ -36,7 +26,7 @@ export function loop() {
 }
 
 /** call [fun] after waiting for [frames] */
-function defer(fun, frames) {
+function defer(fun: () => void, frames: number) {
     if (frames) {
         requestAnimationFrame(() => defer(fun, frames - 1))
     }

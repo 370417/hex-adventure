@@ -1,13 +1,14 @@
 import { forEachPos } from '../engine/level'
+import { Game } from '../engine/game'
 
 import Tile from './tile'
 
-import React from 'react'
+import * as React from 'react'
 
 /** array of {pos, x, y} */
 const positions = createPositions()
 
-export default function Grid({game}) {
+export default function Grid({game}: {game: Game}) {
     const {types, actors} = game.level
     const fov = game.player.fov
     return <div>{
@@ -22,7 +23,7 @@ export default function Grid({game}) {
 }
 
 function createPositions() {
-    const positions = []
+    const positions: {pos: number, x: number, y: number}[] = []
     forEachPos((pos, x, y) => {
         positions.push({pos, x, y})
     })

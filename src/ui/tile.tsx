@@ -2,12 +2,20 @@ import { WIDTH, HEIGHT } from '../data/constants'
 import { xu, smallyu } from '../data/style'
 import * as tiles from '../data/tile'
 
-import React from 'react'
+import * as React from 'react'
 
-export default function Tile({type, color, x, y, opacity}) {
+interface TileProps {
+    type: string
+    color?: string
+    x: number
+    y: number
+    opacity: number
+}
+
+export default function Tile({type, color, x, y, opacity}: TileProps) {
     const left = (x - (HEIGHT - y - 1) / 2) * xu
     const top = y * smallyu
-    const style = {left, top, opacity}
+    const style: any = {left, top, opacity}
     if (color) {
         style.background = color
     }
