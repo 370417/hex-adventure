@@ -9,8 +9,8 @@ export interface Game {
     seed: number
     schedule: number[]
     entities: Entities
-    player: any
-    level: any
+    player: Player.Player
+    level: Level.Level
 }
 
 const VERSION = '0.1.0'
@@ -32,10 +32,6 @@ function create(seed: number): Game {
     const schedule: number[] = []
     const entities = {nextId: 1}
     const player = Player.create(entities)
-    // createEntity(entities)
-    // player.fov = {}
-    // player.pos = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2))
-    // player.type = 'player'
     schedule.unshift(player.id)
     const level = Level.create(seed, player)
 

@@ -1,8 +1,6 @@
-import { WIDTH, dir1, dir3, dir5, dir7, dir9, dir11 } from '../data/constants'
+import { WIDTH, directions, dir1 } from '../data/constants'
 
 /** @file helper functions for working with positions */
-
-const directions = [dir1, dir3, dir5, dir7, dir9, dir11]
 
 /** convert the coordinate pair [x], [y] into an integer position */
 export function xy2pos(x: number, y: number) {
