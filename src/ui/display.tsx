@@ -1,7 +1,8 @@
 import { getGame, save } from '../engine/game'
-import { step } from '../engine/actor'
+import { step } from '../engine/schedule'
 
 import Grid from './grid'
+import { keydown } from './input'
 
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
@@ -10,6 +11,8 @@ import * as ReactDOM from 'react-dom'
 
 const root = document.getElementById('game')
 const game = getGame()
+
+window.addEventListener('keydown', keydown.bind(window, game), false)
 
 /** advance the gamestate until player input is needed */
 export function loop() {

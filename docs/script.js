@@ -9,9 +9,9 @@ const dir5 = WIDTH;
 const dir7 = -1 + WIDTH;
 const dir9 = -1;
 const dir11 = -WIDTH;
+const directions = [dir1, dir3, dir5, dir7, dir9, dir11];
 
 /** @file helper functions for working with positions */
-const directions = [dir1, dir3, dir5, dir7, dir9, dir11];
 /** convert the coordinate pair [x], [y] into an integer position */
 function xy2pos(x, y) {
     return x + y * WIDTH;
@@ -363,8 +363,14 @@ const Behavior = {};
 function step(game) {
     const id = game.schedule[0];
     const entity = game.entities[id];
-    return Behavior[entity.type](entity, game);
+    return Behavior[entity.type](game, entity);
 }
+/** end current actor's turn and setup its next turn */
+function reschedule(game) {
+    const id = game.schedule.shift();
+    game.schedule.push(id);
+}
+/** end current actor's turn and remove it from the schedule */
 
 /** @file calculates fov */
 const normals = [dir1, dir3, dir5, dir7, dir9, dir11];
@@ -424,7 +430,7 @@ function create$2(entities) {
         fov: {}
     });
 }
-Behavior.player = function (self, game) {
+Behavior.player = function (game, self) {
     function transparent(pos) {
         return game.level.types[pos] === 'floor';
     }
@@ -434,6 +440,16 @@ Behavior.player = function (self, game) {
     fov(self.pos, transparent, reveal);
     return Infinity;
 };
+function move(game, player, direction) {
+    const { actors, types } = game.level;
+    const targetPos = player.pos + direction;
+    if (types[targetPos] === 'floor') {
+        actors[player.pos] = undefined;
+        player.pos = targetPos;
+        actors[player.pos] = player.id;
+    }
+    reschedule(game);
+}
 /** return half of n rounded to an int */
 function intHalf(n) {
     return Math.round(n / 2);
@@ -456,10 +472,6 @@ function create$$1(seed) {
     const schedule = [];
     const entities = { nextId: 1 };
     const player = create$2(entities);
-    // createEntity(entities)
-    // player.fov = {}
-    // player.pos = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2))
-    // player.type = 'player'
     schedule.unshift(player.id);
     const level = create$1(seed, player);
     return { version, seed, schedule, entities, player, level };
@@ -507,9 +519,27 @@ function createPositions() {
     return positions;
 }
 
+/** @file handles input */
+const movement = {
+    KeyE: dir1,
+    KeyD: dir3,
+    KeyX: dir5,
+    KeyZ: dir7,
+    KeyA: dir9,
+    KeyW: dir11,
+};
+function keydown(game, e) {
+    const direction = movement[e.code];
+    if (direction) {
+        move(game, game.player, direction);
+        loop();
+    }
+}
+
 /** @file handles displaying the game and the game loop */
 const root = document.getElementById('game');
 const game = getGame();
+window.addEventListener('keydown', keydown.bind(window, game), false);
 /** advance the gamestate until player input is needed */
 function loop() {
     let delay = 0;
@@ -529,7 +559,9 @@ function defer(fun, frames) {
     if (frames) {
         requestAnimationFrame(() => defer(fun, frames - 1));
     }
-    fun();
+    else {
+        fun();
+    }
 }
 
 /** @file entry point */
