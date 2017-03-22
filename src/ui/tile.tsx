@@ -12,6 +12,7 @@ interface TileProps {
     opacity: number
 }
 
+/** renders one map tile */
 export default function Tile({type, color, x, y, opacity}: TileProps) {
     const left = (x - (HEIGHT - y - 1) / 2) * xu
     const top = y * smallyu

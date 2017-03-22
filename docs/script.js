@@ -427,27 +427,37 @@ function create$2(entities) {
     return Object.assign(create$3(entities), {
         type: 'player',
         pos: xy2pos(intHalf(WIDTH), intHalf(HEIGHT)),
-        fov: {}
+        fov: {},
+        memory: {},
     });
 }
 Behavior.player = function (game, self) {
+    // initialize fov if uninitiazlied
+    if (!self.fov[self.pos]) {
+        look(game, self);
+    }
+    return Infinity;
+};
+function look(game, self) {
+    self.fov = {};
     function transparent(pos) {
         return game.level.types[pos] === 'floor';
     }
     function reveal(pos) {
         self.fov[pos] = true;
+        self.memory[pos] = game.level.types[pos];
     }
     fov(self.pos, transparent, reveal);
-    return Infinity;
-};
-function move(game, player, direction) {
+}
+function move(game, self, direction) {
     const { actors, types } = game.level;
-    const targetPos = player.pos + direction;
+    const targetPos = self.pos + direction;
     if (types[targetPos] === 'floor') {
-        actors[player.pos] = undefined;
-        player.pos = targetPos;
-        actors[player.pos] = player.id;
+        actors[self.pos] = undefined;
+        self.pos = targetPos;
+        actors[self.pos] = self.id;
     }
+    look(game, self);
     reschedule(game);
 }
 /** return half of n rounded to an int */
@@ -494,6 +504,7 @@ function load() {
 /** @file constants related to visual style */ const xu = 18;
 const smallyu = 16;
 
+/** renders one map tile */
 function Tile({ type, color, x, y, opacity }) {
     const left = (x - (HEIGHT - y - 1) / 2) * xu;
     const top = y * smallyu;
@@ -504,19 +515,33 @@ function Tile({ type, color, x, y, opacity }) {
     return React.createElement("div", { className: `tile ${type}`, style: style });
 }
 
-/** array of {pos, x, y} */
-const positions = createPositions();
+/** renders all map tiles */
 function Grid({ game }) {
     const { types, actors } = game.level;
-    const fov = game.player.fov;
-    return React.createElement("div", null, positions.map(({ pos, x, y }) => React.createElement(Tile, { key: pos, type: actors[pos] && fov[pos] && game.entities[actors[pos]].type || types[pos], opacity: fov[pos] ? 1.0 : 0.5, x: x, y: y })));
-}
-function createPositions() {
-    const positions = [];
+    const { fov, memory } = game.player;
+    const children = [];
     forEachPos((pos, x, y) => {
-        positions.push({ pos, x, y });
+        // default values for unknown tiles
+        let type = 'empty';
+        let opacity = 0;
+        if (fov[pos]) {
+            // visible tiles
+            if (actors[pos]) {
+                type = game.entities[actors[pos]].type;
+            }
+            else {
+                type = types[pos];
+            }
+            opacity = 1;
+        }
+        else if (memory[pos]) {
+            // remembered tiles
+            type = types[pos];
+            opacity = 0.5;
+        }
+        children.push(React.createElement(Tile, { key: pos, type: type, x: x, y: y, opacity: opacity }));
     });
-    return positions;
+    return React.createElement("div", null, children);
 }
 
 /** @file handles input */

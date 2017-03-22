@@ -5,27 +5,37 @@ import Tile from './tile'
 
 import * as React from 'react'
 
-/** array of {pos, x, y} */
-const positions = createPositions()
-
+/** renders all map tiles */
 export default function Grid({game}: {game: Game}) {
     const {types, actors} = game.level
     const {fov, memory} = game.player
-    return <div>{
-        positions.map(({pos, x, y}) => <Tile
-            key={pos}
-            type={actors[pos] && fov[pos] && game.entities[actors[pos]].type || types[pos]}
-            opacity={fov[pos] && 1.0 || memory[pos] && 0.5 || 0}
-            x={x}
-            y={y}
-        />)
-    }</div>
-}
-
-function createPositions() {
-    const positions: {pos: number, x: number, y: number}[] = []
+    const children: JSX.Element[] = []
     forEachPos((pos, x, y) => {
-        positions.push({pos, x, y})
+        // default values for unknown tiles
+        let type = 'empty'
+        let opacity = 0
+        if (fov[pos]) {
+            // visible tiles
+            if (actors[pos]) {
+                type = game.entities[actors[pos]].type
+            } else {
+                type = types[pos]
+            }
+            opacity = 1
+        } else if (memory[pos]) {
+            // remembered tiles
+            type = types[pos]
+            opacity = 0.5
+        }
+        children.push(
+            <Tile
+                key={pos}
+                type={type}
+                x={x}
+                y={y}
+                opacity={opacity}
+            />
+        )
     })
-    return positions
+    return <div>{children}</div>
 }
