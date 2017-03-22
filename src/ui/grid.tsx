@@ -10,12 +10,12 @@ const positions = createPositions()
 
 export default function Grid({game}: {game: Game}) {
     const {types, actors} = game.level
-    const fov = game.player.fov
+    const {fov, memory} = game.player
     return <div>{
         positions.map(({pos, x, y}) => <Tile
             key={pos}
             type={actors[pos] && fov[pos] && game.entities[actors[pos]].type || types[pos]}
-            opacity={fov[pos] ? 1.0 : 0.5}
+            opacity={fov[pos] && 1.0 || memory[pos] && 0.5 || 0}
             x={x}
             y={y}
         />)
