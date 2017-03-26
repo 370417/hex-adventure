@@ -13,7 +13,7 @@ export interface Game {
     level: Level.Level
 }
 
-const VERSION = '0.1.0'
+const VERSION = '0.1.1'
 const SAVE_NAME = 'hex adventure'
 
 /** load save game if it exists, otherwise create a new game */
