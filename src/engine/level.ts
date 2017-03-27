@@ -57,7 +57,7 @@ export function create(seed: any, player: number, components: Components): Level
     /** return a dict of positions to actor ids */
     function createActors() {
         const actors: {[pos: number]: number} = {}
-        // actors[startPos] = player.id
+        actors[position[player]] = player
         return actors
     }
 
