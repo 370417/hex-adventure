@@ -1,6 +1,6 @@
 import * as Level from './level'
 import * as Player from './player'
-import { Entities } from './entity'
+import { Components } from './components'
 
 /** @file handles game creation, saving, and loading */
 
@@ -8,8 +8,8 @@ export interface Game {
     version: string
     seed: number
     schedule: number[]
-    entities: Entities
-    player: Player.Player
+    components: Components
+    player: number
     level: Level.Level
 }
 
@@ -30,12 +30,18 @@ export function getGame() {
 function create(seed: number): Game {
     const version = VERSION
     const schedule: number[] = []
-    const entities = {nextId: 1}
-    const player = Player.create(entities)
-    schedule.unshift(player.id)
-    const level = Level.create(seed, player)
+    const components = {
+        position: {},
+        behavior: {},
+        fov: {},
+        memory: {},
+    }
+    const player = 1
+    Player.create(player, components)
+    schedule.unshift(player)
+    const level = Level.create(seed, player, components)
 
-    return {version, seed, schedule, entities, player, level}
+    return {version, seed, schedule, components, player, level}
 }
 
 /** save a game */

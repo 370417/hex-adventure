@@ -2,7 +2,7 @@ import { WIDTH, HEIGHT } from '../data/constants'
 
 import { floodfill, floodfillSet, countGroups, surrounded, forEachNeighbor, xy2pos, pos2xy } from './position'
 import { shuffle } from './random'
-import { Player } from './player'
+import { Components } from './components'
 
 import Alea from '../lib/alea'
 
@@ -14,7 +14,9 @@ export interface Level {
 }
 
 /** create a new level */
-export function create(seed: any, player: Player): Level {
+export function create(seed: any, player: number, components: Components): Level {
+    const {position} = components
+
     const random = Alea(seed)
     const types = createTypes()
     // const weights = createRandomWeights() // for lakes
@@ -24,7 +26,7 @@ export function create(seed: any, player: Player): Level {
     removeSmallWalls()
     const size = removeOtherCaves()
     if (size < WIDTH * HEIGHT / 4) {
-        return create(random(), player)
+        return create(random(), player, components)
     }
     fillSmallCaves()
 
@@ -48,14 +50,14 @@ export function create(seed: any, player: Player): Level {
         forEachPos(pos => {
             types[pos] = 'wall'
         })
-        types[player.pos] = 'floor'
+        types[position[player]] = 'floor'
         return types
     }
 
     /** return a dict of positions to actor ids */
     function createActors() {
         const actors: {[pos: number]: number} = {}
-        actors[player.pos] = player.id
+        // actors[startPos] = player.id
         return actors
     }
 
@@ -132,7 +134,7 @@ export function create(seed: any, player: Player): Level {
     /** remove disconnected caves */
     function removeOtherCaves() {
         const mainCave = new Set()
-        floodfillSet(player.pos, passable, mainCave)
+        floodfillSet(position[player], passable, mainCave)
 
         forEachInnerPos(pos => {
             if (types[pos] === 'floor' && !mainCave.has(pos)) {
@@ -165,8 +167,8 @@ export function create(seed: any, player: Player): Level {
         if (isDeadEnd(pos)) {
             types[pos] = 'wall'
             forEachNeighbor(pos, neighbor => {
-                if (pos === player.pos && passable(neighbor)) {
-                    player.pos = neighbor
+                if (pos === position[player] && passable(neighbor)) {
+                    position[player] = neighbor
                 }
                 fillDeadEnd(neighbor)
             })

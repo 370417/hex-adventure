@@ -1,61 +1,41 @@
 import { WIDTH, HEIGHT } from '../data/constants'
 
-import { Entity, Entities, create as createEntity } from './entity'
 import { xy2pos } from './position'
-import { Behavior, reschedule } from './schedule'
+import { reschedule } from './schedule'
 import { Game } from './game'
-import { fov } from './fov'
-
-export interface Player extends Entity {
-    type: string
-    pos: number
-    fov: {[pos: number]: boolean}
-    memory: {[pos: number]: string}
-}
+import { shadowcast } from './fov'
+import { Components } from './components'
 
 /** create a new player */
-export function create(entities: Entities): Player {
-    return Object.assign(createEntity(entities), {
-        type: 'player',
-        pos: xy2pos(intHalf(WIDTH), intHalf(HEIGHT)),
-        fov: {},
-        memory: {},
-    })
+export function create(entity: number, {position, behavior, fov, memory}: Components) {
+    position[entity] = xy2pos(Math.round(WIDTH / 2), Math.round(HEIGHT / 2))
+    behavior[entity] = 'player'
+    fov[entity] = {}
+    memory[entity] = {}
 }
 
-Behavior.player = function(game: Game, self: Player) {
-    // initialize fov if uninitiazlied
-    if (!self.fov[self.pos]) {
-        look(game, self)
-    }
-    return Infinity
-}
-
-function look(game: Game, self: Player) {
-    self.fov = {}
-    function transparent(pos: number) {
-        return game.level.types[pos] === 'floor'
-    }
-    function reveal(pos: number) {
-        self.fov[pos] = true
-        self.memory[pos] = game.level.types[pos]
-    }
-    fov(self.pos, transparent, reveal)
-}
-
-export function move(game: Game, self: Player, direction: number) {
+export function move(game: Game, self: number, direction: number) {
+    const {position} = game.components
     const {actors, types} = game.level
-    const targetPos = self.pos + direction
+    const targetPos = position[self] + direction
     if (types[targetPos] === 'floor') {
-        actors[self.pos] = undefined
-        self.pos = targetPos
-        actors[self.pos] = self.id
+        actors[position[self]] = undefined
+        position[self] = targetPos
+        actors[position[self]] = self
     }
     look(game, self)
     reschedule(game)
 }
 
-/** return half of n rounded to an int */
-function intHalf(n: number) {
-    return Math.round(n / 2)
+export function look(game: Game, self: number) {
+    const {fov, memory, position} = game.components
+    fov[self] = {}
+    function transparent(pos: number) {
+        return game.level.types[pos] === 'floor'
+    }
+    function reveal(pos: number) {
+        fov[self][pos] = true
+        memory[self][pos] = game.level.types[pos]
+    }
+    shadowcast(position[self], transparent, reveal)
 }

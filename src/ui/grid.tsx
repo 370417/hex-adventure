@@ -8,7 +8,9 @@ import * as React from 'react'
 /** renders all map tiles */
 export default function Grid({game}: {game: Game}) {
     const {types, actors} = game.level
-    const {fov, memory} = game.player
+    // const {fov, memory} = game.player
+    const fov = game.components.fov[game.player]
+    const memory = game.components.memory[game.player]
     const children: JSX.Element[] = []
     forEachPos((pos, x, y) => {
         // default values for unknown tiles
@@ -17,7 +19,7 @@ export default function Grid({game}: {game: Game}) {
         if (fov[pos]) {
             // visible tiles
             if (actors[pos]) {
-                type = game.entities[actors[pos]].type
+                type = game.components.behavior[actors[pos]]
             } else {
                 type = types[pos]
             }

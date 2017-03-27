@@ -11,7 +11,7 @@ const tangents = [dir5, dir7, dir9, dir11, dir1, dir3]
  * @param transparent whether the tile at pos is transpaernt
  * @param reveal add pos to the fov
  */
-export function fov(center: number, transparent: (pos: number) => boolean, reveal: (pos: number) => void) {
+export function shadowcast(center: number, transparent: (pos: number) => boolean, reveal: (pos: number) => void) {
     reveal(center)
     for (let i = 0; i < 6; i++) {
         const transform = (x: number, y: number) => center + x * tangents[i] + y * normals[i]

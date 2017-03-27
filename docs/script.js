@@ -152,7 +152,8 @@ function Mash() {
 }
 
 /** create a new level */
-function create$1(seed, player) {
+function create$1(seed, player, components) {
+    const { position } = components;
     const random = Alea(seed);
     const types = createTypes();
     // const weights = createRandomWeights() // for lakes
@@ -161,7 +162,7 @@ function create$1(seed, player) {
     removeSmallWalls();
     const size = removeOtherCaves();
     if (size < WIDTH * HEIGHT / 4) {
-        return create$1(random(), player);
+        return create$1(random(), player, components);
     }
     fillSmallCaves();
     const actors = createActors();
@@ -182,13 +183,13 @@ function create$1(seed, player) {
         forEachPos(pos => {
             types[pos] = 'wall';
         });
-        types[player.pos] = 'floor';
+        types[position[player]] = 'floor';
         return types;
     }
     /** return a dict of positions to actor ids */
     function createActors() {
         const actors = {};
-        actors[player.pos] = player.id;
+        // actors[startPos] = player.id
         return actors;
     }
     /** whether the tile at [pos] is a floor tile */
@@ -254,7 +255,7 @@ function create$1(seed, player) {
     /** remove disconnected caves */
     function removeOtherCaves() {
         const mainCave = new Set();
-        floodfillSet(player.pos, passable, mainCave);
+        floodfillSet(position[player], passable, mainCave);
         forEachInnerPos(pos => {
             if (types[pos] === 'floor' && !mainCave.has(pos)) {
                 types[pos] = 'wall';
@@ -281,8 +282,8 @@ function create$1(seed, player) {
         if (isDeadEnd(pos)) {
             types[pos] = 'wall';
             forEachNeighbor(pos, neighbor => {
-                if (pos === player.pos && passable(neighbor)) {
-                    player.pos = neighbor;
+                if (pos === position[player] && passable(neighbor)) {
+                    position[player] = neighbor;
                 }
                 fillDeadEnd(neighbor);
             });
@@ -343,42 +344,44 @@ function forEachInnerPos(fun) {
     }
 }
 
-/** create an entity */
-function create$3(entities) {
-    const entity = { id: entities.nextId };
-    entities[entity.id] = entity;
-    entities.nextId++;
-    return entity;
-}
+const behaviors = {
+    player: (game, self) => {
+        const { fov, position } = game.components;
+        // initialize fov if uninitiazlied
+        if (!fov[position[self]]) {
+            look(game, self);
+        }
+        return Infinity;
+    }
+};
 
 /** @file handles actor behavior and scheduling (turn order) */
-/** dict of actor behaviors */
-const Behavior = {};
-// function create(game, behavior) {
-//     const actor = Entity.create(game)
-//     actor.behavior = behavior
-//     return actor
-// }
 /** advance gamestate by an atomic step */
 function step(game) {
-    const id = game.schedule[0];
-    const entity = game.entities[id];
-    return Behavior[entity.type](game, entity);
+    const entity = game.schedule[0];
+    const behavior = game.components.behavior[entity];
+    return behaviors[behavior](game, entity);
 }
 /** end current actor's turn and setup its next turn */
 function reschedule(game) {
-    const id = game.schedule.shift();
-    game.schedule.push(id);
+    const entity = game.schedule.shift();
+    game.schedule.push(entity);
 }
 /** end current actor's turn and remove it from the schedule */
 
 /** @file calculates fov */
 const normals = [dir1, dir3, dir5, dir7, dir9, dir11];
 const tangents = [dir5, dir7, dir9, dir11, dir1, dir3];
-function fov(center, transparent, reveal) {
+/**
+ * calculate fov using recursive shadowcasting
+ * @param center orgin of fov
+ * @param transparent whether the tile at pos is transpaernt
+ * @param reveal add pos to the fov
+ */
+function shadowcast(center, transparent, reveal) {
     reveal(center);
     for (let i = 0; i < 6; i++) {
-        const transform = (x, y) => center + x * normals[i] + y * tangents[i];
+        const transform = (x, y) => center + x * tangents[i] + y * normals[i];
         const transformedTransparent = (x, y) => transparent(transform(x, y));
         const transformedReveal = (x, y) => reveal(transform(x, y));
         scan(1, 0, 1, transformedTransparent, transformedReveal);
@@ -392,12 +395,23 @@ function roundHigh(n) {
 function roundLow(n) {
     return Math.ceil(n - 0.5);
 }
-/** Recursively scan one row spanning 60 degrees of fov */
+/**
+ * Calculate a 60 degree sector of fov by recursively scanning rows.
+ * @param y Distance from center of fov to the row being scanned
+ * @param start Slope of starting angle expressed as x / y
+ * @param end Slope of ending angle expressed as x / y
+ * @param transparent Whether the tile at (x, y) is transparent
+ * @param reveal Add the tile at (x, y) to the fov
+ */
 function scan(y, start, end, transparent, reveal) {
     if (start >= end)
         return;
+    // minimum and maximum x coordinates for opaque tiles
+    // the fov for transparent tiles is slightly narrower to presernve symmetry
     const xmin = roundHigh(y * start);
     const xmax = roundLow(y * end);
+    // whether the current continous fov has transparent tiles
+    // this is used to prevent disjoint fov
     let fovExists = false;
     for (let x = xmin; x <= xmax; x++) {
         if (transparent(x, y)) {
@@ -423,49 +437,38 @@ function scan(y, start, end, transparent, reveal) {
 }
 
 /** create a new player */
-function create$2(entities) {
-    return Object.assign(create$3(entities), {
-        type: 'player',
-        pos: xy2pos(intHalf(WIDTH), intHalf(HEIGHT)),
-        fov: {},
-        memory: {},
-    });
-}
-Behavior.player = function (game, self) {
-    // initialize fov if uninitiazlied
-    if (!self.fov[self.pos]) {
-        look(game, self);
-    }
-    return Infinity;
-};
-function look(game, self) {
-    self.fov = {};
-    function transparent(pos) {
-        return game.level.types[pos] === 'floor';
-    }
-    function reveal(pos) {
-        self.fov[pos] = true;
-        self.memory[pos] = game.level.types[pos];
-    }
-    fov(self.pos, transparent, reveal);
+function create$2(entity, { position, behavior, fov, memory }) {
+    position[entity] = xy2pos(Math.round(WIDTH / 2), Math.round(HEIGHT / 2));
+    behavior[entity] = 'player';
+    fov[entity] = {};
+    memory[entity] = {};
 }
 function move(game, self, direction) {
+    const { position } = game.components;
     const { actors, types } = game.level;
-    const targetPos = self.pos + direction;
+    const targetPos = position[self] + direction;
     if (types[targetPos] === 'floor') {
-        actors[self.pos] = undefined;
-        self.pos = targetPos;
-        actors[self.pos] = self.id;
+        actors[position[self]] = undefined;
+        position[self] = targetPos;
+        actors[position[self]] = self;
     }
     look(game, self);
     reschedule(game);
 }
-/** return half of n rounded to an int */
-function intHalf(n) {
-    return Math.round(n / 2);
+function look(game, self) {
+    const { fov, memory, position } = game.components;
+    fov[self] = {};
+    function transparent(pos) {
+        return game.level.types[pos] === 'floor';
+    }
+    function reveal(pos) {
+        fov[self][pos] = true;
+        memory[self][pos] = game.level.types[pos];
+    }
+    shadowcast(position[self], transparent, reveal);
 }
 
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 const SAVE_NAME = 'hex adventure';
 /** load save game if it exists, otherwise create a new game */
 function getGame() {
@@ -480,11 +483,17 @@ function getGame() {
 function create$$1(seed) {
     const version = VERSION;
     const schedule = [];
-    const entities = { nextId: 1 };
-    const player = create$2(entities);
-    schedule.unshift(player.id);
-    const level = create$1(seed, player);
-    return { version, seed, schedule, entities, player, level };
+    const components = {
+        position: {},
+        behavior: {},
+        fov: {},
+        memory: {},
+    };
+    const player = 1;
+    create$2(player, components);
+    schedule.unshift(player);
+    const level = create$1(seed, player, components);
+    return { version, seed, schedule, components, player, level };
 }
 /** save a game */
 function save(game) {
@@ -518,7 +527,9 @@ function Tile({ type, color, x, y, opacity }) {
 /** renders all map tiles */
 function Grid({ game }) {
     const { types, actors } = game.level;
-    const { fov, memory } = game.player;
+    // const {fov, memory} = game.player
+    const fov = game.components.fov[game.player];
+    const memory = game.components.memory[game.player];
     const children = [];
     forEachPos((pos, x, y) => {
         // default values for unknown tiles
@@ -527,7 +538,7 @@ function Grid({ game }) {
         if (fov[pos]) {
             // visible tiles
             if (actors[pos]) {
-                type = game.entities[actors[pos]].type;
+                type = game.components.behavior[actors[pos]];
             }
             else {
                 type = types[pos];
