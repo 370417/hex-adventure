@@ -98,6 +98,73 @@ function shuffle(array, random) {
     return array;
 }
 
+/** @file calculates fov */
+const normals = [dir1, dir3, dir5, dir7, dir9, dir11];
+const tangents = [dir5, dir7, dir9, dir11, dir1, dir3];
+/**
+ * calculate fov using recursive shadowcasting
+ * @param center orgin of fov
+ * @param transparent whether the tile at pos is transpaernt
+ * @param reveal add pos to the fov
+ */
+function shadowcast(center, transparent, reveal) {
+    reveal(center);
+    for (let i = 0; i < 6; i++) {
+        const transform = (x, y) => center + x * tangents[i] + y * normals[i];
+        const transformedTransparent = (x, y) => transparent(transform(x, y));
+        const transformedReveal = (x, y) => reveal(transform(x, y));
+        scan(1, 0, 1, transformedTransparent, transformedReveal);
+    }
+}
+/** round a number, rounding up if it ends in .5 */
+function roundHigh(n) {
+    return Math.round(n);
+}
+/** round a number, rounding down if it ends in .5 */
+function roundLow(n) {
+    return Math.ceil(n - 0.5);
+}
+/**
+ * Calculate a 60 degree sector of fov by recursively scanning rows.
+ * @param y Distance from center of fov to the row being scanned
+ * @param start Slope of starting angle expressed as x / y
+ * @param end Slope of ending angle expressed as x / y
+ * @param transparent Whether the tile at (x, y) is transparent
+ * @param reveal Add the tile at (x, y) to the fov
+ */
+function scan(y, start, end, transparent, reveal) {
+    if (start >= end)
+        return;
+    // minimum and maximum x coordinates for opaque tiles
+    // the fov for transparent tiles is slightly narrower to presernve symmetry
+    const xmin = roundHigh(y * start);
+    const xmax = roundLow(y * end);
+    // whether the current continous fov has transparent tiles
+    // this is used to prevent disjoint fov
+    let fovExists = false;
+    for (let x = xmin; x <= xmax; x++) {
+        if (transparent(x, y)) {
+            if (x >= y * start && x <= y * end) {
+                reveal(x, y);
+                fovExists = true;
+            }
+        }
+        else {
+            if (fovExists) {
+                scan(y + 1, start, (x - 0.5) / y, transparent, reveal);
+            }
+            reveal(x, y);
+            fovExists = false;
+            start = (x + 0.5) / y;
+            if (start >= end)
+                return;
+        }
+    }
+    if (fovExists) {
+        scan(y + 1, start, end, transparent, reveal);
+    }
+}
+
 // Port of alea.js to typescript
 // From http://baagoe.com/en/RandomMusings/javascript/
 // Johannes Baagøe <baagoe@baagoe.com>, 2010
@@ -165,6 +232,8 @@ function create$1(seed, player, components) {
         return create$1(random(), player, components);
     }
     fillSmallCaves();
+    const visibility = generateVisibility();
+    placeGrass();
     const actors = createActors();
     /** return a dict of positions to a random number */
     // function createRandomWeights() {
@@ -189,7 +258,7 @@ function create$1(seed, player, components) {
     /** return a dict of positions to actor ids */
     function createActors() {
         const actors = {};
-        // actors[startPos] = player.id
+        actors[position[player]] = player;
         return actors;
     }
     /** whether the tile at [pos] is a floor tile */
@@ -305,6 +374,31 @@ function create$1(seed, player, components) {
             }
         });
     }
+    /** Find the number of tiles visible from each tile */
+    function generateVisibility() {
+        const visibility = {};
+        forEachInnerPos(pos => {
+            let tiles = new Set();
+            const transparent = (pos) => types[pos] === 'floor';
+            const reveal = (pos) => tiles.add(pos);
+            if (transparent(pos)) {
+                shadowcast(pos, transparent, reveal);
+            }
+            visibility[pos] = tiles.size;
+            console.log(tiles.size);
+        });
+        return visibility;
+    }
+    function placeGrass() {
+        forEachInnerPos(pos => {
+            if (visibility[pos] > 80) {
+                types[pos] = 'tallGrass';
+            }
+            else if (visibility[pos] > 60) {
+                types[pos] = 'shortGrass';
+            }
+        });
+    }
     return {
         types,
         actors,
@@ -344,6 +438,26 @@ function forEachInnerPos(fun) {
     }
 }
 
+/** @file constants for map tiles */
+const Tiles = {
+    wall: {
+        transparency: 0,
+        canWalk: false,
+    },
+    floor: {
+        transparency: 2,
+        canWalk: true,
+    },
+    shortGrass: {
+        transparency: 2,
+        canWalk: true,
+    },
+    tallGrass: {
+        transparency: 1,
+        canWalk: true,
+    },
+};
+
 const behaviors = {
     player: (game, self) => {
         const { fov, position } = game.components;
@@ -369,73 +483,6 @@ function reschedule(game) {
 }
 /** end current actor's turn and remove it from the schedule */
 
-/** @file calculates fov */
-const normals = [dir1, dir3, dir5, dir7, dir9, dir11];
-const tangents = [dir5, dir7, dir9, dir11, dir1, dir3];
-/**
- * calculate fov using recursive shadowcasting
- * @param center orgin of fov
- * @param transparent whether the tile at pos is transpaernt
- * @param reveal add pos to the fov
- */
-function shadowcast(center, transparent, reveal) {
-    reveal(center);
-    for (let i = 0; i < 6; i++) {
-        const transform = (x, y) => center + x * tangents[i] + y * normals[i];
-        const transformedTransparent = (x, y) => transparent(transform(x, y));
-        const transformedReveal = (x, y) => reveal(transform(x, y));
-        scan(1, 0, 1, transformedTransparent, transformedReveal);
-    }
-}
-/** round a number, rounding up if it ends in .5 */
-function roundHigh(n) {
-    return Math.round(n);
-}
-/** round a number, rounding down if it ends in .5 */
-function roundLow(n) {
-    return Math.ceil(n - 0.5);
-}
-/**
- * Calculate a 60 degree sector of fov by recursively scanning rows.
- * @param y Distance from center of fov to the row being scanned
- * @param start Slope of starting angle expressed as x / y
- * @param end Slope of ending angle expressed as x / y
- * @param transparent Whether the tile at (x, y) is transparent
- * @param reveal Add the tile at (x, y) to the fov
- */
-function scan(y, start, end, transparent, reveal) {
-    if (start >= end)
-        return;
-    // minimum and maximum x coordinates for opaque tiles
-    // the fov for transparent tiles is slightly narrower to presernve symmetry
-    const xmin = roundHigh(y * start);
-    const xmax = roundLow(y * end);
-    // whether the current continous fov has transparent tiles
-    // this is used to prevent disjoint fov
-    let fovExists = false;
-    for (let x = xmin; x <= xmax; x++) {
-        if (transparent(x, y)) {
-            if (x >= y * start && x <= y * end) {
-                reveal(x, y);
-                fovExists = true;
-            }
-        }
-        else {
-            if (fovExists) {
-                scan(y + 1, start, (x - 0.5) / y, transparent, reveal);
-            }
-            reveal(x, y);
-            fovExists = false;
-            start = (x + 0.5) / y;
-            if (start >= end)
-                return;
-        }
-    }
-    if (fovExists) {
-        scan(y + 1, start, end, transparent, reveal);
-    }
-}
-
 /** create a new player */
 function create$2(entity, { position, behavior, fov, memory }) {
     position[entity] = xy2pos(Math.round(WIDTH / 2), Math.round(HEIGHT / 2));
@@ -447,7 +494,7 @@ function move(game, self, direction) {
     const { position } = game.components;
     const { actors, types } = game.level;
     const targetPos = position[self] + direction;
-    if (types[targetPos] === 'floor') {
+    if (Tiles[types[targetPos]].canWalk) {
         actors[position[self]] = undefined;
         position[self] = targetPos;
         actors[position[self]] = self;
@@ -456,16 +503,18 @@ function move(game, self, direction) {
     reschedule(game);
 }
 function look(game, self) {
+    const types = game.level.types;
     const { fov, memory, position } = game.components;
     fov[self] = {};
-    function transparent(pos) {
-        return game.level.types[pos] === 'floor';
-    }
-    function reveal(pos) {
-        fov[self][pos] = true;
-        memory[self][pos] = game.level.types[pos];
-    }
-    shadowcast(position[self], transparent, reveal);
+    // function transparent(pos: number) {
+    //     return game.level.types[pos] === 'floor'
+    // }
+    // function reveal(pos: number) {
+    //     fov[self][pos] = true
+    //     memory[self][pos] = game.level.types[pos]
+    // }
+    shadowcast(position[self], pos => Tiles[types[pos]].transparency === 2, pos => fov[self][pos] = true);
+    shadowcast(position[self], pos => Tiles[types[pos]].transparency > 0, pos => memory[self][pos] = types[pos]);
 }
 
 const VERSION = '0.1.1';

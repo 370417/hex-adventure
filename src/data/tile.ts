@@ -1,25 +1,27 @@
 /** @file constants for map tiles */
 
-export const unknown = {
-    x: 0,
-    y: 0,
-    color: 'transparent',
+export type TileName = 'wall' | 'floor' | 'shortGrass' | 'tallGrass'
+
+interface Tile {
+    transparency: 0 | 1 | 2
+    canWalk: boolean
 }
 
-export const floor = {
-    x: 1,
-    y: 0,
-    color: '#FFF',
-}
-
-export const wall = {
-    x: 0,
-    y: 0,
-    color: '#999',
-}
-
-export const player = {
-    x: 0,
-    y: 1,
-    color: '#FFF',
+export const Tiles: Record<TileName, Tile> = {
+    wall: {
+        transparency: 0,
+        canWalk: false,
+    },
+    floor: {
+        transparency: 2,
+        canWalk: true,
+    },
+    shortGrass: {
+        transparency: 2,
+        canWalk: true,
+    },
+    tallGrass: {
+        transparency: 1,
+        canWalk: true,
+    },
 }

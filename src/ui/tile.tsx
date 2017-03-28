@@ -1,6 +1,5 @@
 import { WIDTH, HEIGHT } from '../data/constants'
 import { xu, smallyu } from '../data/style'
-import * as tiles from '../data/tile'
 
 import * as React from 'react'
 

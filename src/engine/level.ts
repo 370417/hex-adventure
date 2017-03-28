@@ -1,15 +1,17 @@
 import { WIDTH, HEIGHT } from '../data/constants'
+import { TileName } from '../data/tile'
 
 import { floodfill, floodfillSet, countGroups, surrounded, forEachNeighbor, xy2pos, pos2xy } from './position'
 import { shuffle } from './random'
 import { Components } from './components'
+import { shadowcast } from './fov'
 
 import Alea from '../lib/alea'
 
 /** @file handles level generation and iteration */
 
 export interface Level {
-    types: {[pos: number]: string}
+    types: {[pos: number]: TileName}
     actors: {[pos: number]: number}
 }
 
@@ -29,6 +31,8 @@ export function create(seed: any, player: number, components: Components): Level
         return create(random(), player, components)
     }
     fillSmallCaves()
+    const visibility = generateVisibility()
+    placeGrass()
 
     const actors = createActors()
 
@@ -46,7 +50,7 @@ export function create(seed: any, player: number, components: Components): Level
      * all tiles are initially walls except for the player's position, which is a floor
      */
     function createTypes() {
-        const types: {[pos: number]: string} = {}
+        const types: {[pos: number]: TileName} = {}
         forEachPos(pos => {
             types[pos] = 'wall'
         })
@@ -189,6 +193,32 @@ export function create(seed: any, player: number, components: Components): Level
                 for (const pos of cave) {
                     fillDeadEnd(pos)
                 }
+            }
+        })
+    }
+
+    /** Find the number of tiles visible from each tile */
+    function generateVisibility() {
+        const visibility: {[pos: number]: number} = {}
+        forEachInnerPos(pos => {
+            let tiles = new Set()
+            const transparent = (pos: number) => types[pos] === 'floor'
+            const reveal = (pos: number) => tiles.add(pos)
+            if (transparent(pos)) {
+                shadowcast(pos, transparent, reveal)
+            }
+            visibility[pos] = tiles.size
+            console.log(tiles.size)
+        })
+        return visibility
+    }
+
+    function placeGrass() {
+        forEachInnerPos(pos => {
+            if (visibility[pos] > 80) {
+                types[pos] = 'tallGrass'
+            } else if (visibility[pos] > 60) {
+                types[pos] = 'shortGrass'
             }
         })
     }
