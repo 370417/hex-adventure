@@ -7,6 +7,7 @@ import { Components } from './components'
 import { shadowcast } from './fov'
 
 import Alea from '../lib/alea'
+import * as Noise from '../lib/noise'
 
 /** @file handles level generation and iteration */
 
@@ -20,6 +21,8 @@ export function create(seed: any, player: number, components: Components): Level
     const {position} = components
 
     const random = Alea(seed)
+    Noise.seed(random())
+
     const types = createTypes()
     // const weights = createRandomWeights() // for lakes
 
@@ -214,10 +217,17 @@ export function create(seed: any, player: number, components: Components): Level
     }
 
     function placeGrass() {
-        forEachInnerPos(pos => {
-            if (visibility[pos] > 80) {
+        forEachInnerPos((pos, x, y) => {
+            if (types[pos] === 'wall') {
+                return
+            }
+            const z = 0 - x - y
+            const zoom = 10
+            // random simplex number between 0 and 2
+            const noise = Noise.simplex3(x / zoom, y / zoom, z / zoom) + 1
+            if (visibility[pos] < 40 * noise) {
                 types[pos] = 'tallGrass'
-            } else if (visibility[pos] > 60) {
+            } else if (visibility[pos] < 60 * noise) {
                 types[pos] = 'shortGrass'
             }
         })
