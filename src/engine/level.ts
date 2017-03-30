@@ -211,7 +211,6 @@ export function create(seed: any, player: number, components: Components): Level
                 shadowcast(pos, transparent, reveal)
             }
             visibility[pos] = tiles.size
-            console.log(tiles.size)
         })
         return visibility
     }
