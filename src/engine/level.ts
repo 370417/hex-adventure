@@ -12,8 +12,8 @@ import * as Noise from '../lib/noise'
 /** @file handles level generation and iteration */
 
 export interface Level {
-    types: {[pos: number]: TileName}
-    actors: {[pos: number]: number}
+    tiles: {[pos: number]: TileName}
+    mobs: {[pos: number]: number}
 }
 
 /** create a new level */
@@ -23,7 +23,7 @@ export function create(seed: any, player: number, components: Components): Level
     const random = Alea(seed)
     Noise.seed(random())
 
-    const types = createTypes()
+    const tiles = createTiles()
     // const weights = createRandomWeights() // for lakes
 
     //makeLakes()
@@ -37,7 +37,7 @@ export function create(seed: any, player: number, components: Components): Level
     const visibility = generateVisibility()
     placeGrass()
 
-    const actors = createActors()
+    const mobs = createMobs()
 
     /** return a dict of positions to a random number */
     // function createRandomWeights() {
@@ -52,7 +52,7 @@ export function create(seed: any, player: number, components: Components): Level
      * return a dict of positions to tile types
      * all tiles are initially walls except for the player's position, which is a floor
      */
-    function createTypes() {
+    function createTiles() {
         const types: {[pos: number]: TileName} = {}
         forEachPos(pos => {
             types[pos] = 'wall'
@@ -62,25 +62,25 @@ export function create(seed: any, player: number, components: Components): Level
     }
 
     /** return a dict of positions to actor ids */
-    function createActors() {
-        const actors: {[pos: number]: number} = {}
-        actors[position[player]] = player
-        return actors
+    function createMobs() {
+        const mobs: {[pos: number]: number} = {}
+        mobs[position[player]] = player
+        return mobs
     }
 
     /** whether the tile at [pos] is a floor tile */
     function isFloor(pos: number) {
-        return types[pos] === 'floor'
+        return tiles[pos] === 'floor'
     }
 
     /** whether the tile at [pos] is passable */
     function passable(pos: number) {
-        return types[pos] === 'floor'// || types[pos] === '.'SHALLOW_WATER
+        return tiles[pos] === 'floor'// || tiles[pos] === '.'SHALLOW_WATER
     }
 
     /** whether the tile at [pos] is a wall tile */
     function isWall(pos: number) {
-        return inBounds(pos) && types[pos] === 'wall'
+        return inBounds(pos) && tiles[pos] === 'wall'
     }
 
     // function makeLake() {
@@ -113,7 +113,7 @@ export function create(seed: any, player: number, components: Components): Level
         forEachInnerPos(pos => innerPositions.push(pos))
         shuffle(Array.from(innerPositions), random).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
-                types[pos] = 'floor'
+                tiles[pos] = 'floor'
             }
         })
     }
@@ -132,7 +132,7 @@ export function create(seed: any, player: number, components: Components): Level
 
             if (wallGroup.size < 6) {
                 for (const pos of wallGroup) {
-                    types[pos] = 'floor'
+                    tiles[pos] = 'floor'
                 }
             }
         })
@@ -144,8 +144,8 @@ export function create(seed: any, player: number, components: Components): Level
         floodfillSet(position[player], passable, mainCave)
 
         forEachInnerPos(pos => {
-            if (types[pos] === 'floor' && !mainCave.has(pos)) {
-                types[pos] = 'wall'
+            if (tiles[pos] === 'floor' && !mainCave.has(pos)) {
+                tiles[pos] = 'wall'
             }
         })
 
@@ -172,7 +172,7 @@ export function create(seed: any, player: number, components: Components): Level
     /** recursively fill a dead end */
     function fillDeadEnd(pos: number) {
         if (isDeadEnd(pos)) {
-            types[pos] = 'wall'
+            tiles[pos] = 'wall'
             forEachNeighbor(pos, neighbor => {
                 if (pos === position[player] && passable(neighbor)) {
                     position[player] = neighbor
@@ -192,7 +192,7 @@ export function create(seed: any, player: number, components: Components): Level
             floodfillSet(pos, isCave, cave)
 
             if (cave.size === 2 || cave.size === 3) {
-                types[pos] = 'wall'
+                tiles[pos] = 'wall'
                 for (const pos of cave) {
                     fillDeadEnd(pos)
                 }
@@ -204,20 +204,20 @@ export function create(seed: any, player: number, components: Components): Level
     function generateVisibility() {
         const visibility: {[pos: number]: number} = {}
         forEachInnerPos(pos => {
-            let tiles = new Set()
-            const transparent = (pos: number) => types[pos] === 'floor'
-            const reveal = (pos: number) => tiles.add(pos)
+            let fov = new Set()
+            const transparent = (pos: number) => tiles[pos] === 'floor'
+            const reveal = (pos: number) => fov.add(pos)
             if (transparent(pos)) {
                 shadowcast(pos, transparent, reveal)
             }
-            visibility[pos] = tiles.size
+            visibility[pos] = fov.size
         })
         return visibility
     }
 
     function placeGrass() {
         forEachInnerPos((pos, x, y) => {
-            if (types[pos] === 'wall') {
+            if (tiles[pos] === 'wall') {
                 return
             }
             const z = 0 - x - y
@@ -225,16 +225,16 @@ export function create(seed: any, player: number, components: Components): Level
             // random simplex number between 0 and 2
             const noise = Noise.simplex3(x / zoom, y / zoom, z / zoom) + 1
             if (visibility[pos] < 40 * noise) {
-                types[pos] = 'tallGrass'
+                tiles[pos] = 'tallGrass'
             } else if (visibility[pos] < 60 * noise) {
-                types[pos] = 'shortGrass'
+                tiles[pos] = 'shortGrass'
             }
         })
     }
 
     return {
-        types,
-        actors,
+        tiles,
+        mobs,
     }
 }
 

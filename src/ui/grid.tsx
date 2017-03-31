@@ -7,7 +7,7 @@ import * as React from 'react'
 
 /** renders all map tiles */
 export default function Grid({game}: {game: Game}) {
-    const {types, actors} = game.level
+    const {tiles, mobs} = game.level
     // const {fov, memory} = game.player
     const fov = game.components.fov[game.player]
     const memory = game.components.memory[game.player]
@@ -18,15 +18,15 @@ export default function Grid({game}: {game: Game}) {
         let opacity = 0
         if (fov[pos]) {
             // visible tiles
-            if (actors[pos]) {
-                type = game.components.behavior[actors[pos]]
+            if (mobs[pos]) {
+                type = game.components.behavior[mobs[pos]]
             } else {
-                type = types[pos]
+                type = tiles[pos]
             }
             opacity = 1
         } else if (memory[pos]) {
             // remembered tiles
-            type = types[pos]
+            type = tiles[pos]
             opacity = 0.5
         }
         children.push(
