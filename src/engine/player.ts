@@ -1,11 +1,12 @@
 import { WIDTH, HEIGHT } from '../data/constants'
-import { Tiles } from '../data/tile'
+import { transparency } from '../data/tile'
 
 import { xy2pos } from './position'
 import { reschedule } from './schedule'
 import { Game } from './game'
 import { shadowcast } from './fov'
 import { Components } from './components'
+import { walk } from './character'
 
 /** create a new player */
 export function create(entity: number, {position, behavior, fov, memory}: Components) {
@@ -15,16 +16,9 @@ export function create(entity: number, {position, behavior, fov, memory}: Compon
     memory[entity] = {}
 }
 
-export function move(game: Game, self: number, direction: number) {
-    const {position} = game.components
-    const {actors, types} = game.level
-    const targetPos = position[self] + direction
-    if (Tiles[types[targetPos]].canWalk) {
-        actors[position[self]] = undefined
-        position[self] = targetPos
-        actors[position[self]] = self
-    }
-    look(game, self)
+export function move(game: Game, entity: number, direction: number) {
+    walk(game.level, game.components, entity, direction)
+    look(game, entity)
     reschedule(game)
 }
 
@@ -39,6 +33,6 @@ export function look(game: Game, self: number) {
     //     fov[self][pos] = true
     //     memory[self][pos] = game.level.types[pos]
     // }
-    shadowcast(position[self], pos => Tiles[types[pos]].transparency === 2, pos => fov[self][pos] = true)
-    shadowcast(position[self], pos => Tiles[types[pos]].transparency > 0, pos => memory[self][pos] = types[pos])
+    shadowcast(position[self], pos => transparency[types[pos]] === 2, pos => fov[self][pos] = true)
+    shadowcast(position[self], pos => transparency[types[pos]] > 0, pos => memory[self][pos] = types[pos])
 }
