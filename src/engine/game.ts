@@ -1,6 +1,7 @@
 import * as Level from './level'
 import * as Player from './player'
 import { Components } from './components'
+import * as Entity from './entity'
 
 import * as Alea from '../lib/alea'
 
@@ -34,16 +35,21 @@ export function getGame() {
 function create(seed: number): Game {
     const version = VERSION
     const schedule: number[] = []
-    const components = {
+    const components: Components = {
         position: {},
         behavior: {},
         fov: {},
         memory: {},
     }
-    const nextEntity = 1
-    const player = 1
+    let nextEntity = 1
+    const player = nextEntity++
     Player.create(player, components)
-    schedule.unshift(player)
+    schedule.push(player)
+
+    const environment = nextEntity++
+    components.behavior[environment] = 'environment'
+    schedule.push(environment)
+
     const level = Level.create(seed, player, components)
     const alea = Alea.seed(seed)
 

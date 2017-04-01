@@ -20,9 +20,9 @@ export function create(entity: number, {position, behavior, fov, memory}: Compon
 
 /** move the player */
 export function move(game: Game, player: number, direction: number) {
-    walk(game.level, game.components, player, direction)
+    walk(game, player, direction)
     look(game, player)
-    reschedule(game)
+    reschedule(game.schedule)
 }
 
 export function look(game: Game, self: number) {

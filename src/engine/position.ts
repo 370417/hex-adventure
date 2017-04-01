@@ -15,6 +15,18 @@ export function pos2xy(pos: number) {
     }
 }
 
+/** return the distance between (x1, y1) and (x2, y2) */
+export function calcDistance(x1: number, y1: number, x2: number, y2: number) {
+    return Math.abs(x2 - x1) + Math.abs(y2 - y1)
+}
+
+/** return the distance between pos1 and pos2 */
+export function calcDistancePos(pos1: number, pos2: number) {
+    const {x: x1, y: y1} = pos2xy(pos1)
+    const {x: x2, y: y2} = pos2xy(pos2)
+    return calcDistance(x1, y1, x2, y2)
+}
+
 /** return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup] */
 export function countGroups(pos: number, ingroup: (pos: number) => boolean) {
     // use var instead of let because

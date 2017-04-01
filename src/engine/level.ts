@@ -6,7 +6,7 @@ import { shuffle } from './random'
 import { Components } from './components'
 import { shadowcast } from './fov'
 
-import Alea from '../lib/alea'
+import * as Alea from '../lib/alea'
 import * as Noise from '../lib/noise'
 
 /** @file handles level generation and iteration */
@@ -14,14 +14,16 @@ import * as Noise from '../lib/noise'
 export interface Level {
     tiles: {[pos: number]: TileName}
     mobs: {[pos: number]: number}
+    grassDelay: {[pos: number]: number}
 }
 
 /** create a new level */
 export function create(seed: any, player: number, components: Components): Level {
     const {position} = components
 
-    const random = Alea(seed)
-    Noise.seed(random())
+    const alea = Alea.seed(seed)
+    const random = Alea.random
+    Noise.seed(random(alea))
 
     const tiles = createTiles()
     // const weights = createRandomWeights() // for lakes
@@ -31,7 +33,7 @@ export function create(seed: any, player: number, components: Components): Level
     removeSmallWalls()
     const size = removeOtherCaves()
     if (size < WIDTH * HEIGHT / 4) {
-        return create(random(), player, components)
+        return create(random(alea), player, components)
     }
     fillSmallCaves()
     const visibility = generateVisibility()
@@ -111,7 +113,7 @@ export function create(seed: any, player: number, components: Components): Level
     function carveCaves() {
         const innerPositions: number[] = [];
         forEachInnerPos(pos => innerPositions.push(pos))
-        shuffle(Array.from(innerPositions), random).forEach(pos => {
+        shuffle(Array.from(innerPositions), alea).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
                 tiles[pos] = 'floor'
             }
@@ -235,6 +237,7 @@ export function create(seed: any, player: number, components: Components): Level
     return {
         tiles,
         mobs,
+        grassDelay: {},
     }
 }
 
