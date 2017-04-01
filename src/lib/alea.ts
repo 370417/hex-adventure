@@ -3,7 +3,18 @@
 // Johannes Baagøe <baagoe@baagoe.com>, 2010
 // version 0.9
 
-export default function Alea(...args: any[]) {
+/** @file pseudo-random number generation */
+
+/** internal state of the prng */
+export interface RandState {
+    s0: number
+    s1: number
+    s2: number
+    c: number
+}
+
+/** seed a new prng state */
+export function seed(...args: any[]): RandState {
     const mash = Mash()
     let s0 = mash(' ')
     let s1 = mash(' ')
@@ -29,12 +40,15 @@ export default function Alea(...args: any[]) {
         }
     }
 
-    return function random() {
-      let t = 2091639 * s0 + c * 2.3283064365386963e-10 // 2^-32
-      s0 = s1
-      s1 = s2
-      return s2 = t - (c = t | 0)
-    }
+    return {s0, s1, s2, c}
+}
+
+/** generate a random number between 0 and 1 */
+export function random(state: RandState) {
+    const t = 2091639 * state.s0 + state.c * 2.3283064365386963e-10 // 2^-32
+    state.s0 = state.s1
+    state.s1 = state.s2
+    return state.s2 = t - (state.c = t | 0)
 }
 
 function Mash() {

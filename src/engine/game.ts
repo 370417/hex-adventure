@@ -2,6 +2,8 @@ import * as Level from './level'
 import * as Player from './player'
 import { Components } from './components'
 
+import * as Alea from '../lib/alea'
+
 /** @file handles game creation, saving, and loading */
 
 export interface Game {
@@ -9,8 +11,10 @@ export interface Game {
     seed: number
     schedule: number[]
     components: Components
+    nextEntity: number
     player: number
     level: Level.Level
+    alea: Alea.RandState
 }
 
 const VERSION = '0.1.2'
@@ -36,12 +40,14 @@ function create(seed: number): Game {
         fov: {},
         memory: {},
     }
+    const nextEntity = 1
     const player = 1
     Player.create(player, components)
     schedule.unshift(player)
     const level = Level.create(seed, player, components)
+    const alea = Alea.seed(seed)
 
-    return {version, seed, schedule, components, player, level}
+    return {version, seed, schedule, components, nextEntity, player, level, alea}
 }
 
 /** save a game */
