@@ -26,7 +26,7 @@ export default function Grid({game}: {game: Game}) {
             opacity = 1
         } else if (memory[pos]) {
             // remembered tiles
-            type = tiles[pos]
+            type = memory[pos]
             opacity = 0.5
         }
         children.push(
