@@ -40,6 +40,7 @@ function create(seed: number): Game {
         behavior: {},
         fov: {},
         memory: {},
+        velocity: {},
     }
     let nextEntity = 1
     const player = nextEntity++

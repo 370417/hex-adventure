@@ -39,5 +39,5 @@ export default function Grid({game}: {game: Game}) {
             />
         )
     })
-    return <div>{children}</div>
+    return <div id="grid">{children}</div>
 }

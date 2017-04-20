@@ -23,6 +23,10 @@ function pos2xy(pos) {
         y: Math.floor(pos / WIDTH),
     };
 }
+/** return the distance between (x1, y1) and (x2, y2) */
+
+/** return the distance between pos1 and pos2 */
+
 /** return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup] */
 function countGroups(pos, ingroup) {
     // use var instead of let because
@@ -82,15 +86,70 @@ function forEachNeighbor(pos, callback) {
     }
 }
 
+// Port of alea.js to typescript
+// From http://baagoe.com/en/RandomMusings/javascript/
+// Johannes Baagøe <baagoe@baagoe.com>, 2010
+// version 0.9
+/** seed a new prng state */
+function seed(...args) {
+    const mash = Mash();
+    let s0 = mash(' ');
+    let s1 = mash(' ');
+    let s2 = mash(' ');
+    let c = 1;
+    if (args.length === 0) {
+        args = [Date.now()];
+    }
+    for (let i = 0; i < args.length; i++) {
+        s0 -= mash(args[i]);
+        if (s0 < 0) {
+            s0 += 1;
+        }
+        s1 -= mash(args[i]);
+        if (s1 < 0) {
+            s1 += 1;
+        }
+        s2 -= mash(args[i]);
+        if (s2 < 0) {
+            s2 += 1;
+        }
+    }
+    return { s0, s1, s2, c };
+}
+/** generate a random number between 0 and 1 */
+function random(state) {
+    const t = 2091639 * state.s0 + state.c * 2.3283064365386963e-10; // 2^-32
+    state.s0 = state.s1;
+    state.s1 = state.s2;
+    return state.s2 = t - (state.c = t | 0);
+}
+function Mash() {
+    let n = 0xefc8249d;
+    return function mash(data) {
+        data = data.toString();
+        for (let i = 0; i < data.length; i++) {
+            n += data.charCodeAt(i);
+            let h = 0.02519603282416938 * n;
+            n = h >>> 0;
+            h -= n;
+            h *= n;
+            n = h >>> 0;
+            h -= n;
+            n += h * 0x100000000; // 2^32
+        }
+        return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
+    };
+}
+
 /** @file helper functions for working with randomness */
 /** return a random integer in the range [min, max] inclusive */
-function randint(min, max, random) {
-    return min + Math.floor((max - min + 1) * random());
+function randint(min, max, state) {
+    return min + Math.floor((max - min + 1) * random(state));
 }
 /** randomly shuffle an array in place */
-function shuffle(array, random) {
+function shuffle(array, state) {
     for (let i = array.length - 1; i > 0; i--) {
-        const j = randint(0, i, random);
+        const j = randint(0, i, state);
         const tempi = array[i];
         array[i] = array[j];
         array[j] = tempi;
@@ -165,59 +224,6 @@ function scan(y, start, end, transparent, reveal) {
     }
 }
 
-// Port of alea.js to typescript
-// From http://baagoe.com/en/RandomMusings/javascript/
-// Johannes Baagøe <baagoe@baagoe.com>, 2010
-// version 0.9
-// Port of alea.js to typescript
-function Alea(...args) {
-    const mash = Mash();
-    let s0 = mash(' ');
-    let s1 = mash(' ');
-    let s2 = mash(' ');
-    let c = 1;
-    if (args.length === 0) {
-        args = [Date.now()];
-    }
-    for (let i = 0; i < args.length; i++) {
-        s0 -= mash(args[i]);
-        if (s0 < 0) {
-            s0 += 1;
-        }
-        s1 -= mash(args[i]);
-        if (s1 < 0) {
-            s1 += 1;
-        }
-        s2 -= mash(args[i]);
-        if (s2 < 0) {
-            s2 += 1;
-        }
-    }
-    return function random() {
-        let t = 2091639 * s0 + c * 2.3283064365386963e-10; // 2^-32
-        s0 = s1;
-        s1 = s2;
-        return s2 = t - (c = t | 0);
-    };
-}
-function Mash() {
-    let n = 0xefc8249d;
-    return function mash(data) {
-        data = data.toString();
-        for (let i = 0; i < data.length; i++) {
-            n += data.charCodeAt(i);
-            let h = 0.02519603282416938 * n;
-            n = h >>> 0;
-            h -= n;
-            h *= n;
-            n = h >>> 0;
-            h -= n;
-            n += h * 0x100000000; // 2^32
-        }
-        return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
-    };
-}
-
 /*
  * A speed-improved perlin and simplex noise algorithms for 2D.
  *
@@ -267,7 +273,7 @@ var perm = new Array(512);
 var gradP = new Array(512);
 // This isn't a very good seeding function, but it works ok. It supports 2^16
 // different seed values. Write something better if you need more seeds.
-function seed(seed) {
+function seed$1(seed) {
     if (seed > 0 && seed < 1) {
         // Scale the seed out
         seed *= 65536;
@@ -289,7 +295,7 @@ function seed(seed) {
     }
 }
 
-seed(0);
+seed$1(0);
 var F3 = 1 / 3;
 var G3 = 1 / 6;
 // 2D simplex noise
@@ -430,21 +436,22 @@ function simplex3(xin, yin, zin) {
 /** create a new level */
 function create$1(seed$$1, player, components) {
     const { position } = components;
-    const random = Alea(seed$$1);
-    seed(random());
-    const types = createTypes();
+    const alea = seed(seed$$1);
+    const random$$1 = random;
+    seed$1(random$$1(alea));
+    const tiles = createTiles();
     // const weights = createRandomWeights() // for lakes
     //makeLakes()
     carveCaves();
     removeSmallWalls();
     const size = removeOtherCaves();
     if (size < WIDTH * HEIGHT / 4) {
-        return create$1(random(), player, components);
+        return create$1(random$$1(alea), player, components);
     }
     fillSmallCaves();
     const visibility = generateVisibility();
     placeGrass();
-    const actors = createActors();
+    const mobs = createMobs();
     /** return a dict of positions to a random number */
     // function createRandomWeights() {
     //     const weights = {}
@@ -457,7 +464,7 @@ function create$1(seed$$1, player, components) {
      * return a dict of positions to tile types
      * all tiles are initially walls except for the player's position, which is a floor
      */
-    function createTypes() {
+    function createTiles() {
         const types = {};
         forEachPos(pos => {
             types[pos] = 'wall';
@@ -466,22 +473,22 @@ function create$1(seed$$1, player, components) {
         return types;
     }
     /** return a dict of positions to actor ids */
-    function createActors() {
-        const actors = {};
-        actors[position[player]] = player;
-        return actors;
+    function createMobs() {
+        const mobs = {};
+        mobs[position[player]] = player;
+        return mobs;
     }
     /** whether the tile at [pos] is a floor tile */
     function isFloor(pos) {
-        return types[pos] === 'floor';
+        return tiles[pos] === 'floor';
     }
     /** whether the tile at [pos] is passable */
     function passable(pos) {
-        return types[pos] === 'floor'; // || types[pos] === '.'SHALLOW_WATER
+        return tiles[pos] === 'floor'; // || tiles[pos] === '.'SHALLOW_WATER
     }
     /** whether the tile at [pos] is a wall tile */
     function isWall(pos) {
-        return inBounds(pos) && types[pos] === 'wall';
+        return inBounds(pos) && tiles[pos] === 'wall';
     }
     // function makeLake() {
     //     const center = shuffle(Array.from(innerPositions), random)[0]
@@ -507,9 +514,9 @@ function create$1(seed$$1, player, components) {
     function carveCaves() {
         const innerPositions = [];
         forEachInnerPos(pos => innerPositions.push(pos));
-        shuffle(Array.from(innerPositions), random).forEach(pos => {
+        shuffle(Array.from(innerPositions), alea).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
-                types[pos] = 'floor';
+                tiles[pos] = 'floor';
             }
         });
     }
@@ -526,7 +533,7 @@ function create$1(seed$$1, player, components) {
             floodfill(pos, floodable, flood);
             if (wallGroup.size < 6) {
                 for (const pos of wallGroup) {
-                    types[pos] = 'floor';
+                    tiles[pos] = 'floor';
                 }
             }
         });
@@ -536,8 +543,8 @@ function create$1(seed$$1, player, components) {
         const mainCave = new Set();
         floodfillSet(position[player], passable, mainCave);
         forEachInnerPos(pos => {
-            if (types[pos] === 'floor' && !mainCave.has(pos)) {
-                types[pos] = 'wall';
+            if (tiles[pos] === 'floor' && !mainCave.has(pos)) {
+                tiles[pos] = 'wall';
             }
         });
         return mainCave.size;
@@ -559,7 +566,7 @@ function create$1(seed$$1, player, components) {
     /** recursively fill a dead end */
     function fillDeadEnd(pos) {
         if (isDeadEnd(pos)) {
-            types[pos] = 'wall';
+            tiles[pos] = 'wall';
             forEachNeighbor(pos, neighbor => {
                 if (pos === position[player] && passable(neighbor)) {
                     position[player] = neighbor;
@@ -577,7 +584,7 @@ function create$1(seed$$1, player, components) {
             const cave = new Set();
             floodfillSet(pos, isCave, cave);
             if (cave.size === 2 || cave.size === 3) {
-                types[pos] = 'wall';
+                tiles[pos] = 'wall';
                 for (const pos of cave) {
                     fillDeadEnd(pos);
                 }
@@ -588,19 +595,19 @@ function create$1(seed$$1, player, components) {
     function generateVisibility() {
         const visibility = {};
         forEachInnerPos(pos => {
-            let tiles = new Set();
-            const transparent = (pos) => types[pos] === 'floor';
-            const reveal = (pos) => tiles.add(pos);
+            let fov = new Set();
+            const transparent = (pos) => tiles[pos] === 'floor';
+            const reveal = (pos) => fov.add(pos);
             if (transparent(pos)) {
                 shadowcast(pos, transparent, reveal);
             }
-            visibility[pos] = tiles.size;
+            visibility[pos] = fov.size;
         });
         return visibility;
     }
     function placeGrass() {
         forEachInnerPos((pos, x, y) => {
-            if (types[pos] === 'wall') {
+            if (tiles[pos] === 'wall') {
                 return;
             }
             const z = 0 - x - y;
@@ -608,16 +615,17 @@ function create$1(seed$$1, player, components) {
             // random simplex number between 0 and 2
             const noise = simplex3(x / zoom, y / zoom, z / zoom) + 1;
             if (visibility[pos] < 40 * noise) {
-                types[pos] = 'tallGrass';
+                tiles[pos] = 'tallGrass';
             }
             else if (visibility[pos] < 60 * noise) {
-                types[pos] = 'shortGrass';
+                tiles[pos] = 'shortGrass';
             }
         });
     }
     return {
-        types,
-        actors,
+        tiles,
+        mobs,
+        grassDelay: {},
     };
 }
 /** return the minimum x coordinate for a given [y], inclusive */
@@ -655,23 +663,21 @@ function forEachInnerPos(fun) {
 }
 
 /** @file constants for map tiles */
-const Tiles = {
-    wall: {
-        transparency: 0,
-        canWalk: false,
-    },
-    floor: {
-        transparency: 2,
-        canWalk: true,
-    },
-    shortGrass: {
-        transparency: 2,
-        canWalk: true,
-    },
-    tallGrass: {
-        transparency: 1,
-        canWalk: true,
-    },
+const transparency = {
+    wall: 0,
+    floor: 2,
+    shortGrass: 2,
+    tallGrass: 1,
+    lowSpikes: 2,
+    highSpikes: 2,
+};
+const canWalk = {
+    wall: false,
+    floor: true,
+    shortGrass: true,
+    tallGrass: true,
+    lowSpikes: true,
+    highSpikes: false,
 };
 
 const behaviors = {
@@ -682,6 +688,42 @@ const behaviors = {
             look(game, self);
         }
         return Infinity;
+    },
+    snake: (game, self) => {
+        reschedule(game.schedule);
+        return 0;
+    },
+    environment: (game, self) => {
+        const { tiles, grassDelay } = game.level;
+        forEachPos(pos => {
+            if (tiles[pos] === 'shortGrass' && grassDelay[pos] !== undefined) {
+                grassDelay[pos]--;
+                if (!grassDelay[pos]) {
+                    grassDelay[pos] = undefined;
+                    tiles[pos] = 'tallGrass';
+                }
+            }
+        });
+        reschedule(game.schedule);
+        return 0;
+    },
+    spike: (game, self) => {
+        const { position, velocity } = game.components;
+        const { tiles, mobs } = game.level;
+        const pos = position[self];
+        const prevPos = pos - velocity[self];
+        if (tiles[prevPos] === 'lowSpikes') {
+            tiles[prevPos] = 'highSpikes';
+        }
+        if (canWalk[tiles[pos]]) {
+            tiles[pos] = 'lowSpikes';
+            position[self] += velocity[self];
+            look(game, game.player);
+        }
+        else {
+            unschedule(game.schedule);
+        }
+        return 6;
     }
 };
 
@@ -693,12 +735,48 @@ function step(game) {
     return behaviors[behavior](game, entity);
 }
 /** end current actor's turn and setup its next turn */
-function reschedule(game) {
-    const entity = game.schedule.shift();
-    game.schedule.push(entity);
+function reschedule(schedule) {
+    const entity = schedule.shift();
+    schedule.push(entity);
 }
 /** end current actor's turn and remove it from the schedule */
+function unschedule(schedule) {
+    schedule.shift();
+}
 
+/** @file manipulates entities that can be represented on the map */
+/** move the entity */
+function move$1(game, entity, direction) {
+    const mobs = game.level.mobs;
+    const position = game.components.position;
+    mobs[position[entity]] = undefined;
+    position[entity] = position[entity] + direction;
+    mobs[position[entity]] = entity;
+}
+const onWalk = {
+    tallGrass: (game, pos, entity, direction) => {
+        game.level.tiles[pos] = 'shortGrass';
+        game.level.grassDelay[pos] = randint(3, 5, game.alea);
+    }
+};
+/** move the entity if possible */
+function walk(game, entity, direction) {
+    const targetPos = game.components.position[entity] + direction;
+    const targetTile = game.level.tiles[targetPos];
+    if (canWalk[game.level.tiles[targetPos]]) {
+        move$1(game, entity, direction);
+        if (onWalk[targetTile]) {
+            onWalk[targetTile](game, targetPos, entity, direction);
+        }
+    }
+}
+
+/** @file handles entity creation */
+const create$3 = function (game) {
+    return game.nextEntity++;
+};
+
+/** @file manipulates the player character */
 /** create a new player */
 function create$2(entity, { position, behavior, fov, memory }) {
     position[entity] = xy2pos(Math.round(WIDTH / 2), Math.round(HEIGHT / 2));
@@ -706,31 +784,34 @@ function create$2(entity, { position, behavior, fov, memory }) {
     fov[entity] = {};
     memory[entity] = {};
 }
-function move(game, self, direction) {
-    const { position } = game.components;
-    const { actors, types } = game.level;
-    const targetPos = position[self] + direction;
-    if (Tiles[types[targetPos]].canWalk) {
-        actors[position[self]] = undefined;
-        position[self] = targetPos;
-        actors[position[self]] = self;
-    }
-    look(game, self);
-    reschedule(game);
+/** move the player */
+function move$$1(game, player, direction) {
+    walk(game, player, direction);
+    look(game, player);
+    reschedule(game.schedule);
 }
 function look(game, self) {
-    const types = game.level.types;
+    const tiles = game.level.tiles;
     const { fov, memory, position } = game.components;
     fov[self] = {};
     // function transparent(pos: number) {
-    //     return game.level.types[pos] === 'floor'
+    //     return game.level.tiles[pos] === 'floor'
     // }
     // function reveal(pos: number) {
     //     fov[self][pos] = true
-    //     memory[self][pos] = game.level.types[pos]
+    //     memory[self][pos] = game.level.tiles[pos]
     // }
-    shadowcast(position[self], pos => Tiles[types[pos]].transparency === 2, pos => fov[self][pos] = true);
-    shadowcast(position[self], pos => Tiles[types[pos]].transparency > 0, pos => memory[self][pos] = types[pos]);
+    shadowcast(position[self], pos => transparency[tiles[pos]] === 2, pos => fov[self][pos] = true);
+    shadowcast(position[self], pos => transparency[tiles[pos]] > 0, pos => memory[self][pos] = tiles[pos]);
+}
+function magic(game, player) {
+    const { position, velocity, behavior } = game.components;
+    reschedule(game.schedule);
+    const spike = create$3(game);
+    game.schedule.unshift(spike);
+    position[spike] = position[player] + 1;
+    velocity[spike] = 1;
+    behavior[spike] = 'spike';
 }
 
 const VERSION = '0.1.2';
@@ -745,7 +826,7 @@ function getGame() {
     return game;
 }
 /** create a new game */
-function create$$1(seed) {
+function create$$1(seed$$1) {
     const version = VERSION;
     const schedule = [];
     const components = {
@@ -753,12 +834,18 @@ function create$$1(seed) {
         behavior: {},
         fov: {},
         memory: {},
+        velocity: {},
     };
-    const player = 1;
+    let nextEntity = 1;
+    const player = nextEntity++;
     create$2(player, components);
-    schedule.unshift(player);
-    const level = create$1(seed, player, components);
-    return { version, seed, schedule, components, player, level };
+    schedule.push(player);
+    const environment = nextEntity++;
+    components.behavior[environment] = 'environment';
+    schedule.push(environment);
+    const level = create$1(seed$$1, player, components);
+    const alea = seed(seed$$1);
+    return { version, seed: seed$$1, schedule, components, nextEntity, player, level, alea };
 }
 /** save a game */
 function save(game) {
@@ -791,7 +878,7 @@ function Tile({ type, color, x, y, opacity }) {
 
 /** renders all map tiles */
 function Grid({ game }) {
-    const { types, actors } = game.level;
+    const { tiles, mobs } = game.level;
     // const {fov, memory} = game.player
     const fov = game.components.fov[game.player];
     const memory = game.components.memory[game.player];
@@ -802,22 +889,22 @@ function Grid({ game }) {
         let opacity = 0;
         if (fov[pos]) {
             // visible tiles
-            if (actors[pos]) {
-                type = game.components.behavior[actors[pos]];
+            if (mobs[pos]) {
+                type = game.components.behavior[mobs[pos]];
             }
             else {
-                type = types[pos];
+                type = tiles[pos];
             }
             opacity = 1;
         }
         else if (memory[pos]) {
             // remembered tiles
-            type = types[pos];
+            type = memory[pos];
             opacity = 0.5;
         }
         children.push(React.createElement(Tile, { key: pos, type: type, x: x, y: y, opacity: opacity }));
     });
-    return React.createElement("div", null, children);
+    return React.createElement("div", { id: "grid" }, children);
 }
 
 /** @file handles input */
@@ -830,9 +917,14 @@ const movement = {
     KeyW: dir11,
 };
 function keydown(game, e) {
+    skip();
     const direction = movement[e.code];
     if (direction) {
-        move(game, game.player, direction);
+        move$$1(game, game.player, direction);
+        loop();
+    }
+    if (e.code === 'Digit1') {
+        magic(game, game.player);
         loop();
     }
 }
@@ -841,14 +933,18 @@ function keydown(game, e) {
 const root = document.getElementById('game');
 const game = getGame();
 window.addEventListener('keydown', keydown.bind(window, game), false);
+let animationId;
+let animationFun;
+let skippingAnimation = false;
 /** advance the gamestate until player input is needed */
 function loop() {
     let delay = 0;
-    while (!delay) {
+    while (!delay || skippingAnimation && delay < Infinity) {
         delay = step(game);
     }
     ReactDOM.render(React.createElement(Grid, { game: game }), root);
     if (delay === Infinity) {
+        skippingAnimation = false;
         save(game);
     }
     else {
@@ -858,11 +954,20 @@ function loop() {
 /** call [fun] after waiting for [frames] */
 function defer(fun, frames) {
     if (frames) {
-        requestAnimationFrame(() => defer(fun, frames - 1));
+        animationFun = fun;
+        animationId = requestAnimationFrame(() => defer(fun, frames - 1));
     }
     else {
         fun();
     }
+}
+/** skip all animations until player's next turn */
+function skip() {
+    if (animationId === undefined)
+        return;
+    skippingAnimation = true;
+    cancelAnimationFrame(animationId);
+    animationFun();
 }
 
 /** @file entry point */

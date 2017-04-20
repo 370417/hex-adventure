@@ -7,6 +7,7 @@ import { Game } from './game'
 import { shadowcast } from './fov'
 import { Components } from './components'
 import { walk } from './mob'
+import * as Entity from './entity'
 
 /** @file manipulates the player character */
 
@@ -38,4 +39,14 @@ export function look(game: Game, self: number) {
     // }
     shadowcast(position[self], pos => transparency[tiles[pos]] === 2, pos => fov[self][pos] = true)
     shadowcast(position[self], pos => transparency[tiles[pos]] > 0, pos => memory[self][pos] = tiles[pos])
+}
+
+export function magic(game: Game, player: number) {
+    const {position, velocity, behavior} = game.components
+    reschedule(game.schedule)
+    const spike = Entity.create(game)
+    game.schedule.unshift(spike)
+    position[spike] = position[player] + 1
+    velocity[spike] = 1
+    behavior[spike] = 'spike'
 }

@@ -14,14 +14,19 @@ const game = getGame()
 
 window.addEventListener('keydown', keydown.bind(window, game), false)
 
+let animationId: number
+let animationFun: Function
+let skippingAnimation = false
+
 /** advance the gamestate until player input is needed */
 export function loop() {
     let delay = 0
-    while (!delay) {
+    while (!delay || skippingAnimation && delay < Infinity) {
         delay = step(game)
     }
     ReactDOM.render(<Grid game={game} />, root)
     if (delay === Infinity) {
+        skippingAnimation = false
         save(game)
     } else {
         defer(loop, delay)
@@ -31,8 +36,17 @@ export function loop() {
 /** call [fun] after waiting for [frames] */
 function defer(fun: () => void, frames: number) {
     if (frames) {
-        requestAnimationFrame(() => defer(fun, frames - 1))
+        animationFun = fun
+        animationId = requestAnimationFrame(() => defer(fun, frames - 1))
     } else {
         fun()
     }
+}
+
+/** skip all animations until player's next turn */
+export function skip() {
+    if (animationId === undefined) return
+    skippingAnimation = true
+    cancelAnimationFrame(animationId)
+    animationFun()
 }

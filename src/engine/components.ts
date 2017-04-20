@@ -11,4 +11,5 @@ interface Entity  {
     behavior: Behavior
     fov: {[pos: number]: boolean}
     memory: {[pos: number]: string}
+    velocity: number
 }

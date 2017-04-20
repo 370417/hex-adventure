@@ -49,6 +49,18 @@ html {
     background: #080;
 }
 
+.lowSpikes {
+    -webkit-mask: url(tileset.png) -2em 0rem;
+    mask: url(tileset.png) -2em 0rem;
+    background: #888;
+}
+
+.highSpikes {
+    -webkit-mask: url(tileset.png) -3em 0rem;
+    mask: url(tileset.png) -3em 0rem;
+    background: #888;
+}
+
 .deepWater {
     -webkit-mask: url(tileset.png) -5em 0rem;
     mask: url(tileset.png) -5em 0rem;
