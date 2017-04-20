@@ -44,11 +44,8 @@ export const behaviors: Record<Behavior, (game: Game, self: number) => number> =
         const {tiles, mobs} = game.level
         const pos = position[self]
         const prevPos = pos - velocity[self]
-        if (tiles[prevPos] === 'lowSpikes') {
-            tiles[prevPos] = 'highSpikes'
-        }
         if (canWalk[tiles[pos]]) {
-            tiles[pos] = 'lowSpikes'
+            tiles[pos] = 'spikes'
             position[self] += velocity[self]
             look(game, game.player)
         } else {

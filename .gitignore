@@ -1,4 +1,5 @@
 *.xcf
+tileset.png
 ignore/
 node_modules/
 npm-debug.log

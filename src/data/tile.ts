@@ -1,6 +1,6 @@
 /** @file constants for map tiles */
 
-export type TileName = 'wall' | 'floor' | 'shortGrass' | 'tallGrass' | 'lowSpikes' | 'highSpikes'
+export type TileName = 'wall' | 'floor' | 'shortGrass' | 'tallGrass' | 'spikes'
 
 type TileData<T> = Record<TileName, T>
 
@@ -9,8 +9,7 @@ export const transparency: TileData< 0 | 1 | 2> = {
     floor: 2,
     shortGrass: 2,
     tallGrass: 1,
-    lowSpikes: 2,
-    highSpikes: 2,
+    spikes: 2,
 }
 
 export const canWalk: TileData<boolean> = {
@@ -18,6 +17,5 @@ export const canWalk: TileData<boolean> = {
     floor: true,
     shortGrass: true,
     tallGrass: true,
-    lowSpikes: true,
-    highSpikes: false,
+    spikes: false,
 }

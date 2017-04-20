@@ -668,16 +668,14 @@ const transparency = {
     floor: 2,
     shortGrass: 2,
     tallGrass: 1,
-    lowSpikes: 2,
-    highSpikes: 2,
+    spikes: 2,
 };
 const canWalk = {
     wall: false,
     floor: true,
     shortGrass: true,
     tallGrass: true,
-    lowSpikes: true,
-    highSpikes: false,
+    spikes: false,
 };
 
 const behaviors = {
@@ -712,11 +710,8 @@ const behaviors = {
         const { tiles, mobs } = game.level;
         const pos = position[self];
         const prevPos = pos - velocity[self];
-        if (tiles[prevPos] === 'lowSpikes') {
-            tiles[prevPos] = 'highSpikes';
-        }
         if (canWalk[tiles[pos]]) {
-            tiles[pos] = 'lowSpikes';
+            tiles[pos] = 'spikes';
             position[self] += velocity[self];
             look(game, game.player);
         }
@@ -865,15 +860,29 @@ function load() {
 /** @file constants related to visual style */ const xu = 18;
 const smallyu = 16;
 
+const char = {
+    wall: '#',
+    floor: '.',
+    shortGrass: "'",
+    tallGrass: '"',
+    spikes: '^',
+    player: '@',
+};
+const color = {
+    wall: '#EEE',
+    floor: '#FFF',
+    shortGrass: '#080',
+    tallGrass: '#080',
+    spikes: '#EEE',
+    player: '#FFF',
+};
+
 /** renders one map tile */
-function Tile({ type, color, x, y, opacity }) {
+function Tile({ char: char$$1, color: color$$1, x, y, opacity }) {
     const left = (x - (HEIGHT - y - 1) / 2) * xu;
     const top = y * smallyu;
-    const style = { left, top, opacity };
-    if (color) {
-        style.background = color;
-    }
-    return React.createElement("div", { className: `tile ${type}`, style: style });
+    const style = { left, top, opacity, color: color$$1 };
+    return React.createElement("div", { className: "tile", style: style }, char$$1);
 }
 
 /** renders all map tiles */
@@ -902,7 +911,7 @@ function Grid({ game }) {
             type = memory[pos];
             opacity = 0.5;
         }
-        children.push(React.createElement(Tile, { key: pos, type: type, x: x, y: y, opacity: opacity }));
+        children.push(React.createElement(Tile, { key: pos, char: char[type], color: color[type], x: x, y: y, opacity: opacity }));
     });
     return React.createElement("div", { id: "grid" }, children);
 }

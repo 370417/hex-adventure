@@ -1,3 +1,5 @@
+import { char, color } from '../data/style'
+
 import { forEachPos } from '../engine/level'
 import { Game } from '../engine/game'
 
@@ -32,7 +34,8 @@ export default function Grid({game}: {game: Game}) {
         children.push(
             <Tile
                 key={pos}
-                type={type}
+                char={char[type]}
+                color={color[type]}
                 x={x}
                 y={y}
                 opacity={opacity}
