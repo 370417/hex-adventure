@@ -1,18 +1,31 @@
+///<reference path="../lib/pixi.js.d.ts"/>
+
+import { WIDTH, HEIGHT } from '../data/constants'
+import { xu, smallyu, bigyu } from '../data/style'
+
 import { getGame, save } from '../engine/game'
 import { step } from '../engine/schedule'
 
 import Grid from './grid'
 import { keydown } from './input'
 
-import * as React from 'react'
-import * as ReactDOM from 'react-dom'
-
 /** @file handles displaying the game and the game loop */
 
 const root = document.getElementById('game')
 const game = getGame()
 
+let canvasWidth = (WIDTH - HEIGHT / 2 + 1) * xu
+let canvasHeight = HEIGHT * smallyu
+
+const app = new PIXI.Application({
+    width: canvasWidth,
+    height: canvasHeight,
+})
+root.appendChild(app.view)
+
 window.addEventListener('keydown', keydown.bind(window, game), false)
+
+export 
 
 let animationId: number
 let animationFun: Function

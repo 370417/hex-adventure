@@ -19,8 +19,6 @@
   "homepage": "https://github.com/as-f/hex-adventure#readme",
   "devDependencies": {
     "rollup": "^0.41.5",
-    "typescript": "^2.2.1",
-    "@types/react": "^15.0.16",
-    "@types/react-dom": "^0.14.23"
+    "typescript": "^2.2.1"
   }
 }
