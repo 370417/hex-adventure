@@ -1,9 +1,8 @@
 import { dir1, dir3, dir5, dir7, dir9, dir11 } from '../data/constants'
 
-import { Game } from '../engine/game'
 import { move, magic } from '../engine/player'
 
-import { loop, skip } from './display'
+import { Display/*, loop, skip*/ } from './display'
 
 /** @file handles input */
 
@@ -17,15 +16,15 @@ const movement: {[code: string]: number} = {
 }
 
 
-export function keydown(game: Game, e: KeyboardEvent) {
-    skip()
+export function keydown(game: Display, e: KeyboardEvent) {
+    // skip()
     const direction = movement[e.code]
     if (direction) {
-        move(game, game.player, direction)
-        loop()
+        move(game, game.getPlayer(), direction)
+        // loop()
     }
     if (e.code === 'Digit1') {
-        magic(game, game.player)
-        loop()
+        magic(game, game.getPlayer())
+        // loop()
     }
 }

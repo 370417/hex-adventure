@@ -1,4 +1,4 @@
-(function (React,ReactDOM) {
+(function () {
 'use strict';
 
 const WIDTH = 48;
@@ -10,6 +10,19 @@ const dir7 = -1 + WIDTH;
 const dir9 = -1;
 const dir11 = -WIDTH;
 const directions = [dir1, dir3, dir5, dir7, dir9, dir11];
+
+/** @file constants related to visual style */
+/** @file constants related to visual style */ const xu = 18;
+const smallyu = 16;
+const bigyu = 24;
+const color = {
+    wall: 0xEEEEEE,
+    floor: 0xFFFFFF,
+    shortGrass: 0x008800,
+    tallGrass: 0x008800,
+    spikes: 0xEEEEEE,
+    player: 0xFFFFFF,
+};
 
 /** @file helper functions for working with positions */
 /** convert the coordinate pair [x], [y] into an integer position */
@@ -86,70 +99,14 @@ function forEachNeighbor(pos, callback) {
     }
 }
 
-// Port of alea.js to typescript
-// From http://baagoe.com/en/RandomMusings/javascript/
-// Johannes Baagøe <baagoe@baagoe.com>, 2010
-// version 0.9
-/** seed a new prng state */
-function seed(...args) {
-    const mash = Mash();
-    let s0 = mash(' ');
-    let s1 = mash(' ');
-    let s2 = mash(' ');
-    let c = 1;
-    if (args.length === 0) {
-        args = [Date.now()];
-    }
-    for (let i = 0; i < args.length; i++) {
-        s0 -= mash(args[i]);
-        if (s0 < 0) {
-            s0 += 1;
-        }
-        s1 -= mash(args[i]);
-        if (s1 < 0) {
-            s1 += 1;
-        }
-        s2 -= mash(args[i]);
-        if (s2 < 0) {
-            s2 += 1;
-        }
-    }
-    return { s0, s1, s2, c };
-}
-/** generate a random number between 0 and 1 */
-function random(state) {
-    const t = 2091639 * state.s0 + state.c * 2.3283064365386963e-10; // 2^-32
-    state.s0 = state.s1;
-    state.s1 = state.s2;
-    return state.s2 = t - (state.c = t | 0);
-}
-function Mash() {
-    let n = 0xefc8249d;
-    return function mash(data) {
-        data = data.toString();
-        for (let i = 0; i < data.length; i++) {
-            n += data.charCodeAt(i);
-            let h = 0.02519603282416938 * n;
-            n = h >>> 0;
-            h -= n;
-            h *= n;
-            n = h >>> 0;
-            h -= n;
-            n += h * 0x100000000; // 2^32
-        }
-        return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
-    };
-}
-
-/** @file helper functions for working with randomness */
 /** return a random integer in the range [min, max] inclusive */
-function randint(min, max, state) {
-    return min + Math.floor((max - min + 1) * random(state));
+function randint(min, max, random) {
+    return min + Math.floor((max - min + 1) * random());
 }
 /** randomly shuffle an array in place */
-function shuffle(array, state) {
+function shuffle(array, random) {
     for (let i = array.length - 1; i > 0; i--) {
-        const j = randint(0, i, state);
+        const j = randint(0, i, random);
         const tempi = array[i];
         array[i] = array[j];
         array[j] = tempi;
@@ -222,6 +179,61 @@ function scan(y, start, end, transparent, reveal) {
     if (fovExists) {
         scan(y + 1, start, end, transparent, reveal);
     }
+}
+
+// Port of alea.js to typescript
+// From http://baagoe.com/en/RandomMusings/javascript/
+// Johannes Baagøe <baagoe@baagoe.com>, 2010
+// version 0.9
+/** seed a new prng state */
+function seed(...args) {
+    const mash = Mash();
+    let s0 = mash(' ');
+    let s1 = mash(' ');
+    let s2 = mash(' ');
+    let c = 1;
+    if (args.length === 0) {
+        args = [Date.now()];
+    }
+    for (let i = 0; i < args.length; i++) {
+        s0 -= mash(args[i]);
+        if (s0 < 0) {
+            s0 += 1;
+        }
+        s1 -= mash(args[i]);
+        if (s1 < 0) {
+            s1 += 1;
+        }
+        s2 -= mash(args[i]);
+        if (s2 < 0) {
+            s2 += 1;
+        }
+    }
+    return { s0, s1, s2, c };
+}
+/** generate a random number between 0 and 1 */
+function random(state) {
+    const t = 2091639 * state.s0 + state.c * 2.3283064365386963e-10; // 2^-32
+    state.s0 = state.s1;
+    state.s1 = state.s2;
+    return state.s2 = t - (state.c = t | 0);
+}
+function Mash() {
+    let n = 0xefc8249d;
+    return function mash(data) {
+        data = data.toString();
+        for (let i = 0; i < data.length; i++) {
+            n += data.charCodeAt(i);
+            let h = 0.02519603282416938 * n;
+            n = h >>> 0;
+            h -= n;
+            h *= n;
+            n = h >>> 0;
+            h -= n;
+            n += h * 0x100000000; // 2^32
+        }
+        return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
+    };
 }
 
 /*
@@ -434,11 +446,10 @@ function simplex3(xin, yin, zin) {
 // 3D Perlin Noise
 
 /** create a new level */
-function create$1(seed$$1, player, components) {
-    const { position } = components;
+function create(seed$$1, playerPos) {
     const alea = seed(seed$$1);
-    const random$$1 = random;
-    seed$1(random$$1(alea));
+    const random$$1 = () => random(alea);
+    seed$1(random$$1());
     const tiles = createTiles();
     // const weights = createRandomWeights() // for lakes
     //makeLakes()
@@ -446,12 +457,11 @@ function create$1(seed$$1, player, components) {
     removeSmallWalls();
     const size = removeOtherCaves();
     if (size < WIDTH * HEIGHT / 4) {
-        return create$1(random$$1(alea), player, components);
+        return create(seed$$1, playerPos);
     }
     fillSmallCaves();
     const visibility = generateVisibility();
     placeGrass();
-    const mobs = createMobs();
     /** return a dict of positions to a random number */
     // function createRandomWeights() {
     //     const weights = {}
@@ -469,14 +479,8 @@ function create$1(seed$$1, player, components) {
         forEachPos(pos => {
             types[pos] = 'wall';
         });
-        types[position[player]] = 'floor';
+        types[playerPos] = 'floor';
         return types;
-    }
-    /** return a dict of positions to actor ids */
-    function createMobs() {
-        const mobs = {};
-        mobs[position[player]] = player;
-        return mobs;
     }
     /** whether the tile at [pos] is a floor tile */
     function isFloor(pos) {
@@ -514,7 +518,7 @@ function create$1(seed$$1, player, components) {
     function carveCaves() {
         const innerPositions = [];
         forEachInnerPos(pos => innerPositions.push(pos));
-        shuffle(Array.from(innerPositions), alea).forEach(pos => {
+        shuffle(Array.from(innerPositions), random$$1).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
                 tiles[pos] = 'floor';
             }
@@ -541,7 +545,7 @@ function create$1(seed$$1, player, components) {
     /** remove disconnected caves */
     function removeOtherCaves() {
         const mainCave = new Set();
-        floodfillSet(position[player], passable, mainCave);
+        floodfillSet(playerPos, passable, mainCave);
         forEachInnerPos(pos => {
             if (tiles[pos] === 'floor' && !mainCave.has(pos)) {
                 tiles[pos] = 'wall';
@@ -568,8 +572,8 @@ function create$1(seed$$1, player, components) {
         if (isDeadEnd(pos)) {
             tiles[pos] = 'wall';
             forEachNeighbor(pos, neighbor => {
-                if (pos === position[player] && passable(neighbor)) {
-                    position[player] = neighbor;
+                if (pos === playerPos && passable(neighbor)) {
+                    playerPos = neighbor;
                 }
                 fillDeadEnd(neighbor);
             });
@@ -624,8 +628,7 @@ function create$1(seed$$1, player, components) {
     }
     return {
         tiles,
-        mobs,
-        grassDelay: {},
+        playerPos,
     };
 }
 /** return the minimum x coordinate for a given [y], inclusive */
@@ -662,189 +665,139 @@ function forEachInnerPos(fun) {
     }
 }
 
-/** @file constants for map tiles */
-const transparency = {
-    wall: 0,
-    floor: 2,
-    shortGrass: 2,
-    tallGrass: 1,
-    spikes: 2,
-};
-const canWalk = {
-    wall: false,
-    floor: true,
-    shortGrass: true,
-    tallGrass: true,
-    spikes: false,
-};
-
-const behaviors = {
-    player: (game, self) => {
-        const { fov, position } = game.components;
-        // initialize fov if uninitiazlied
-        if (!fov[position[self]]) {
-            look(game, self);
-        }
-        return Infinity;
-    },
-    snake: (game, self) => {
-        reschedule(game.schedule);
-        return 0;
-    },
-    environment: (game, self) => {
-        const { tiles, grassDelay } = game.level;
-        forEachPos(pos => {
-            if (tiles[pos] === 'shortGrass' && grassDelay[pos] !== undefined) {
-                grassDelay[pos]--;
-                if (!grassDelay[pos]) {
-                    grassDelay[pos] = undefined;
-                    tiles[pos] = 'tallGrass';
-                }
-            }
-        });
-        reschedule(game.schedule);
-        return 0;
-    },
-    spike: (game, self) => {
-        const { position, velocity } = game.components;
-        const { tiles, mobs } = game.level;
-        const pos = position[self];
-        const prevPos = pos - velocity[self];
-        if (canWalk[tiles[pos]]) {
-            tiles[pos] = 'spikes';
-            position[self] += velocity[self];
-            look(game, game.player);
-        }
-        else {
-            unschedule(game.schedule);
-        }
-        return 6;
-    }
-};
-
-/** @file handles actor behavior and scheduling (turn order) */
-/** advance gamestate by an atomic step */
-function step(game) {
-    const entity = game.schedule[0];
-    const behavior = game.components.behavior[entity];
-    return behaviors[behavior](game, entity);
-}
-/** end current actor's turn and setup its next turn */
-function reschedule(schedule) {
-    const entity = schedule.shift();
-    schedule.push(entity);
-}
-/** end current actor's turn and remove it from the schedule */
-function unschedule(schedule) {
-    schedule.shift();
-}
-
-/** @file manipulates entities that can be represented on the map */
-/** move the entity */
-function move$1(game, entity, direction) {
-    const mobs = game.level.mobs;
-    const position = game.components.position;
-    mobs[position[entity]] = undefined;
-    position[entity] = position[entity] + direction;
-    mobs[position[entity]] = entity;
-}
-const onWalk = {
-    tallGrass: (game, pos, entity, direction) => {
-        game.level.tiles[pos] = 'shortGrass';
-        game.level.grassDelay[pos] = randint(3, 5, game.alea);
-    }
-};
-/** move the entity if possible */
-function walk(game, entity, direction) {
-    const targetPos = game.components.position[entity] + direction;
-    const targetTile = game.level.tiles[targetPos];
-    if (canWalk[game.level.tiles[targetPos]]) {
-        move$1(game, entity, direction);
-        if (onWalk[targetTile]) {
-            onWalk[targetTile](game, targetPos, entity, direction);
-        }
-    }
-}
-
-/** @file handles entity creation */
-const create$3 = function (game) {
-    return game.nextEntity++;
-};
-
-/** @file manipulates the player character */
-/** create a new player */
-function create$2(entity, { position, behavior, fov, memory }) {
-    position[entity] = xy2pos(Math.round(WIDTH / 2), Math.round(HEIGHT / 2));
-    behavior[entity] = 'player';
-    fov[entity] = {};
-    memory[entity] = {};
-}
-/** move the player */
-function move$$1(game, player, direction) {
-    walk(game, player, direction);
-    look(game, player);
-    reschedule(game.schedule);
-}
-function look(game, self) {
-    const tiles = game.level.tiles;
-    const { fov, memory, position } = game.components;
-    fov[self] = {};
-    // function transparent(pos: number) {
-    //     return game.level.tiles[pos] === 'floor'
-    // }
-    // function reveal(pos: number) {
-    //     fov[self][pos] = true
-    //     memory[self][pos] = game.level.tiles[pos]
-    // }
-    shadowcast(position[self], pos => transparency[tiles[pos]] === 2, pos => fov[self][pos] = true);
-    shadowcast(position[self], pos => transparency[tiles[pos]] > 0, pos => memory[self][pos] = tiles[pos]);
-}
-function magic(game, player) {
-    const { position, velocity, behavior } = game.components;
-    reschedule(game.schedule);
-    const spike = create$3(game);
-    game.schedule.unshift(spike);
-    position[spike] = position[player] + 1;
-    velocity[spike] = 1;
-    behavior[spike] = 'spike';
-}
-
+// import * as Player from './player'
 const VERSION = '0.1.2';
 const SAVE_NAME = 'hex adventure';
-/** load save game if it exists, otherwise create a new game */
-function getGame() {
-    let game = load() || create$$1(Date.now());
-    if (game.version !== VERSION) {
-        console.warn('Save game is out of date');
+class Game {
+    constructor() {
+        this.state = load() || create$1(Date.now());
+        if (this.state.version !== VERSION) {
+            console.warn('Save game is out of date');
+        }
+        console.log('Seed:', this.state.seed);
     }
-    console.log('Seed:', game.seed);
-    return game;
+    getPlayer() {
+        return this.state.player;
+    }
+    getPosition(entity) {
+        return this.state.components.position[entity];
+    }
+    setPosition(entity, position) {
+        this.state.components.position[entity] = position;
+    }
+    offsetPosition(entity, delta) {
+        this.state.components.position[entity] += delta;
+    }
+    getVelocity(entity) {
+        return this.state.components.velocity[entity];
+    }
+    setVelocity(entity, velocity) {
+        this.state.components.velocity[entity] = velocity;
+    }
+    getBehavior(entity) {
+        return this.state.components.behavior[entity];
+    }
+    setBehavior(entity, behavior) {
+        this.state.components.behavior[entity] = behavior;
+    }
+    getTile(position) {
+        return this.state.level.tiles[position];
+    }
+    setTile(position, tile) {
+        this.state.level.tiles[position] = tile;
+    }
+    getGrassDelay(position) {
+        return this.state.level.grassDelay[position];
+    }
+    setGrassDelay(position, delay) {
+        this.state.level.grassDelay[position] = delay;
+    }
+    getMob(position) {
+        return this.state.level.mobs[position];
+    }
+    getMobType(entity) {
+        return this.state.components.behavior[entity];
+    }
+    removeMob(position) {
+        this.state.level.mobs[position] = undefined;
+    }
+    setMob(position, entity) {
+        this.state.level.mobs[position] = entity;
+    }
+    getFov(entity, position) {
+        return this.state.components.fov[entity][position];
+    }
+    clearFov(entity) {
+        this.state.components.fov[entity] = {};
+    }
+    addFov(entity, position) {
+        this.state.components.fov[entity][position] = true;
+    }
+    getMemory(entity, position) {
+        return this.state.components.memory[entity][position];
+    }
+    setMemory(entity, position, tile) {
+        this.state.components.memory[entity][position] = tile;
+    }
+    createEntity() {
+        return this.state.nextEntity++;
+    }
+    /** add a new entity in the schedule before the current actor */
+    schedule(entity) {
+        this.state.schedule.unshift(entity);
+    }
+    /** end current actor's turn and setup its next turn */
+    reschedule() {
+        const entity = this.state.schedule.shift();
+        this.state.schedule.push(entity);
+    }
+    /** end current actor's turn and remove it from the schedule */
+    unschedule() {
+        this.state.schedule.shift();
+    }
+    getCurrentEntity() {
+        return this.state.schedule[0];
+    }
+    save() {
+        localStorage[SAVE_NAME] = JSON.stringify(this.state);
+    }
+    random() {
+        return random(this.state.alea);
+    }
 }
 /** create a new game */
-function create$$1(seed$$1) {
-    const version = VERSION;
-    const schedule = [];
-    const components = {
-        position: {},
-        behavior: {},
-        fov: {},
-        memory: {},
-        velocity: {},
+function create$1(seed$$1) {
+    const center = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2));
+    const level = create(seed$$1, center);
+    return {
+        version: VERSION,
+        seed: seed$$1,
+        schedule: [1, 2],
+        components: {
+            position: {
+                '1': level.playerPos,
+            },
+            behavior: {
+                '1': 'player',
+                '2': 'environment',
+            },
+            fov: {
+                '1': {},
+            },
+            memory: {
+                '1': {},
+            },
+            velocity: {},
+        },
+        nextEntity: 3,
+        player: 1,
+        level: {
+            tiles: {},
+            mobs: {},
+            grassDelay: {},
+        },
+        alea: seed(seed$$1),
     };
-    let nextEntity = 1;
-    const player = nextEntity++;
-    create$2(player, components);
-    schedule.push(player);
-    const environment = nextEntity++;
-    components.behavior[environment] = 'environment';
-    schedule.push(environment);
-    const level = create$1(seed$$1, player, components);
-    const alea = seed(seed$$1);
-    return { version, seed: seed$$1, schedule, components, nextEntity, player, level, alea };
-}
-/** save a game */
-function save(game) {
-    localStorage[SAVE_NAME] = JSON.stringify(game);
 }
 /** load the saved game if it exists */
 function load() {
@@ -856,130 +809,104 @@ function load() {
 //     localStorage.removeItem(SAVE_NAME)
 // }
 
-/** @file constants related to visual style */
-/** @file constants related to visual style */ const xu = 18;
-const smallyu = 16;
-
-const char = {
-    wall: '#',
-    floor: '.',
-    shortGrass: "'",
-    tallGrass: '"',
-    spikes: '^',
-    player: '@',
-};
-const color = {
-    wall: '#EEE',
-    floor: '#FFF',
-    shortGrass: '#080',
-    tallGrass: '#080',
-    spikes: '#EEE',
-    player: '#FFF',
-};
-
-/** renders one map tile */
-function Tile({ char: char$$1, color: color$$1, x, y, opacity }) {
-    const left = (x - (HEIGHT - y - 1) / 2) * xu;
-    const top = y * smallyu;
-    const style = { left, top, opacity, color: color$$1 };
-    return React.createElement("div", { className: "tile", style: style }, char$$1);
-}
-
-/** renders all map tiles */
-function Grid({ game }) {
-    const { tiles, mobs } = game.level;
-    // const {fov, memory} = game.player
-    const fov = game.components.fov[game.player];
-    const memory = game.components.memory[game.player];
-    const children = [];
-    forEachPos((pos, x, y) => {
-        // default values for unknown tiles
-        let type = 'empty';
-        let opacity = 0;
-        if (fov[pos]) {
-            // visible tiles
-            if (mobs[pos]) {
-                type = game.components.behavior[mobs[pos]];
-            }
-            else {
-                type = tiles[pos];
-            }
-            opacity = 1;
-        }
-        else if (memory[pos]) {
-            // remembered tiles
-            type = memory[pos];
-            opacity = 0.5;
-        }
-        children.push(React.createElement(Tile, { key: pos, char: char[type], color: color[type], x: x, y: y, opacity: opacity }));
-    });
-    return React.createElement("div", { id: "grid" }, children);
-}
-
-/** @file handles input */
-const movement = {
-    KeyE: dir1,
-    KeyD: dir3,
-    KeyX: dir5,
-    KeyZ: dir7,
-    KeyA: dir9,
-    KeyW: dir11,
-};
-function keydown(game, e) {
-    skip();
-    const direction = movement[e.code];
-    if (direction) {
-        move$$1(game, game.player, direction);
-        loop();
-    }
-    if (e.code === 'Digit1') {
-        magic(game, game.player);
-        loop();
-    }
-}
-
+///<reference path="../lib/pixi.js.d.ts"/>
 /** @file handles displaying the game and the game loop */
 const root = document.getElementById('game');
-const game = getGame();
-window.addEventListener('keydown', keydown.bind(window, game), false);
-let animationId;
-let animationFun;
-let skippingAnimation = false;
+const canvasWidth = (WIDTH - HEIGHT / 2 + 1) * xu;
+const canvasHeight = (HEIGHT - 1) * smallyu + bigyu;
+class Display extends Game {
+    constructor() {
+        super();
+        this.app = new PIXI.Application({
+            width: canvasWidth,
+            height: canvasHeight,
+        });
+        root.appendChild(this.app.view);
+        this.tiles = {};
+        PIXI.loader
+            .add('wall', 'wall.png')
+            .add('floor', 'floor.png')
+            .add('shortGrass', 'shortGrass.png')
+            .add('tallGrass', 'tallGrass.png')
+            .add('spikes', 'spikes.png')
+            .add('player', 'player.png')
+            .load(this.init.bind(this));
+    }
+    init(loader, resources) {
+        const bgContainer = new PIXI.Container();
+        forEachPos((pos, x, y) => {
+            const tileName = this.getTile(pos);
+            const tile = new PIXI.Sprite(resources[tileName].texture);
+            tile.x = (x - (HEIGHT - y - 1) / 2) * xu;
+            tile.y = y * smallyu;
+            if (this.getMob(pos) !== undefined) {
+                tile.visible = false;
+            }
+            else if (this.getFov(this.getPlayer(), pos)) {
+                tile.alpha = 1.0;
+                tile.tint = color[tileName];
+                tile.visible = true;
+            }
+            else if (this.getMemory(this.getPlayer(), pos)) {
+                tile.alpha = 0.5;
+                tile.tint = color[tileName];
+                tile.visible = true;
+            }
+            else {
+                tile.visible = false;
+            }
+            this.tiles[pos] = tile;
+            bgContainer.addChild(tile);
+        });
+        this.app.stage.addChild(bgContainer);
+        this.app.render();
+    }
+    setTile(position, tile) {
+        super.setTile(position, tile);
+    }
+    setPosition(entity, position) {
+        super.setPosition(entity, position);
+    }
+    offsetPosition(entity, delta) {
+        super.offsetPosition(entity, delta);
+    }
+}
+
 /** advance the gamestate until player input is needed */
-function loop() {
-    let delay = 0;
-    while (!delay || skippingAnimation && delay < Infinity) {
-        delay = step(game);
-    }
-    ReactDOM.render(React.createElement(Grid, { game: game }), root);
-    if (delay === Infinity) {
-        skippingAnimation = false;
-        save(game);
-    }
-    else {
-        defer(loop, delay);
-    }
-}
-/** call [fun] after waiting for [frames] */
-function defer(fun, frames) {
-    if (frames) {
-        animationFun = fun;
-        animationId = requestAnimationFrame(() => defer(fun, frames - 1));
-    }
-    else {
-        fun();
-    }
-}
-/** skip all animations until player's next turn */
-function skip() {
-    if (animationId === undefined)
-        return;
-    skippingAnimation = true;
-    cancelAnimationFrame(animationId);
-    animationFun();
-}
+// export function loop() {
+//     let delay = 0
+//     while (!delay || skippingAnimation && delay < Infinity) {
+//         delay = step(game)
+//     }
+//     render(game)
+//     if (delay === Infinity) {
+//         skippingAnimation = false
+//         game.save()
+//     } else {
+//         defer(loop, delay)
+//     }
+// }
+// function render(game: Game) {
+//     app.render()
+// }
+// /** call [fun] after waiting for [frames] */
+// function defer(fun: () => void, frames: number) {
+//     if (frames) {
+//         animationFun = fun
+//         animationId = requestAnimationFrame(() => defer(fun, frames - 1))
+//     } else {
+//         fun()
+//     }
+// }
+// /** skip all animations until player's next turn */
+// export function skip() {
+//     if (animationId === undefined) return
+//     skippingAnimation = true
+//     cancelAnimationFrame(animationId)
+//     animationFun()
+// }
 
 /** @file entry point */
-loop();
+new Display();
 
-}(React,ReactDOM));
+}());

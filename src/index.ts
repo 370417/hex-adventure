@@ -1,5 +1,5 @@
-import { loop } from './ui/display'
+import { Display } from './ui/display'
 
 /** @file entry point */
 
-loop()
+new Display()

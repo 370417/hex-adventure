@@ -15,12 +15,22 @@ html {
     font-size: 24px;
 }
 
+canvas {
+    image-rendering: optimizeSpeed;
+	image-rendering: -moz-crisp-edges;
+	image-rendering: -o-crisp-edges;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: optimize-contrast;
+	image-rendering: crisp-edges;
+	image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+}
+
 /* 1 em = tile width */
 .tile {
     font-size: 18px;
     width: 18px;
     height: 24px;
     position: absolute;
-    font: 24px/1 oryx;
     text-align: center;
 }

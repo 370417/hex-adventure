@@ -1,6 +1,5 @@
 import { Game } from './game'
 import { look } from './player'
-import { reschedule, unschedule } from './schedule'
 import { calcDistancePos } from './position'
 import { forEachPos } from './level'
 
@@ -14,43 +13,47 @@ export type Behavior = 'player' | 'snake' | 'environment' | 'spike'
 
 export const behaviors: Record<Behavior, (game: Game, self: number) => number> = {
     player: (game, self) => {
-        const {fov, position} = game.components
         // initialize fov if uninitiazlied
-        if (!fov[position[self]]) {
+        if (!game.getFov(self, game.getPosition(self))) {
             look(game, self)
         }
         return Infinity
     },
     snake: (game, self) => {
-        reschedule(game.schedule)
+        game.reschedule()
         return 0
     },
     environment: (game, self) => {
-        const {tiles, grassDelay} = game.level
         forEachPos(pos => {
-            if (tiles[pos] === 'shortGrass' && grassDelay[pos] !== undefined) {
-                grassDelay[pos]--
-                if (!grassDelay[pos]) {
-                    grassDelay[pos] = undefined
-                    tiles[pos] = 'tallGrass'
+            const grassDelay = game.getGrassDelay(pos)
+            if (game.getTile(pos) === 'shortGrass' && grassDelay !== undefined) {
+                game.setGrassDelay(pos, grassDelay - 1)
+                if (!game.getGrassDelay(pos)) {
+                    game.setGrassDelay(pos, undefined)
+                    game.setTile(pos, 'tallGrass')
                 }
             }
         })
-        reschedule(game.schedule)
+        game.reschedule()
         return 0
     },
     spike: (game, self) => {
-        const {position, velocity} = game.components
-        const {tiles, mobs} = game.level
-        const pos = position[self]
-        const prevPos = pos - velocity[self]
-        if (canWalk[tiles[pos]]) {
-            tiles[pos] = 'spikes'
-            position[self] += velocity[self]
-            look(game, game.player)
+        // const {tiles, mobs} = game.level
+        const pos = game.getPosition(self)
+        const prevPos = pos - game.getVelocity(self)
+        if (canWalk[game.getTile(pos)]) {
+            game.setTile(pos, 'spikes')
+            game.offsetPosition(self, game.getVelocity(self))
+            look(game, game.getPlayer())
         } else {
-            unschedule(game.schedule)
+            game.unschedule()
         }
         return 6
     }
+}
+
+export function step(game: Game) {
+    const entity = game.getCurrentEntity()
+    const behavior = game.getBehavior(entity)
+    return behaviors[behavior](game, entity)
 }
