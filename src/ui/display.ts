@@ -21,6 +21,10 @@ export class Display extends Game {
     app: PIXI.Application
 
     private tiles: {[pos: number]: PIXI.Sprite}
+    private mobs: {[pos: number]: PIXI.Sprite}
+
+    private skipAnimation: boolean
+    private delayId: number
 
     constructor() {
         super()
@@ -42,13 +46,21 @@ export class Display extends Game {
 
     init(loader: PIXI.loaders.Loader, resources: any) {
         const bgContainer = new PIXI.Container()
+        const mobContainer = new PIXI.Container()
         forEachPos((pos, x, y) => {
             const tileName = this.getTile(pos)
             const tile = new PIXI.Sprite(resources[tileName].texture)
-            tile.x = (x - (HEIGHT - y - 1) / 2) * xu
-            tile.y = y * smallyu
+            const {left, top} = calcOffset(x, y)
+            tile.x = left
+            tile.y = top
             if (this.getMob(pos) !== undefined) {
+                const mobName = this.getBehavior(this.getMob(pos))
                 tile.visible = false
+                const mobTile = new PIXI.Sprite(resources[mobName].texture)
+                mobTile.x = left
+                mobTile.y = top
+                mobTile.tint = color[mobName]
+                mobContainer.addChild(mobTile)
             } else if (this.getFov(this.getPlayer(), pos)) {
                 tile.alpha = 1.0
                 tile.tint = color[tileName]
@@ -64,7 +76,9 @@ export class Display extends Game {
             bgContainer.addChild(tile)
         })
         this.app.stage.addChild(bgContainer)
-        this.app.render()
+        this.app.stage.addChild(mobContainer)
+        // this.app.render()
+        window.addEventListener('keydown', keydown.bind(window, this), false)
     }
 
     setTile(position: number, tile: TileName) {
@@ -78,9 +92,46 @@ export class Display extends Game {
     offsetPosition(entity: number, delta: number) {
         super.offsetPosition(entity, delta)
     }
+
+    loop() {
+        let delay = 0
+        while (!delay || this.skipAnimation && delay < Infinity) {
+            delay = step(this)
+        }
+        this.app.render()
+        if (delay === Infinity) {
+            this.skipAnimation = false
+            this.save()
+        } else {
+            this.defer(delay)
+        }
+    }
+
+    /** call loop after waiting a certain number of frames */
+    defer(frames: number) {
+        if (frames) {
+            this.delayId = requestAnimationFrame(this.defer.bind(this, frames - 1))
+        } else {
+            this.loop()
+        }
+    }
+
+    skip() {
+        if (this.delayId === undefined) return
+        this.skipAnimation = false
+        cancelAnimationFrame(this.delayId)
+        this.loop()
+    }
 }
 
 // window.addEventListener('keydown', keydown.bind(window, game), false)
+
+function calcOffset(x: number, y: number) {
+    return {
+        left: (x - (HEIGHT - y - 1) / 2) * xu,
+        top: y * smallyu,
+    }
+}
 
 let animationId: number
 let animationFun: Function
