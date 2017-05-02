@@ -908,7 +908,6 @@ function keydown(game, e) {
 
 ///<reference path="../lib/pixi.js.d.ts"/>
 /** @file handles displaying the game and the game loop */
-const root = document.getElementById('game');
 const canvasWidth = (WIDTH - HEIGHT / 2 + 1) * xu;
 const canvasHeight = (HEIGHT - 1) * smallyu + bigyu;
 class Display extends Game {
@@ -918,7 +917,7 @@ class Display extends Game {
             width: canvasWidth,
             height: canvasHeight,
         });
-        root.appendChild(this.app.view);
+        document.body.appendChild(this.app.view);
         for (let i = 0; i < spriteNames.length; i++) {
             PIXI.loader.add(spriteNames[i], `${spriteNames[i]}.png`);
         }
@@ -1039,7 +1038,7 @@ class Display extends Game {
     skip() {
         if (this.delayId === undefined)
             return;
-        this.skipAnimation = false;
+        this.skipAnimation = true;
         cancelAnimationFrame(this.delayId);
         this.loop();
     }
