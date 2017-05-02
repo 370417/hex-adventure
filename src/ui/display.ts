@@ -164,7 +164,7 @@ export class Display extends Game {
 
     skip() {
         if (this.delayId === undefined) return
-        this.skipAnimation = false
+        this.skipAnimation = true
         cancelAnimationFrame(this.delayId)
         this.loop()
     }
