@@ -12,8 +12,6 @@ import * as Alea from '../lib/alea'
 interface Entity  {
     position: number
     behavior: Behavior
-    fov: {[pos: number]: boolean}
-    memory: {[pos: number]: TileName}
     velocity: number
 }
 
@@ -32,13 +30,15 @@ interface GameState {
     }
     nextEntity: number
     player: number
+    fov: {[pos: number]: boolean}
+    memory: {[pos: number]: TileName}
     level: {
         [Prop in keyof Tile]: {[pos: number]: Tile[Prop]}
     }
     alea: Alea.RandState
 }
 
-const VERSION = '0.1.2'
+const VERSION = '0.1.3'
 const SAVE_NAME = 'hex adventure'
 
 export class Game {
@@ -116,28 +116,28 @@ export class Game {
         this.state.level.mobs[position] = entity
     }
 
-    getFov(entity: number, position: number): boolean {
-        return this.state.components.fov[entity][position]
+    getFov(position: number): boolean {
+        return this.state.fov[position]
     }
 
-    clearFov(entity: number) {
-        for (let strPos in this.state.components.fov[entity]) {
+    clearFov() {
+        for (let strPos in this.state.fov) {
             const pos = Number(strPos)
-            this.setMemory(entity, pos, this.state.level.tiles[pos])
+            this.setMemory(pos, this.state.level.tiles[pos])
         }
-        this.state.components.fov[entity] = {}
+        this.state.fov = {}
     }
 
-    addFov(entity: number, position: number) {
-        this.state.components.fov[entity][position] = true
+    addFov(position: number) {
+        this.state.fov[position] = true
     }
 
-    getMemory(entity: number, position: number): TileName {
-        return this.state.components.memory[entity][position]
+    getMemory(position: number): TileName {
+        return this.state.memory[position]
     }
 
-    setMemory(entity: number, position: number, tile: TileName) {
-        this.state.components.memory[entity][position] = tile
+    setMemory(position: number, tile: TileName) {
+        this.state.memory[position] = tile
     }
 
     createEntity(): number {
@@ -189,16 +189,12 @@ function create(seed: number): GameState {
                 '1': 'player',
                 '2': 'environment',
             },
-            fov: {
-                '1': {},
-            },
-            memory: {
-                '1': {},
-            },
             velocity: {},
         },
         nextEntity: 3,
         player: 1,
+        fov: {},
+        memory: {},
         level: {
             tiles: level.tiles,
             mobs: {

@@ -14,7 +14,7 @@ export type Behavior = 'player' | 'snake' | 'environment' | 'spike'
 export const behaviors: Record<Behavior, (game: Game, self: number) => number> = {
     player: (game, self) => {
         // initialize fov if uninitiazlied
-        if (!game.getFov(self, game.getPosition(self))) {
+        if (!game.getFov(game.getPosition(self))) {
             look(game, self)
         }
         return Infinity

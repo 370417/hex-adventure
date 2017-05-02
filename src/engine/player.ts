@@ -16,16 +16,16 @@ export function move(game: Game, player: number, direction: number) {
 }
 
 export function look(game: Game, self: number) {
-    game.clearFov(self)
+    game.clearFov()
     shadowcast(
         game.getPosition(self),
         pos => transparency[game.getTile(pos)] > 0,
-        pos => game.setMemory(self, pos, game.getTile(pos))
+        pos => game.setMemory(pos, game.getTile(pos))
     )
     shadowcast(
         game.getPosition(self),
         pos => transparency[game.getTile(pos)] === 2,
-        pos => game.addFov(self, pos)
+        pos => game.addFov(pos)
     )
 }
 

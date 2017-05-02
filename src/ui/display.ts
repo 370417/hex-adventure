@@ -80,8 +80,8 @@ export class Display extends Game {
         return container
     }
 
-    addFov(entity: number, position: number) {
-        super.addFov(entity, position)
+    addFov(position: number) {
+        super.addFov(position)
         const tile = this.getTile(position)
         const sprite = this.tiles[position]
         sprite.visible = true
@@ -90,8 +90,8 @@ export class Display extends Game {
         sprite.alpha = 1
     }
 
-    clearFov(entity: number) {
-        super.clearFov(entity)
+    clearFov() {
+        super.clearFov()
     }
 
     setTile(position: number, tile: TileName) {
@@ -101,8 +101,8 @@ export class Display extends Game {
         sprite.tint = color[tile]
     }
 
-    setMemory(entity: number, position: number, tile: TileName) {
-        super.setMemory(entity, position, tile)
+    setMemory(position: number, tile: TileName) {
+        super.setMemory(position, tile)
         const sprite = this.tiles[position]
         sprite.texture = this.textures[tile]
         sprite.tint = color[tile]
