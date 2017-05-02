@@ -15,6 +15,7 @@ const directions = [dir1, dir3, dir5, dir7, dir9, dir11];
 /** @file constants related to visual style */ const xu = 18;
 const smallyu = 16;
 const bigyu = 24;
+const spriteNames = ['wall', 'floor', 'shortGrass', 'tallGrass', 'spikes', 'player'];
 const color = {
     wall: 0xEEEEEE,
     floor: 0xFFFFFF,
@@ -451,8 +452,6 @@ function create(seed$$1, playerPos) {
     const random$$1 = () => random(alea);
     seed$1(random$$1());
     const tiles = createTiles();
-    // const weights = createRandomWeights() // for lakes
-    //makeLakes()
     carveCaves();
     removeSmallWalls();
     const size = removeOtherCaves();
@@ -462,14 +461,6 @@ function create(seed$$1, playerPos) {
     fillSmallCaves();
     const visibility = generateVisibility();
     placeGrass();
-    /** return a dict of positions to a random number */
-    // function createRandomWeights() {
-    //     const weights = {}
-    //     forEachInnerPos(pos => {
-    //         weights[pos] = random()
-    //     })
-    //     return weights
-    // }
     /**
      * return a dict of positions to tile types
      * all tiles are initially walls except for the player's position, which is a floor
@@ -494,26 +485,6 @@ function create(seed$$1, playerPos) {
     function isWall(pos) {
         return inBounds(pos) && tiles[pos] === 'wall';
     }
-    // function makeLake() {
-    //     const center = shuffle(Array.from(innerPositions), random)[0]
-    //     const neighbors = (pos, callback) => {
-    //         forEachNeighbor(pos, neighbor => {
-    //             if (innerPositions.has(neighbor)) {
-    //                 callback(neighbor)
-    //             }
-    //         })
-    //     }
-    //     const cost = pos => 0.1 + 0.3 * weights.get(pos)
-    //     const lake = flowmap(center, 1, neighbors, cost)
-    //     for ([pos, val] of lake) {
-    //         const type = val < 0.6 ? '.'DEEP_WATER : '.'SHALLOW_WATER
-    //         types.set(pos, type)
-    //     }
-    //     return lake
-    // }
-    // function makeLakes() {
-    //     makeLake()
-    // }
     /** use an (almost) cellular automaton to generate caves */
     function carveCaves() {
         const innerPositions = [];
@@ -665,8 +636,7 @@ function forEachInnerPos(fun) {
     }
 }
 
-// import * as Player from './player'
-const VERSION = '0.1.2';
+const VERSION = '0.1.3';
 const SAVE_NAME = 'hex adventure';
 class Game {
     constructor() {
@@ -724,20 +694,24 @@ class Game {
     setMob(position, entity) {
         this.state.level.mobs[position] = entity;
     }
-    getFov(entity, position) {
-        return this.state.components.fov[entity][position];
+    getFov(position) {
+        return this.state.fov[position];
     }
-    clearFov(entity) {
-        this.state.components.fov[entity] = {};
+    clearFov() {
+        for (let strPos in this.state.fov) {
+            const pos = Number(strPos);
+            this.setMemory(pos, this.state.level.tiles[pos]);
+        }
+        this.state.fov = {};
     }
-    addFov(entity, position) {
-        this.state.components.fov[entity][position] = true;
+    addFov(position) {
+        this.state.fov[position] = true;
     }
-    getMemory(entity, position) {
-        return this.state.components.memory[entity][position];
+    getMemory(position) {
+        return this.state.memory[position];
     }
-    setMemory(entity, position, tile) {
-        this.state.components.memory[entity][position] = tile;
+    setMemory(position, tile) {
+        this.state.memory[position] = tile;
     }
     createEntity() {
         return this.state.nextEntity++;
@@ -781,19 +755,17 @@ function create$1(seed$$1) {
                 '1': 'player',
                 '2': 'environment',
             },
-            fov: {
-                '1': {},
-            },
-            memory: {
-                '1': {},
-            },
             velocity: {},
         },
         nextEntity: 3,
         player: 1,
+        fov: {},
+        memory: {},
         level: {
-            tiles: {},
-            mobs: {},
+            tiles: level.tiles,
+            mobs: {
+                [level.playerPos]: 1,
+            },
             grassDelay: {},
         },
         alea: seed(seed$$1),
@@ -804,10 +776,135 @@ function load() {
     const saveFile = localStorage[SAVE_NAME];
     return saveFile && JSON.parse(saveFile);
 }
-/** delete the current savefile */
-// function deleteSave() {
-//     localStorage.removeItem(SAVE_NAME)
-// }
+
+/** @file constants for map tiles */
+const transparency = {
+    wall: 0,
+    floor: 2,
+    shortGrass: 2,
+    tallGrass: 1,
+    spikes: 2,
+};
+const canWalk = {
+    wall: false,
+    floor: true,
+    shortGrass: true,
+    tallGrass: true,
+    spikes: false,
+};
+
+/** @file manipulates entities that can be represented on the map */
+/** move the entity */
+function move$1(game, entity, direction) {
+    game.removeMob(game.getPosition(entity));
+    game.offsetPosition(entity, direction);
+    game.setMob(game.getPosition(entity), entity);
+}
+const onWalk = {
+    tallGrass: (game, pos, entity, direction) => {
+        game.setTile(pos, 'shortGrass');
+        game.setGrassDelay(pos, randint(3, 5, game.random.bind(game)));
+    }
+};
+/** move the entity if possible */
+function walk(game, entity, direction) {
+    const targetPos = game.getPosition(entity) + direction;
+    const targetTile = game.getTile(targetPos);
+    if (canWalk[game.getTile(targetPos)]) {
+        move$1(game, entity, direction);
+        if (onWalk[targetTile]) {
+            onWalk[targetTile](game, targetPos, entity, direction);
+        }
+    }
+}
+
+/** @file manipulates the player character */
+/** move the player */
+function move$$1(game, player, direction) {
+    walk(game, player, direction);
+    look(game, player);
+    game.reschedule();
+}
+function look(game, self) {
+    game.clearFov();
+    shadowcast(game.getPosition(self), pos => transparency[game.getTile(pos)] > 0, pos => game.setMemory(pos, game.getTile(pos)));
+    shadowcast(game.getPosition(self), pos => transparency[game.getTile(pos)] === 2, pos => game.addFov(pos));
+}
+function magic(game, player) {
+    game.reschedule();
+    const spike = game.createEntity();
+    game.schedule(spike);
+    game.setPosition(spike, game.getPosition(player) + 1);
+    game.setVelocity(spike, 1);
+    game.setBehavior(spike, 'spike');
+}
+
+const behaviors = {
+    player: (game, self) => {
+        // initialize fov if uninitiazlied
+        if (!game.getFov(game.getPosition(self))) {
+            look(game, self);
+        }
+        return Infinity;
+    },
+    snake: (game, self) => {
+        game.reschedule();
+        return 0;
+    },
+    environment: (game, self) => {
+        forEachPos(pos => {
+            const grassDelay = game.getGrassDelay(pos);
+            if (game.getTile(pos) === 'shortGrass' && grassDelay !== undefined) {
+                game.setGrassDelay(pos, grassDelay - 1);
+                if (!game.getGrassDelay(pos)) {
+                    game.setGrassDelay(pos, undefined);
+                    game.setTile(pos, 'tallGrass');
+                }
+            }
+        });
+        game.reschedule();
+        return 0;
+    },
+    spike: (game, self) => {
+        const pos = game.getPosition(self);
+        if (canWalk[game.getTile(pos)]) {
+            game.setTile(pos, 'spikes');
+            game.offsetPosition(self, game.getVelocity(self));
+            look(game, game.getPlayer());
+        }
+        else {
+            game.unschedule();
+        }
+        return 6;
+    }
+};
+function step(game) {
+    const entity = game.getCurrentEntity();
+    const behavior = game.getBehavior(entity);
+    return behaviors[behavior](game, entity);
+}
+
+/** @file handles input */
+const movement = {
+    KeyE: dir1,
+    KeyD: dir3,
+    KeyX: dir5,
+    KeyZ: dir7,
+    KeyA: dir9,
+    KeyW: dir11,
+};
+function keydown(game, e) {
+    game.skip();
+    const direction = movement[e.code];
+    if (direction) {
+        move$$1(game, game.getPlayer(), direction);
+        game.loop();
+    }
+    if (e.code === 'Digit1') {
+        magic(game, game.getPlayer());
+        game.loop();
+    }
+}
 
 ///<reference path="../lib/pixi.js.d.ts"/>
 /** @file handles displaying the game and the game loop */
@@ -822,89 +919,144 @@ class Display extends Game {
             height: canvasHeight,
         });
         root.appendChild(this.app.view);
-        this.tiles = {};
-        PIXI.loader
-            .add('wall', 'wall.png')
-            .add('floor', 'floor.png')
-            .add('shortGrass', 'shortGrass.png')
-            .add('tallGrass', 'tallGrass.png')
-            .add('spikes', 'spikes.png')
-            .add('player', 'player.png')
-            .load(this.init.bind(this));
+        for (let i = 0; i < spriteNames.length; i++) {
+            PIXI.loader.add(spriteNames[i], `${spriteNames[i]}.png`);
+        }
+        PIXI.loader.load(this.init.bind(this));
     }
     init(loader, resources) {
-        const bgContainer = new PIXI.Container();
+        this.textures = createTextureCache(resources);
+        this.app.stage.addChild(this.createTiles());
+        this.app.stage.addChild(this.createMobs());
+        this.loop();
+        window.addEventListener('keydown', keydown.bind(window, this), false);
+    }
+    createTiles() {
+        const container = new PIXI.Container();
+        this.tiles = {};
         forEachPos((pos, x, y) => {
             const tileName = this.getTile(pos);
-            const tile = new PIXI.Sprite(resources[tileName].texture);
-            tile.x = (x - (HEIGHT - y - 1) / 2) * xu;
-            tile.y = y * smallyu;
-            if (this.getMob(pos) !== undefined) {
-                tile.visible = false;
+            const sprite = new PIXI.Sprite(this.textures[tileName]);
+            const { left, top } = calcOffset(x, y);
+            sprite.x = left;
+            sprite.y = top;
+            sprite.visible = false;
+            const memory = this.getMemory(pos);
+            if (this.getFov(pos)) {
+                sprite.visible = true;
+                sprite.tint = color[tileName];
             }
-            else if (this.getFov(this.getPlayer(), pos)) {
-                tile.alpha = 1.0;
-                tile.tint = color[tileName];
-                tile.visible = true;
+            else if (memory) {
+                sprite.visible = true;
+                sprite.alpha = 0.5;
+                sprite.texture = this.textures[memory];
+                sprite.tint = color[memory];
             }
-            else if (this.getMemory(this.getPlayer(), pos)) {
-                tile.alpha = 0.5;
-                tile.tint = color[tileName];
-                tile.visible = true;
-            }
-            else {
-                tile.visible = false;
-            }
-            this.tiles[pos] = tile;
-            bgContainer.addChild(tile);
+            container.addChild(sprite);
+            this.tiles[pos] = sprite;
         });
-        this.app.stage.addChild(bgContainer);
-        this.app.render();
+        return container;
+    }
+    createMobs() {
+        const container = new PIXI.Container;
+        const sprite = new PIXI.Sprite(this.textures.player);
+        const pos = this.getPosition(this.getPlayer());
+        const { x, y } = pos2xy(pos);
+        const { left, top } = calcOffset(x, y);
+        sprite.x = left;
+        sprite.y = top;
+        container.addChild(sprite);
+        this.mobs = {
+            [pos]: sprite
+        };
+        return container;
+    }
+    addFov(position) {
+        super.addFov(position);
+        const tile = this.getTile(position);
+        const sprite = this.tiles[position];
+        sprite.visible = true;
+        sprite.texture = this.textures[tile];
+        sprite.tint = color[tile];
+        sprite.alpha = 1;
+    }
+    clearFov() {
+        super.clearFov();
     }
     setTile(position, tile) {
         super.setTile(position, tile);
+        const sprite = this.tiles[position];
+        sprite.texture = this.textures[tile];
+        sprite.tint = color[tile];
+    }
+    setMemory(position, tile) {
+        super.setMemory(position, tile);
+        const sprite = this.tiles[position];
+        sprite.texture = this.textures[tile];
+        sprite.tint = color[tile];
+        sprite.alpha = 0.5;
+        sprite.visible = true;
     }
     setPosition(entity, position) {
         super.setPosition(entity, position);
     }
     offsetPosition(entity, delta) {
+        const pos = this.getPosition(entity);
         super.offsetPosition(entity, delta);
+        const sprite = this.mobs[pos];
+        if (sprite) {
+            this.mobs[pos] = undefined;
+            const { x, y } = pos2xy(pos + delta);
+            const { left, top } = calcOffset(x, y);
+            sprite.x = left;
+            sprite.y = top;
+            this.mobs[pos + delta] = sprite;
+        }
+    }
+    loop() {
+        let delay = 0;
+        while (!delay || this.skipAnimation && delay < Infinity) {
+            delay = step(this);
+        }
+        this.app.render();
+        if (delay === Infinity) {
+            this.skipAnimation = false;
+            this.save();
+        }
+        else {
+            this.defer(delay);
+        }
+    }
+    /** call loop after waiting a certain number of frames */
+    defer(frames) {
+        if (frames) {
+            this.delayId = requestAnimationFrame(this.defer.bind(this, frames - 1));
+        }
+        else {
+            this.loop();
+        }
+    }
+    skip() {
+        if (this.delayId === undefined)
+            return;
+        this.skipAnimation = false;
+        cancelAnimationFrame(this.delayId);
+        this.loop();
     }
 }
-
-/** advance the gamestate until player input is needed */
-// export function loop() {
-//     let delay = 0
-//     while (!delay || skippingAnimation && delay < Infinity) {
-//         delay = step(game)
-//     }
-//     render(game)
-//     if (delay === Infinity) {
-//         skippingAnimation = false
-//         game.save()
-//     } else {
-//         defer(loop, delay)
-//     }
-// }
-// function render(game: Game) {
-//     app.render()
-// }
-// /** call [fun] after waiting for [frames] */
-// function defer(fun: () => void, frames: number) {
-//     if (frames) {
-//         animationFun = fun
-//         animationId = requestAnimationFrame(() => defer(fun, frames - 1))
-//     } else {
-//         fun()
-//     }
-// }
-// /** skip all animations until player's next turn */
-// export function skip() {
-//     if (animationId === undefined) return
-//     skippingAnimation = true
-//     cancelAnimationFrame(animationId)
-//     animationFun()
-// }
+function createTextureCache(resources) {
+    let cache = {};
+    spriteNames.forEach(name => {
+        cache[name] = resources[name].texture;
+    });
+    return cache;
+}
+function calcOffset(x, y) {
+    return {
+        left: (x - (HEIGHT - y - 1) / 2) * xu,
+        top: y * smallyu,
+    };
+}
 
 /** @file entry point */
 new Display();

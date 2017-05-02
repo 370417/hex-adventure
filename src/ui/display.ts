@@ -54,11 +54,22 @@ export class Display extends Game {
         const container = new PIXI.Container()
         this.tiles = {}
         forEachPos((pos, x, y) => {
-            const sprite = new PIXI.Sprite(this.textures[this.getTile(pos)])
+            const tileName = this.getTile(pos)
+            const sprite = new PIXI.Sprite(this.textures[tileName])
             const {left, top} = calcOffset(x, y)
             sprite.x = left
             sprite.y = top
             sprite.visible = false
+            const memory = this.getMemory(pos)
+            if (this.getFov(pos)) {
+                sprite.visible = true
+                sprite.tint = color[tileName]
+            } else if (memory) {
+                sprite.visible = true
+                sprite.alpha = 0.5
+                sprite.texture = this.textures[memory]
+                sprite.tint = color[memory]
+            }
             container.addChild(sprite)
             this.tiles[pos] = sprite
         })
