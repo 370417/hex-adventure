@@ -122,6 +122,10 @@ export class Game {
     }
 
     clearFov(entity: number) {
+        for (let strPos in this.state.components.fov[entity]) {
+            const pos = Number(strPos)
+            this.setMemory(entity, pos, this.state.level.tiles[pos])
+        }
         this.state.components.fov[entity] = {}
     }
 
@@ -197,8 +201,10 @@ function create(seed: number): GameState {
         nextEntity: 3,
         player: 1,
         level: {
-            tiles: {},
-            mobs: {},
+            tiles: level.tiles,
+            mobs: {
+                [level.playerPos]: 1,
+            },
             grassDelay: {},
         },
         alea: Alea.seed(seed),

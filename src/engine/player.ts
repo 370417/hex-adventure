@@ -19,13 +19,13 @@ export function look(game: Game, self: number) {
     game.clearFov(self)
     shadowcast(
         game.getPosition(self),
-        pos => transparency[game.getTile(pos)] === 2,
-        pos => game.addFov(self, pos)
+        pos => transparency[game.getTile(pos)] > 0,
+        pos => game.setMemory(self, pos, game.getTile(pos))
     )
     shadowcast(
         game.getPosition(self),
-        pos => transparency[game.getTile(pos)] > 0,
-        pos => game.setMemory(self, pos, game.getTile(pos))
+        pos => transparency[game.getTile(pos)] === 2,
+        pos => game.addFov(self, pos)
     )
 }
 

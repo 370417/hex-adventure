@@ -2,8 +2,9 @@
 
 import { WIDTH, HEIGHT } from '../data/constants'
 import { TileName } from '../data/tile'
-import { xu, smallyu, bigyu, color } from '../data/style'
+import { SpriteName, spriteNames, xu, smallyu, bigyu, color } from '../data/style'
 
+import { pos2xy } from '../engine/position'
 import { forEachPos } from '../engine/level'
 import { Game } from '../engine/game'
 import { step } from '../engine/behavior'
@@ -23,6 +24,8 @@ export class Display extends Game {
     private tiles: {[pos: number]: PIXI.Sprite}
     private mobs: {[pos: number]: PIXI.Sprite}
 
+    private textures: Record<SpriteName, PIXI.Texture>
+
     private skipAnimation: boolean
     private delayId: number
 
@@ -33,56 +36,78 @@ export class Display extends Game {
             height: canvasHeight,
         })
         root.appendChild(this.app.view)
-        this.tiles = {}
-        PIXI.loader
-            .add('wall', 'wall.png')
-            .add('floor', 'floor.png')
-            .add('shortGrass', 'shortGrass.png')
-            .add('tallGrass', 'tallGrass.png')
-            .add('spikes', 'spikes.png')
-            .add('player', 'player.png')
-            .load(this.init.bind(this))
+        for (let i = 0; i < spriteNames.length; i++) {
+            PIXI.loader.add(spriteNames[i], `${spriteNames[i]}.png`)
+        }
+        PIXI.loader.load(this.init.bind(this))
     }
 
     init(loader: PIXI.loaders.Loader, resources: any) {
-        const bgContainer = new PIXI.Container()
-        const mobContainer = new PIXI.Container()
-        forEachPos((pos, x, y) => {
-            const tileName = this.getTile(pos)
-            const tile = new PIXI.Sprite(resources[tileName].texture)
-            const {left, top} = calcOffset(x, y)
-            tile.x = left
-            tile.y = top
-            if (this.getMob(pos) !== undefined) {
-                const mobName = this.getBehavior(this.getMob(pos))
-                tile.visible = false
-                const mobTile = new PIXI.Sprite(resources[mobName].texture)
-                mobTile.x = left
-                mobTile.y = top
-                mobTile.tint = color[mobName]
-                mobContainer.addChild(mobTile)
-            } else if (this.getFov(this.getPlayer(), pos)) {
-                tile.alpha = 1.0
-                tile.tint = color[tileName]
-                tile.visible = true
-            } else if (this.getMemory(this.getPlayer(), pos)) {
-                tile.alpha = 0.5
-                tile.tint = color[tileName]
-                tile.visible = true
-            } else {
-                tile.visible = false
-            }
-            this.tiles[pos] = tile
-            bgContainer.addChild(tile)
-        })
-        this.app.stage.addChild(bgContainer)
-        this.app.stage.addChild(mobContainer)
-        // this.app.render()
+        this.textures = createTextureCache(resources)
+        this.app.stage.addChild(this.createTiles())
+        this.app.stage.addChild(this.createMobs())
+        this.loop()
         window.addEventListener('keydown', keydown.bind(window, this), false)
+    }
+
+    createTiles(): PIXI.Container {
+        const container = new PIXI.Container()
+        this.tiles = {}
+        forEachPos((pos, x, y) => {
+            const sprite = new PIXI.Sprite(this.textures[this.getTile(pos)])
+            const {left, top} = calcOffset(x, y)
+            sprite.x = left
+            sprite.y = top
+            sprite.visible = false
+            container.addChild(sprite)
+            this.tiles[pos] = sprite
+        })
+        return container
+    }
+
+    createMobs(): PIXI.Container {
+        const container = new PIXI.Container
+        const sprite = new PIXI.Sprite(this.textures.player)
+        const pos = this.getPosition(this.getPlayer())
+        const {x, y} = pos2xy(pos)
+        const {left, top} = calcOffset(x, y)
+        sprite.x = left
+        sprite.y = top
+        container.addChild(sprite)
+        this.mobs = {
+            [pos]: sprite
+        }
+        return container
+    }
+
+    addFov(entity: number, position: number) {
+        super.addFov(entity, position)
+        const tile = this.getTile(position)
+        const sprite = this.tiles[position]
+        sprite.visible = true
+        sprite.texture = this.textures[tile]
+        sprite.tint = color[tile]
+        sprite.alpha = 1
+    }
+
+    clearFov(entity: number) {
+        super.clearFov(entity)
     }
 
     setTile(position: number, tile: TileName) {
         super.setTile(position, tile)
+        const sprite = this.tiles[position]
+        sprite.texture = this.textures[tile]
+        sprite.tint = color[tile]
+    }
+
+    setMemory(entity: number, position: number, tile: TileName) {
+        super.setMemory(entity, position, tile)
+        const sprite = this.tiles[position]
+        sprite.texture = this.textures[tile]
+        sprite.tint = color[tile]
+        sprite.alpha = 0.5
+        sprite.visible = true
     }
     
     setPosition(entity: number, position: number) {
@@ -90,7 +115,17 @@ export class Display extends Game {
     }
 
     offsetPosition(entity: number, delta: number) {
+        const pos = this.getPosition(entity)
         super.offsetPosition(entity, delta)
+        const sprite = this.mobs[pos]
+        if (sprite) {
+            this.mobs[pos] = undefined
+            const {x, y} = pos2xy(pos + delta)
+            const {left, top} = calcOffset(x, y)
+            sprite.x = left
+            sprite.y = top
+            this.mobs[pos + delta] = sprite
+        }
     }
 
     loop() {
@@ -122,6 +157,14 @@ export class Display extends Game {
         cancelAnimationFrame(this.delayId)
         this.loop()
     }
+}
+
+function createTextureCache(resources: any): Record<SpriteName, PIXI.Texture> {
+    let cache: any = {}
+    spriteNames.forEach(name => {
+        cache[name] = resources[name].texture
+    })
+    return cache
 }
 
 // window.addEventListener('keydown', keydown.bind(window, game), false)

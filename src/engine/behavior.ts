@@ -38,9 +38,7 @@ export const behaviors: Record<Behavior, (game: Game, self: number) => number> =
         return 0
     },
     spike: (game, self) => {
-        // const {tiles, mobs} = game.level
         const pos = game.getPosition(self)
-        const prevPos = pos - game.getVelocity(self)
         if (canWalk[game.getTile(pos)]) {
             game.setTile(pos, 'spikes')
             game.offsetPosition(self, game.getVelocity(self))
