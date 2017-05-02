@@ -4,7 +4,6 @@ import { WIDTH, HEIGHT } from '../data/constants'
 import { xy2pos } from './position'
 import { Behavior } from './behavior'
 import * as Level from './level'
-// import * as Player from './player'
 
 import * as Alea from '../lib/alea'
 
@@ -216,8 +215,3 @@ function load(): GameState {
     const saveFile = localStorage[SAVE_NAME]
     return saveFile && JSON.parse(saveFile)
 }
-
-/** delete the current savefile */
-// function deleteSave() {
-//     localStorage.removeItem(SAVE_NAME)
-// }

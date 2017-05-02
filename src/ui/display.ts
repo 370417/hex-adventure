@@ -167,52 +167,9 @@ function createTextureCache(resources: any): Record<SpriteName, PIXI.Texture> {
     return cache
 }
 
-// window.addEventListener('keydown', keydown.bind(window, game), false)
-
 function calcOffset(x: number, y: number) {
     return {
         left: (x - (HEIGHT - y - 1) / 2) * xu,
         top: y * smallyu,
     }
 }
-
-let animationId: number
-let animationFun: Function
-let skippingAnimation = false
-
-/** advance the gamestate until player input is needed */
-// export function loop() {
-//     let delay = 0
-//     while (!delay || skippingAnimation && delay < Infinity) {
-//         delay = step(game)
-//     }
-//     render(game)
-//     if (delay === Infinity) {
-//         skippingAnimation = false
-//         game.save()
-//     } else {
-//         defer(loop, delay)
-//     }
-// }
-
-// function render(game: Game) {
-//     app.render()
-// }
-
-// /** call [fun] after waiting for [frames] */
-// function defer(fun: () => void, frames: number) {
-//     if (frames) {
-//         animationFun = fun
-//         animationId = requestAnimationFrame(() => defer(fun, frames - 1))
-//     } else {
-//         fun()
-//     }
-// }
-
-// /** skip all animations until player's next turn */
-// export function skip() {
-//     if (animationId === undefined) return
-//     skippingAnimation = true
-//     cancelAnimationFrame(animationId)
-//     animationFun()
-// }

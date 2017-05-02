@@ -26,9 +26,7 @@ export function create(seed: number, playerPos: number): Level {
     Noise.seed(random())
 
     const tiles = createTiles()
-    // const weights = createRandomWeights() // for lakes
 
-    //makeLakes()
     carveCaves()
     removeSmallWalls()
     const size = removeOtherCaves()
@@ -38,15 +36,6 @@ export function create(seed: number, playerPos: number): Level {
     fillSmallCaves()
     const visibility = generateVisibility()
     placeGrass()
-
-    /** return a dict of positions to a random number */
-    // function createRandomWeights() {
-    //     const weights = {}
-    //     forEachInnerPos(pos => {
-    //         weights[pos] = random()
-    //     })
-    //     return weights
-    // }
 
     /**
      * return a dict of positions to tile types
@@ -75,30 +64,6 @@ export function create(seed: number, playerPos: number): Level {
     function isWall(pos: number) {
         return inBounds(pos) && tiles[pos] === 'wall'
     }
-
-    // function makeLake() {
-    //     const center = shuffle(Array.from(innerPositions), random)[0]
-    //     const neighbors = (pos, callback) => {
-    //         forEachNeighbor(pos, neighbor => {
-    //             if (innerPositions.has(neighbor)) {
-    //                 callback(neighbor)
-    //             }
-    //         })
-    //     }
-    //     const cost = pos => 0.1 + 0.3 * weights.get(pos)
-    //     const lake = flowmap(center, 1, neighbors, cost)
-
-    //     for ([pos, val] of lake) {
-    //         const type = val < 0.6 ? '.'DEEP_WATER : '.'SHALLOW_WATER
-    //         types.set(pos, type)
-    //     }
-
-    //     return lake
-    // }
-
-    // function makeLakes() {
-    //     makeLake()
-    // }
 
     /** use an (almost) cellular automaton to generate caves */
     function carveCaves() {
