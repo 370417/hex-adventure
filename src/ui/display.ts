@@ -35,7 +35,7 @@ export class Display extends Game {
         })
         document.body.appendChild(this.app.view)
         for (let i = 0; i < spriteNames.length; i++) {
-            PIXI.loader.add(spriteNames[i], `${spriteNames[i]}.png`)
+            PIXI.loader.add(spriteNames[i], `../res/${spriteNames[i]}.png`)
         }
         PIXI.loader.load(this.init.bind(this))
     }
