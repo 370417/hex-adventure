@@ -5,6 +5,8 @@ import { xy2pos } from './position'
 import { Game } from './game'
 import { shadowcast } from './fov'
 import { walk } from './mob'
+import { schedule, reschedule } from './behavior'
+import { createEntity } from './entity'
 
 /** @file manipulates the player character */
 
@@ -12,28 +14,28 @@ import { walk } from './mob'
 export function move(game: Game, player: number, direction: number) {
     walk(game, player, direction)
     look(game, player)
-    game.reschedule()
+    reschedule(game)
 }
 
 export function look(game: Game, self: number) {
-    game.clearFov()
+    game.fov = {}
     shadowcast(
-        game.getPosition(self),
-        pos => transparency[game.getTile(pos)] > 0,
-        pos => game.setMemory(pos, game.getTile(pos))
+        game.prop.pos[self],
+        pos => transparency[game.level.tiles[pos]] > 0,
+        pos => game.memory[pos] = game.level.tiles[pos]
     )
     shadowcast(
-        game.getPosition(self),
-        pos => transparency[game.getTile(pos)] === 2,
-        pos => game.addFov(pos)
+        game.prop.pos[self],
+        pos => transparency[game.level.tiles[pos]] === 2,
+        pos => game.fov[pos] = true
     )
 }
 
 export function magic(game: Game, player: number) {
-    game.reschedule()
-    const spike = game.createEntity()
-    game.schedule(spike)
-    game.setPosition(spike, game.getPosition(player) + 1)
-    game.setVelocity(spike, 1)
-    game.setBehavior(spike, 'spike')
+    reschedule(game)
+    const spike = createEntity(game)
+    schedule(game, spike)
+    game.prop.pos[spike] = game.prop.pos[player] + 1
+    game.prop.velocity[spike] = 1
+    game.prop.behavior[spike] = 'spike'
 }

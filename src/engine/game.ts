@@ -9,8 +9,12 @@ import * as Alea from '../lib/alea'
 
 /** @file handles game creation, saving, and loading */
 
+interface NumDict<T> {
+    [key: number]: T
+}
+
 interface Entity  {
-    position: number
+    pos: number
     behavior: Behavior
     velocity: number
 }
@@ -21,17 +25,17 @@ interface Tile {
     grassDelay: number,
 }
 
-interface GameState {
+export interface Game {
     version: string
     seed: number
     schedule: number[]
-    components: {
-        [Component in keyof Entity]: {[entity: number]: Entity[Component]}
+    prop: {
+        [Component in keyof Entity]: NumDict<Entity[Component]>
     }
     nextEntity: number
     player: number
-    fov: {[pos: number]: boolean}
-    memory: {[pos: number]: TileName}
+    fov: NumDict<boolean>
+    memory: NumDict<TileName>
     level: {
         [Prop in keyof Tile]: {[pos: number]: Tile[Prop]}
     }
@@ -41,148 +45,29 @@ interface GameState {
 const VERSION = '0.1.3'
 const SAVE_NAME = 'hex adventure'
 
-export class Game {
-    private state: GameState
-
-    constructor() {
-        this.state = load() || create(Date.now())
-        if (this.state.version !== VERSION) {
-            console.warn('Save game is out of date');
-        }
-        console.log('Seed:', this.state.seed)
+export function get(): Game {
+    const game = load() || create(Date.now())
+    if (game.version !== VERSION) {
+        console.warn('Save game is out of date');
     }
+    console.log('Seed:', game.seed)
+    return game
+}
 
-    getPlayer(): number {
-        return this.state.player
-    }
-
-    getPosition(entity: number): number {
-        return this.state.components.position[entity]
-    }
-
-    setPosition(entity: number, position: number) {
-        this.state.components.position[entity] = position
-    }
-
-    offsetPosition(entity: number, delta: number) {
-        this.state.components.position[entity] += delta
-    }
-
-    getVelocity(entity: number): number {
-        return this.state.components.velocity[entity]
-    }
-
-    setVelocity(entity: number, velocity: number) {
-        this.state.components.velocity[entity] = velocity
-    }
-
-    getBehavior(entity: number): Behavior {
-        return this.state.components.behavior[entity]
-    }
-
-    setBehavior(entity: number, behavior: Behavior) {
-        this.state.components.behavior[entity] = behavior
-    }
-
-    getTile(position: number) {
-        return this.state.level.tiles[position]
-    }
-
-    setTile(position: number, tile: TileName) {
-        this.state.level.tiles[position] = tile
-    }
-
-    getGrassDelay(position: number): number {
-        return this.state.level.grassDelay[position]
-    }
-
-    setGrassDelay(position: number, delay: number) {
-        this.state.level.grassDelay[position] = delay
-    }
-
-    getMob(position: number): number {
-        return this.state.level.mobs[position]
-    }
-
-    getMobType(entity: number): Behavior {
-        return this.state.components.behavior[entity]
-    }
-
-    removeMob(position: number) {
-        this.state.level.mobs[position] = undefined
-    }
-
-    setMob(position: number, entity: number) {
-        this.state.level.mobs[position] = entity
-    }
-
-    getFov(position: number): boolean {
-        return this.state.fov[position]
-    }
-
-    clearFov() {
-        for (let strPos in this.state.fov) {
-            const pos = Number(strPos)
-            this.setMemory(pos, this.state.level.tiles[pos])
-        }
-        this.state.fov = {}
-    }
-
-    addFov(position: number) {
-        this.state.fov[position] = true
-    }
-
-    getMemory(position: number): TileName {
-        return this.state.memory[position]
-    }
-
-    setMemory(position: number, tile: TileName) {
-        this.state.memory[position] = tile
-    }
-
-    createEntity(): number {
-        return this.state.nextEntity++
-    }
-
-    /** add a new entity in the schedule before the current actor */
-    schedule(entity: number) {
-        this.state.schedule.unshift(entity)
-    }
-
-    /** end current actor's turn and setup its next turn */
-    reschedule() {
-        const entity = this.state.schedule.shift()
-        this.state.schedule.push(entity)
-    }
-
-    /** end current actor's turn and remove it from the schedule */
-    unschedule() {
-        this.state.schedule.shift()
-    }
-
-    getCurrentEntity() {
-        return this.state.schedule[0]
-    }
-
-    save() {
-        localStorage[SAVE_NAME] = JSON.stringify(this.state)
-    }
-
-    random() {
-        return Alea.random(this.state.alea)
-    }
+export function save(game: Game) {
+    localStorage[SAVE_NAME] = JSON.stringify(game)
 }
 
 /** create a new game */
-function create(seed: number): GameState {
+function create(seed: number): Game {
     const center = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2))
     const level = Level.create(seed, center)
     return {
         version: VERSION,
         seed,
         schedule: [1, 2],
-        components: {
-            position: {
+        prop: {
+            pos: {
                 '1': level.playerPos,
             },
             behavior: {
@@ -207,7 +92,7 @@ function create(seed: number): GameState {
 }
 
 /** load the saved game if it exists */
-function load(): GameState {
+function load(): Game {
     const saveFile = localStorage[SAVE_NAME]
     return saveFile && JSON.parse(saveFile)
 }

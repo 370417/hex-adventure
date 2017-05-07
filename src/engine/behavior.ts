@@ -14,44 +14,59 @@ export type Behavior = 'player' | 'snake' | 'environment' | 'spike'
 export const behaviors: Record<Behavior, (game: Game, self: number) => number> = {
     player: (game, self) => {
         // initialize fov if uninitiazlied
-        if (!game.getFov(game.getPosition(self))) {
+        if (!game.fov[game.prop.pos[self]]) {
             look(game, self)
         }
         return Infinity
     },
     snake: (game, self) => {
-        game.reschedule()
+        reschedule(game)
         return 0
     },
     environment: (game, self) => {
         forEachPos(pos => {
-            const grassDelay = game.getGrassDelay(pos)
-            if (game.getTile(pos) === 'shortGrass' && grassDelay !== undefined) {
-                game.setGrassDelay(pos, grassDelay - 1)
-                if (!game.getGrassDelay(pos)) {
-                    game.setGrassDelay(pos, undefined)
-                    game.setTile(pos, 'tallGrass')
+            if (game.level.tiles[pos] === 'shortGrass' && game.level.grassDelay[pos] !== undefined) {
+                game.level.grassDelay[pos] -= 1
+                if (game.level.grassDelay[pos] === 0) {
+                    game.level.grassDelay[pos] = undefined
+                    game.level.tiles[pos] = 'tallGrass'
                 }
             }
         })
-        game.reschedule()
+        reschedule(game)
         return 0
     },
     spike: (game, self) => {
-        const pos = game.getPosition(self)
-        if (canWalk[game.getTile(pos)]) {
-            game.setTile(pos, 'spikes')
-            game.offsetPosition(self, game.getVelocity(self))
-            look(game, game.getPlayer())
+        const pos = game.prop.pos[self]
+        if (canWalk[game.level.tiles[pos]]) {
+            game.level.tiles[pos] = 'spikes'
+            game.prop.pos[self] += game.prop.velocity[self]
+            look(game, game.player)
         } else {
-            game.unschedule()
+            unschedule(game)
         }
         return 6
     }
 }
 
+/** Add a new entity in the schedule before the current actor */
+export function schedule(game: Game, entity: number) {
+    game.schedule.unshift(entity)
+}
+
+/** End current actor's turn and setup its next turn */
+export function reschedule(game: Game) {
+    const entity = game.schedule.shift()
+    game.schedule.push(entity)
+}
+
+/** End current actor's turn and remove it from the schedule */
+export function unschedule(game: Game) {
+    game.schedule.shift()
+}
+
 export function step(game: Game) {
-    const entity = game.getCurrentEntity()
-    const behavior = game.getBehavior(entity)
+    const entity = game.schedule[0]
+    const behavior = game.prop.behavior[entity]
     return behaviors[behavior](game, entity)
 }

@@ -22,8 +22,7 @@ export function createPlaceholder() {
 /** create a new level */
 export function create(seed: number, playerPos: number): Level {
     const alea = Alea.seed(seed)
-    const random = () => Alea.random(alea)
-    Noise.seed(random())
+    Noise.seed(Alea.random(alea))
 
     const tiles = createTiles()
 
@@ -69,7 +68,7 @@ export function create(seed: number, playerPos: number): Level {
     function carveCaves() {
         const innerPositions: number[] = [];
         forEachInnerPos(pos => innerPositions.push(pos))
-        shuffle(Array.from(innerPositions), random).forEach(pos => {
+        shuffle(Array.from(innerPositions), alea).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
                 tiles[pos] = 'floor'
             }

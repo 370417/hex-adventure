@@ -1,5 +1,6 @@
-import { Display } from './ui/display'
+import * as Display from './ui/display'
+import * as Game from './engine/game'
 
 /** @file entry point */
 
-new Display()
+Display.create(Game.get(), document.body)

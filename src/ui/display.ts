@@ -6,179 +6,123 @@ import { SpriteName, spriteNames, xu, smallyu, bigyu, color } from '../data/styl
 
 import { pos2xy } from '../engine/position'
 import { forEachPos } from '../engine/level'
-import { Game } from '../engine/game'
+import { Game, save } from '../engine/game'
 import { step } from '../engine/behavior'
 
 import { keydown } from './input'
 
 /** @file handles displaying the game and the game loop */
 
-const canvasWidth = (WIDTH - HEIGHT / 2 + 1) * xu
-const canvasHeight = (HEIGHT - 1) * smallyu + bigyu
-
-export class Display extends Game {
+export interface Display {
+    game: Game
     app: PIXI.Application
-
-    private tiles: {[pos: number]: PIXI.Sprite}
-    private mobs: {[pos: number]: PIXI.Sprite}
-
-    private textures: Record<SpriteName, PIXI.Texture>
-
-    private skipAnimation: boolean
-    private delayId: number
-
-    constructor() {
-        super()
-        this.app = new PIXI.Application({
-            width: canvasWidth,
-            height: canvasHeight,
-        })
-        document.body.appendChild(this.app.view)
-        for (let i = 0; i < spriteNames.length; i++) {
-            PIXI.loader.add(spriteNames[i], `../res/${spriteNames[i]}.png`)
-        }
-        PIXI.loader.load(this.init.bind(this))
-    }
-
-    init(loader: PIXI.loaders.Loader, resources: any) {
-        this.textures = createTextureCache(resources)
-        this.app.stage.addChild(this.createTiles())
-        this.app.stage.addChild(this.createMobs())
-        this.loop()
-        window.addEventListener('keydown', keydown.bind(window, this), false)
-    }
-
-    createTiles(): PIXI.Container {
-        const container = new PIXI.Container()
-        this.tiles = {}
-        forEachPos((pos, x, y) => {
-            const tileName = this.getTile(pos)
-            const sprite = new PIXI.Sprite(this.textures[tileName])
-            const {left, top} = calcOffset(x, y)
-            sprite.x = left
-            sprite.y = top
-            sprite.visible = false
-            const memory = this.getMemory(pos)
-            if (this.getFov(pos)) {
-                sprite.visible = true
-                sprite.tint = color[tileName]
-            } else if (memory) {
-                sprite.visible = true
-                sprite.alpha = 0.5
-                sprite.texture = this.textures[memory]
-                sprite.tint = color[memory]
-            }
-            container.addChild(sprite)
-            this.tiles[pos] = sprite
-        })
-        return container
-    }
-
-    createMobs(): PIXI.Container {
-        const container = new PIXI.Container
-        const sprite = new PIXI.Sprite(this.textures.player)
-        const pos = this.getPosition(this.getPlayer())
-        const {x, y} = pos2xy(pos)
-        const {left, top} = calcOffset(x, y)
-        sprite.x = left
-        sprite.y = top
-        container.addChild(sprite)
-        this.mobs = {
-            [pos]: sprite
-        }
-        return container
-    }
-
-    addFov(position: number) {
-        super.addFov(position)
-        const tile = this.getTile(position)
-        const sprite = this.tiles[position]
-        sprite.visible = true
-        sprite.texture = this.textures[tile]
-        sprite.tint = color[tile]
-        sprite.alpha = 1
-    }
-
-    clearFov() {
-        super.clearFov()
-    }
-
-    setTile(position: number, tile: TileName) {
-        super.setTile(position, tile)
-        const sprite = this.tiles[position]
-        sprite.texture = this.textures[tile]
-        sprite.tint = color[tile]
-    }
-
-    setMemory(position: number, tile: TileName) {
-        super.setMemory(position, tile)
-        const sprite = this.tiles[position]
-        sprite.texture = this.textures[tile]
-        sprite.tint = color[tile]
-        sprite.alpha = 0.5
-        sprite.visible = true
-    }
-    
-    setPosition(entity: number, position: number) {
-        super.setPosition(entity, position)
-    }
-
-    offsetPosition(entity: number, delta: number) {
-        const pos = this.getPosition(entity)
-        super.offsetPosition(entity, delta)
-        const sprite = this.mobs[pos]
-        if (sprite) {
-            this.mobs[pos] = undefined
-            const {x, y} = pos2xy(pos + delta)
-            const {left, top} = calcOffset(x, y)
-            sprite.x = left
-            sprite.y = top
-            this.mobs[pos + delta] = sprite
-        }
-    }
-
-    loop() {
-        let delay = 0
-        while (!delay || this.skipAnimation && delay < Infinity) {
-            delay = step(this)
-        }
-        this.app.render()
-        if (delay === Infinity) {
-            this.skipAnimation = false
-            this.save()
-        } else {
-            this.defer(delay)
-        }
-    }
-
-    /** call loop after waiting a certain number of frames */
-    defer(frames: number) {
-        if (frames) {
-            this.delayId = requestAnimationFrame(this.defer.bind(this, frames - 1))
-        } else {
-            this.loop()
-        }
-    }
-
-    skip() {
-        if (this.delayId === undefined) return
-        this.skipAnimation = true
-        cancelAnimationFrame(this.delayId)
-        this.loop()
-    }
+    tiles: {[pos: number]: PIXI.Sprite}
+    textures: Record<SpriteName, PIXI.Texture>
+    skipAnimation: boolean
+    animationId: number
 }
 
-function createTextureCache(resources: any): Record<SpriteName, PIXI.Texture> {
-    let cache: any = {}
-    spriteNames.forEach(name => {
-        cache[name] = resources[name].texture
+// export function init(root: HTMLElement) {}
+
+export function create(game: Game, root: HTMLElement): Display {
+    const width = (WIDTH - HEIGHT / 2 + 1) * xu
+    const height = (HEIGHT - 1) * smallyu + bigyu
+    const app = new PIXI.Application({width, height})
+    const display = {
+        game,
+        app,
+        tiles: createTiles(app.stage),
+        textures: createTextures(),
+        skipAnimation: false,
+        animationId: 0,
+    }
+    root.appendChild(display.app.view)
+    loadTextures(display)
+    window.addEventListener('keydown', keydown.bind(window, display), false)
+    return display
+}
+
+function createTextures(): Record<SpriteName, PIXI.Texture> {
+    const textures: any = {}
+    spriteNames.forEach((spriteName) => {
+        textures[spriteName] = PIXI.Texture.EMPTY
     })
-    return cache
+    return textures
 }
 
-function calcOffset(x: number, y: number) {
-    return {
-        left: (x - (HEIGHT - y - 1) / 2) * xu,
-        top: y * smallyu,
+function createTiles(renderer: PIXI.Container): {[pos: number]: PIXI.Sprite} {
+    const tiles: {[pos: number]: PIXI.Sprite} = {}
+    forEachPos((pos, x, y) => {
+        const sprite = new PIXI.Sprite(PIXI.Texture.EMPTY)
+        sprite.x = (x - (HEIGHT - y - 1) / 2) * xu
+        sprite.y = y * smallyu
+        tiles[pos] = sprite
+        renderer.addChild(sprite)
+    })
+    return tiles
+}
+
+type Resources = Record<SpriteName, { texture: PIXI.Texture }>
+
+function loadTextures(display: Display) {
+    spriteNames.forEach((name) => {
+        PIXI.loader.add(name, `res/${name}.png`)
+    })
+    PIXI.loader.load((loader: PIXI.loaders.Loader, resources: Resources) => {
+        spriteNames.forEach((name) => {
+            display.textures[name] = resources[name].texture
+        })
+        render(display)
+    })
+}
+
+function render(display: Display) {
+    forEachPos((pos, x, y) => {
+        const sprite = display.tiles[pos]
+        const level = display.game.level
+        const tile = level.tiles[pos]
+        const mob = level.mobs[pos]
+        if (display.game.fov[pos]) {
+            if (mob) {
+                const behavior = display.game.prop.behavior[mob] as TileName
+                sprite.texture = display.textures[behavior]
+                sprite.tint = color[behavior]
+            } else {
+                sprite.texture = display.textures[tile]
+                sprite.tint = color[tile]
+            }
+            sprite.alpha = 1.0
+            sprite.visible = true
+        } else if (display.game.memory[pos]) {
+            sprite.texture = display.textures[tile]
+            sprite.tint = color[tile]
+            sprite.alpha = 0.5
+            sprite.visible = true
+        } else {
+            sprite.visible = false
+        }
+    })
+    display.app.render()
+}
+
+export function loop(display: Display) {
+    let delay = 0
+    while (!delay || display.skipAnimation && delay < Infinity) {
+        delay = step(display.game)
     }
+    render(display)
+    if (delay === Infinity) {
+        display.skipAnimation = false
+        save(display.game)
+    } else {
+        display.animationId = setTimeout(loop, 10 * delay, display)
+    }
+}
+
+export function skip(display: Display) {
+    if (display.animationId == undefined) return
+    display.skipAnimation = true
+    cancelAnimationFrame(display.animationId)
+    display.animationId = undefined
+    loop(display)
 }
