@@ -36,6 +36,7 @@ export function create(game: Game, root: HTMLElement): Display {
         skipAnimation: false,
         animationId: 0,
     }
+    loop(display)
     root.appendChild(display.app.view)
     loadTextures(display)
     window.addEventListener('keydown', keydown.bind(window, display), false)

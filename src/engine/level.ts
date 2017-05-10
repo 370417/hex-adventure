@@ -77,6 +77,7 @@ export function create(seed: number, playerPos: number): Level {
 
     /** remove groups of 5 or fewer walls */
     // TODO: investigate potential infinite loop here
+    // test seeds slightly before timestamp 4:41:19
     function removeSmallWalls() {
         const visited = new Set()
         forEachInnerPos(pos => {
