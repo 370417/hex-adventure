@@ -13,6 +13,12 @@ const movement: {[code: string]: number} = {
     KeyZ: dir7,
     KeyA: dir9,
     KeyW: dir11,
+    Numpad1: dir7,
+    Numpad3: dir5,
+    Numpad4: dir9,
+    Numpad6: dir3,
+    Numpad7: dir11,
+    Numpad9: dir1,
 }
 
 
