@@ -100,14 +100,70 @@ function forEachNeighbor(pos, callback) {
     }
 }
 
+// Port of alea.js to typescript
+// From http://baagoe.com/en/RandomMusings/javascript/
+// Johannes Baagøe <baagoe@baagoe.com>, 2010
+// version 0.9
+/** seed a new prng state */
+function seed(...args) {
+    const mash = Mash();
+    let s0 = mash(' ');
+    let s1 = mash(' ');
+    let s2 = mash(' ');
+    let c = 1;
+    if (args.length === 0) {
+        args = [Date.now()];
+    }
+    for (let i = 0; i < args.length; i++) {
+        s0 -= mash(args[i]);
+        if (s0 < 0) {
+            s0 += 1;
+        }
+        s1 -= mash(args[i]);
+        if (s1 < 0) {
+            s1 += 1;
+        }
+        s2 -= mash(args[i]);
+        if (s2 < 0) {
+            s2 += 1;
+        }
+    }
+    return { s0, s1, s2, c };
+}
+/** generate a random number between 0 and 1 */
+function random(state) {
+    const t = 2091639 * state.s0 + state.c * 2.3283064365386963e-10; // 2^-32
+    state.s0 = state.s1;
+    state.s1 = state.s2;
+    return state.s2 = t - (state.c = t | 0);
+}
+function Mash() {
+    let n = 0xefc8249d;
+    return function mash(data) {
+        data = data.toString();
+        for (let i = 0; i < data.length; i++) {
+            n += data.charCodeAt(i);
+            let h = 0.02519603282416938 * n;
+            n = h >>> 0;
+            h -= n;
+            h *= n;
+            n = h >>> 0;
+            h -= n;
+            n += h * 0x100000000; // 2^32
+        }
+        return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
+    };
+}
+
+/** @file helper functions for working with randomness */
 /** return a random integer in the range [min, max] inclusive */
-function randint(min, max, random) {
-    return min + Math.floor((max - min + 1) * random());
+function randint(min, max, alea) {
+    return min + Math.floor((max - min + 1) * random(alea));
 }
 /** randomly shuffle an array in place */
-function shuffle(array, random) {
+function shuffle(array, alea) {
     for (let i = array.length - 1; i > 0; i--) {
-        const j = randint(0, i, random);
+        const j = randint(0, i, alea);
         const tempi = array[i];
         array[i] = array[j];
         array[j] = tempi;
@@ -180,61 +236,6 @@ function scan(y, start, end, transparent, reveal) {
     if (fovExists) {
         scan(y + 1, start, end, transparent, reveal);
     }
-}
-
-// Port of alea.js to typescript
-// From http://baagoe.com/en/RandomMusings/javascript/
-// Johannes Baagøe <baagoe@baagoe.com>, 2010
-// version 0.9
-/** seed a new prng state */
-function seed(...args) {
-    const mash = Mash();
-    let s0 = mash(' ');
-    let s1 = mash(' ');
-    let s2 = mash(' ');
-    let c = 1;
-    if (args.length === 0) {
-        args = [Date.now()];
-    }
-    for (let i = 0; i < args.length; i++) {
-        s0 -= mash(args[i]);
-        if (s0 < 0) {
-            s0 += 1;
-        }
-        s1 -= mash(args[i]);
-        if (s1 < 0) {
-            s1 += 1;
-        }
-        s2 -= mash(args[i]);
-        if (s2 < 0) {
-            s2 += 1;
-        }
-    }
-    return { s0, s1, s2, c };
-}
-/** generate a random number between 0 and 1 */
-function random(state) {
-    const t = 2091639 * state.s0 + state.c * 2.3283064365386963e-10; // 2^-32
-    state.s0 = state.s1;
-    state.s1 = state.s2;
-    return state.s2 = t - (state.c = t | 0);
-}
-function Mash() {
-    let n = 0xefc8249d;
-    return function mash(data) {
-        data = data.toString();
-        for (let i = 0; i < data.length; i++) {
-            n += data.charCodeAt(i);
-            let h = 0.02519603282416938 * n;
-            n = h >>> 0;
-            h -= n;
-            h *= n;
-            n = h >>> 0;
-            h -= n;
-            n += h * 0x100000000; // 2^32
-        }
-        return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
-    };
 }
 
 /*
@@ -447,16 +448,15 @@ function simplex3(xin, yin, zin) {
 // 3D Perlin Noise
 
 /** create a new level */
-function create(seed$$1, playerPos) {
+function create$1(seed$$1, playerPos) {
     const alea = seed(seed$$1);
-    const random$$1 = () => random(alea);
-    seed$1(random$$1());
+    seed$1(random(alea));
     const tiles = createTiles();
     carveCaves();
     removeSmallWalls();
     const size = removeOtherCaves();
     if (size < WIDTH * HEIGHT / 4) {
-        return create(seed$$1, playerPos);
+        return create$1(seed$$1, playerPos);
     }
     fillSmallCaves();
     const visibility = generateVisibility();
@@ -489,13 +489,15 @@ function create(seed$$1, playerPos) {
     function carveCaves() {
         const innerPositions = [];
         forEachInnerPos(pos => innerPositions.push(pos));
-        shuffle(Array.from(innerPositions), random$$1).forEach(pos => {
+        shuffle(Array.from(innerPositions), alea).forEach(pos => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
                 tiles[pos] = 'floor';
             }
         });
     }
     /** remove groups of 5 or fewer walls */
+    // TODO: investigate potential infinite loop here
+    // test seeds slightly before timestamp 4:41:19
     function removeSmallWalls() {
         const visited = new Set();
         forEachInnerPos(pos => {
@@ -638,117 +640,27 @@ function forEachInnerPos(fun) {
 
 const VERSION = '0.1.3';
 const SAVE_NAME = 'hex adventure';
-class Game {
-    constructor() {
-        this.state = load() || create$1(Date.now());
-        if (this.state.version !== VERSION) {
-            console.warn('Save game is out of date');
-        }
-        console.log('Seed:', this.state.seed);
+function get() {
+    const game = load() || create$2(Date.now());
+    if (game.version !== VERSION) {
+        console.warn('Save game is out of date');
     }
-    getPlayer() {
-        return this.state.player;
-    }
-    getPosition(entity) {
-        return this.state.components.position[entity];
-    }
-    setPosition(entity, position) {
-        this.state.components.position[entity] = position;
-    }
-    offsetPosition(entity, delta) {
-        this.state.components.position[entity] += delta;
-    }
-    getVelocity(entity) {
-        return this.state.components.velocity[entity];
-    }
-    setVelocity(entity, velocity) {
-        this.state.components.velocity[entity] = velocity;
-    }
-    getBehavior(entity) {
-        return this.state.components.behavior[entity];
-    }
-    setBehavior(entity, behavior) {
-        this.state.components.behavior[entity] = behavior;
-    }
-    getTile(position) {
-        return this.state.level.tiles[position];
-    }
-    setTile(position, tile) {
-        this.state.level.tiles[position] = tile;
-    }
-    getGrassDelay(position) {
-        return this.state.level.grassDelay[position];
-    }
-    setGrassDelay(position, delay) {
-        this.state.level.grassDelay[position] = delay;
-    }
-    getMob(position) {
-        return this.state.level.mobs[position];
-    }
-    getMobType(entity) {
-        return this.state.components.behavior[entity];
-    }
-    removeMob(position) {
-        this.state.level.mobs[position] = undefined;
-    }
-    setMob(position, entity) {
-        this.state.level.mobs[position] = entity;
-    }
-    getFov(position) {
-        return this.state.fov[position];
-    }
-    clearFov() {
-        for (let strPos in this.state.fov) {
-            const pos = Number(strPos);
-            this.setMemory(pos, this.state.level.tiles[pos]);
-        }
-        this.state.fov = {};
-    }
-    addFov(position) {
-        this.state.fov[position] = true;
-    }
-    getMemory(position) {
-        return this.state.memory[position];
-    }
-    setMemory(position, tile) {
-        this.state.memory[position] = tile;
-    }
-    createEntity() {
-        return this.state.nextEntity++;
-    }
-    /** add a new entity in the schedule before the current actor */
-    schedule(entity) {
-        this.state.schedule.unshift(entity);
-    }
-    /** end current actor's turn and setup its next turn */
-    reschedule() {
-        const entity = this.state.schedule.shift();
-        this.state.schedule.push(entity);
-    }
-    /** end current actor's turn and remove it from the schedule */
-    unschedule() {
-        this.state.schedule.shift();
-    }
-    getCurrentEntity() {
-        return this.state.schedule[0];
-    }
-    save() {
-        localStorage[SAVE_NAME] = JSON.stringify(this.state);
-    }
-    random() {
-        return random(this.state.alea);
-    }
+    console.log('Seed:', game.seed);
+    return game;
+}
+function save(game) {
+    localStorage[SAVE_NAME] = JSON.stringify(game);
 }
 /** create a new game */
-function create$1(seed$$1) {
+function create$2(seed$$1) {
     const center = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2));
-    const level = create(seed$$1, center);
+    const level = create$1(seed$$1, center);
     return {
         version: VERSION,
         seed: seed$$1,
         schedule: [1, 2],
-        components: {
-            position: {
+        prop: {
+            pos: {
                 '1': level.playerPos,
             },
             behavior: {
@@ -796,21 +708,21 @@ const canWalk = {
 /** @file manipulates entities that can be represented on the map */
 /** move the entity */
 function move$1(game, entity, direction) {
-    game.removeMob(game.getPosition(entity));
-    game.offsetPosition(entity, direction);
-    game.setMob(game.getPosition(entity), entity);
+    game.level.mobs[game.prop.pos[entity]] = undefined;
+    game.prop.pos[entity] += direction;
+    game.level.mobs[game.prop.pos[entity]] = entity;
 }
 const onWalk = {
     tallGrass: (game, pos, entity, direction) => {
-        game.setTile(pos, 'shortGrass');
-        game.setGrassDelay(pos, randint(3, 5, game.random.bind(game)));
+        game.level.tiles[pos] = 'shortGrass';
+        game.level.grassDelay[pos] = randint(3, 5, game.alea);
     }
 };
 /** move the entity if possible */
 function walk(game, entity, direction) {
-    const targetPos = game.getPosition(entity) + direction;
-    const targetTile = game.getTile(targetPos);
-    if (canWalk[game.getTile(targetPos)]) {
+    const targetPos = game.prop.pos[entity] + direction;
+    const targetTile = game.level.tiles[targetPos];
+    if (canWalk[game.level.tiles[targetPos]]) {
         move$1(game, entity, direction);
         if (onWalk[targetTile]) {
             onWalk[targetTile](game, targetPos, entity, direction);
@@ -818,69 +730,86 @@ function walk(game, entity, direction) {
     }
 }
 
+/** @file Handles entity creation */
+function createEntity(game) {
+    return game.nextEntity++;
+}
+
 /** @file manipulates the player character */
 /** move the player */
 function move$$1(game, player, direction) {
     walk(game, player, direction);
     look(game, player);
-    game.reschedule();
+    reschedule(game);
 }
 function look(game, self) {
-    game.clearFov();
-    shadowcast(game.getPosition(self), pos => transparency[game.getTile(pos)] > 0, pos => game.setMemory(pos, game.getTile(pos)));
-    shadowcast(game.getPosition(self), pos => transparency[game.getTile(pos)] === 2, pos => game.addFov(pos));
+    game.fov = {};
+    shadowcast(game.prop.pos[self], pos => transparency[game.level.tiles[pos]] > 0, pos => game.memory[pos] = game.level.tiles[pos]);
+    shadowcast(game.prop.pos[self], pos => transparency[game.level.tiles[pos]] === 2, pos => game.fov[pos] = true);
 }
 function magic(game, player) {
-    game.reschedule();
-    const spike = game.createEntity();
-    game.schedule(spike);
-    game.setPosition(spike, game.getPosition(player) + 1);
-    game.setVelocity(spike, 1);
-    game.setBehavior(spike, 'spike');
+    reschedule(game);
+    const spike = createEntity(game);
+    schedule(game, spike);
+    game.prop.pos[spike] = game.prop.pos[player] + 1;
+    game.prop.velocity[spike] = 1;
+    game.prop.behavior[spike] = 'spike';
 }
 
 const behaviors = {
     player: (game, self) => {
         // initialize fov if uninitiazlied
-        if (!game.getFov(game.getPosition(self))) {
+        if (!game.fov[game.prop.pos[self]]) {
             look(game, self);
         }
         return Infinity;
     },
     snake: (game, self) => {
-        game.reschedule();
+        reschedule(game);
         return 0;
     },
     environment: (game, self) => {
         forEachPos(pos => {
-            const grassDelay = game.getGrassDelay(pos);
-            if (game.getTile(pos) === 'shortGrass' && grassDelay !== undefined) {
-                game.setGrassDelay(pos, grassDelay - 1);
-                if (!game.getGrassDelay(pos)) {
-                    game.setGrassDelay(pos, undefined);
-                    game.setTile(pos, 'tallGrass');
+            if (game.level.tiles[pos] === 'shortGrass' && game.level.grassDelay[pos] !== undefined) {
+                game.level.grassDelay[pos] -= 1;
+                if (game.level.grassDelay[pos] === 0) {
+                    game.level.grassDelay[pos] = undefined;
+                    game.level.tiles[pos] = 'tallGrass';
                 }
             }
         });
-        game.reschedule();
+        reschedule(game);
         return 0;
     },
     spike: (game, self) => {
-        const pos = game.getPosition(self);
-        if (canWalk[game.getTile(pos)]) {
-            game.setTile(pos, 'spikes');
-            game.offsetPosition(self, game.getVelocity(self));
-            look(game, game.getPlayer());
+        const pos = game.prop.pos[self];
+        if (canWalk[game.level.tiles[pos]]) {
+            game.level.tiles[pos] = 'spikes';
+            game.prop.pos[self] += game.prop.velocity[self];
+            look(game, game.player);
         }
         else {
-            game.unschedule();
+            unschedule(game);
         }
         return 6;
     }
 };
+/** Add a new entity in the schedule before the current actor */
+function schedule(game, entity) {
+    game.schedule.unshift(entity);
+}
+/** End current actor's turn and setup its next turn */
+function reschedule(game) {
+    const entity = game.schedule.shift();
+    game.schedule.push(entity);
+}
+/** End current actor's turn and remove it from the schedule */
+function unschedule(game) {
+    game.schedule.shift();
+}
 function step(game) {
-    const entity = game.getCurrentEntity();
-    const behavior = game.getBehavior(entity);
+    const entity = game.schedule[0];
+    const behavior = game.prop.behavior[entity];
     return behaviors[behavior](game, entity);
 }
 
@@ -892,172 +821,130 @@ const movement = {
     KeyZ: dir7,
     KeyA: dir9,
     KeyW: dir11,
+    Numpad1: dir7,
+    Numpad3: dir5,
+    Numpad4: dir9,
+    Numpad6: dir3,
+    Numpad7: dir11,
+    Numpad9: dir1,
 };
-function keydown(game, e) {
-    game.skip();
+function keydown(display, e) {
+    skip(display);
     const direction = movement[e.code];
     if (direction) {
-        move$$1(game, game.getPlayer(), direction);
-        game.loop();
+        move$$1(display.game, display.game.player, direction);
+        loop(display);
     }
     if (e.code === 'Digit1') {
-        magic(game, game.getPlayer());
-        game.loop();
+        magic(display.game, display.game.player);
+        loop(display);
     }
 }
 
 ///<reference path="../lib/pixi.js.d.ts"/>
-/** @file handles displaying the game and the game loop */
-const canvasWidth = (WIDTH - HEIGHT / 2 + 1) * xu;
-const canvasHeight = (HEIGHT - 1) * smallyu + bigyu;
-class Display extends Game {
-    constructor() {
-        super();
-        this.app = new PIXI.Application({
-            width: canvasWidth,
-            height: canvasHeight,
-        });
-        document.body.appendChild(this.app.view);
-        for (let i = 0; i < spriteNames.length; i++) {
-            PIXI.loader.add(spriteNames[i], `../res/${spriteNames[i]}.png`);
-        }
-        PIXI.loader.load(this.init.bind(this));
-    }
-    init(loader, resources) {
-        this.textures = createTextureCache(resources);
-        this.app.stage.addChild(this.createTiles());
-        this.app.stage.addChild(this.createMobs());
-        this.loop();
-        window.addEventListener('keydown', keydown.bind(window, this), false);
-    }
-    createTiles() {
-        const container = new PIXI.Container();
-        this.tiles = {};
-        forEachPos((pos, x, y) => {
-            const tileName = this.getTile(pos);
-            const sprite = new PIXI.Sprite(this.textures[tileName]);
-            const { left, top } = calcOffset(x, y);
-            sprite.x = left;
-            sprite.y = top;
-            sprite.visible = false;
-            const memory = this.getMemory(pos);
-            if (this.getFov(pos)) {
-                sprite.visible = true;
-                sprite.tint = color[tileName];
-            }
-            else if (memory) {
-                sprite.visible = true;
-                sprite.alpha = 0.5;
-                sprite.texture = this.textures[memory];
-                sprite.tint = color[memory];
-            }
-            container.addChild(sprite);
-            this.tiles[pos] = sprite;
-        });
-        return container;
-    }
-    createMobs() {
-        const container = new PIXI.Container;
-        const sprite = new PIXI.Sprite(this.textures.player);
-        const pos = this.getPosition(this.getPlayer());
-        const { x, y } = pos2xy(pos);
-        const { left, top } = calcOffset(x, y);
-        sprite.x = left;
-        sprite.y = top;
-        container.addChild(sprite);
-        this.mobs = {
-            [pos]: sprite
-        };
-        return container;
-    }
-    addFov(position) {
-        super.addFov(position);
-        const tile = this.getTile(position);
-        const sprite = this.tiles[position];
-        sprite.visible = true;
-        sprite.texture = this.textures[tile];
-        sprite.tint = color[tile];
-        sprite.alpha = 1;
-    }
-    clearFov() {
-        super.clearFov();
-    }
-    setTile(position, tile) {
-        super.setTile(position, tile);
-        const sprite = this.tiles[position];
-        sprite.texture = this.textures[tile];
-        sprite.tint = color[tile];
-    }
-    setMemory(position, tile) {
-        super.setMemory(position, tile);
-        const sprite = this.tiles[position];
-        sprite.texture = this.textures[tile];
-        sprite.tint = color[tile];
-        sprite.alpha = 0.5;
-        sprite.visible = true;
-    }
-    setPosition(entity, position) {
-        super.setPosition(entity, position);
-    }
-    offsetPosition(entity, delta) {
-        const pos = this.getPosition(entity);
-        super.offsetPosition(entity, delta);
-        const sprite = this.mobs[pos];
-        if (sprite) {
-            this.mobs[pos] = undefined;
-            const { x, y } = pos2xy(pos + delta);
-            const { left, top } = calcOffset(x, y);
-            sprite.x = left;
-            sprite.y = top;
-            this.mobs[pos + delta] = sprite;
-        }
-    }
-    loop() {
-        let delay = 0;
-        while (!delay || this.skipAnimation && delay < Infinity) {
-            delay = step(this);
-        }
-        this.app.render();
-        if (delay === Infinity) {
-            this.skipAnimation = false;
-            this.save();
-        }
-        else {
-            this.defer(delay);
-        }
-    }
-    /** call loop after waiting a certain number of frames */
-    defer(frames) {
-        if (frames) {
-            this.delayId = requestAnimationFrame(this.defer.bind(this, frames - 1));
-        }
-        else {
-            this.loop();
-        }
-    }
-    skip() {
-        if (this.delayId === undefined)
-            return;
-        this.skipAnimation = true;
-        cancelAnimationFrame(this.delayId);
-        this.loop();
-    }
-}
-function createTextureCache(resources) {
-    let cache = {};
-    spriteNames.forEach(name => {
-        cache[name] = resources[name].texture;
-    });
-    return cache;
-}
-function calcOffset(x, y) {
-    return {
-        left: (x - (HEIGHT - y - 1) / 2) * xu,
-        top: y * smallyu,
+// export function init(root: HTMLElement) {}
+function create$$1(game, root) {
+    const width = (WIDTH - HEIGHT / 2 + 1) * xu;
+    const height = (HEIGHT - 1) * smallyu + bigyu;
+    const app = new PIXI.Application({ width, height });
+    const display = {
+        game,
+        app,
+        tiles: createTiles(app.stage),
+        textures: createTextures(),
+        skipAnimation: false,
+        animationId: 0,
     };
+    loop(display);
+    root.appendChild(display.app.view);
+    loadTextures(display);
+    window.addEventListener('keydown', keydown.bind(window, display), false);
+    return display;
+}
+function createTextures() {
+    const textures = {};
+    spriteNames.forEach((spriteName) => {
+        textures[spriteName] = PIXI.Texture.EMPTY;
+    });
+    return textures;
+}
+function createTiles(renderer) {
+    const tiles = {};
+    forEachPos((pos, x, y) => {
+        const sprite = new PIXI.Sprite(PIXI.Texture.EMPTY);
+        sprite.x = (x - (HEIGHT - y - 1) / 2) * xu;
+        sprite.y = y * smallyu;
+        tiles[pos] = sprite;
+        renderer.addChild(sprite);
+    });
+    return tiles;
+}
+function loadTextures(display) {
+    spriteNames.forEach((name) => {
+        PIXI.loader.add(name, `res/${name}.png`);
+    });
+    PIXI.loader.load((loader, resources) => {
+        spriteNames.forEach((name) => {
+            display.textures[name] = resources[name].texture;
+        });
+        render(display);
+    });
+}
+function render(display) {
+    forEachPos((pos, x, y) => {
+        const sprite = display.tiles[pos];
+        const level = display.game.level;
+        const tile = level.tiles[pos];
+        const mob = level.mobs[pos];
+        if (display.game.fov[pos]) {
+            if (mob) {
+                const behavior = display.game.prop.behavior[mob];
+                sprite.texture = display.textures[behavior];
+                sprite.tint = color[behavior];
+            }
+            else {
+                sprite.texture = display.textures[tile];
+                sprite.tint = color[tile];
+            }
+            sprite.alpha = 1.0;
+            sprite.visible = true;
+        }
+        else if (display.game.memory[pos]) {
+            sprite.texture = display.textures[tile];
+            sprite.tint = color[tile];
+            sprite.alpha = 0.5;
+            sprite.visible = true;
+        }
+        else {
+            sprite.visible = false;
+        }
+    });
+    display.app.render();
+}
+function loop(display) {
+    let delay = 0;
+    while (!delay || display.skipAnimation && delay < Infinity) {
+        delay = step(display.game);
+    }
+    render(display);
+    if (delay === Infinity) {
+        display.skipAnimation = false;
+        save(display.game);
+    }
+    else {
+        display.animationId = setTimeout(loop, 10 * delay, display);
+    }
+}
+function skip(display) {
+    if (display.animationId == undefined)
+        return;
+    display.skipAnimation = true;
+    cancelAnimationFrame(display.animationId);
+    display.animationId = undefined;
+    loop(display);
 }
 
 /** @file entry point */
-new Display();
+create$$1(get(), document.body);
 
 }());
