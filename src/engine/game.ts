@@ -45,6 +45,12 @@ export interface Game {
 const VERSION = '0.1.3'
 const SAVE_NAME = 'hex adventure'
 
+export function forceNew(seed: number): Game {
+    const game = create(seed)
+    console.log(seed)
+    return game
+}
+
 export function get(): Game {
     const game = load() || create(Date.now())
     if (game.version !== VERSION) {

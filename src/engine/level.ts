@@ -22,7 +22,8 @@ export function createPlaceholder() {
 /** create a new level */
 export function create(seed: number, playerPos: number): Level {
     const alea = Alea.seed(seed)
-    Noise.seed(Alea.random(alea))
+    const randSeed = Alea.random(alea)
+    Noise.seed(randSeed)
 
     const tiles = createTiles()
 
@@ -30,7 +31,7 @@ export function create(seed: number, playerPos: number): Level {
     removeSmallWalls()
     const size = removeOtherCaves()
     if (size < WIDTH * HEIGHT / 4) {
-        return create(seed, playerPos)
+        return create(randSeed, playerPos)
     }
     fillSmallCaves()
     const visibility = generateVisibility()
@@ -76,8 +77,6 @@ export function create(seed: number, playerPos: number): Level {
     }
 
     /** remove groups of 5 or fewer walls */
-    // TODO: investigate potential infinite loop here
-    // test seeds slightly before timestamp 4:41:19
     function removeSmallWalls() {
         const visited = new Set()
         forEachInnerPos(pos => {
