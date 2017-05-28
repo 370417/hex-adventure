@@ -1,0 +1,17 @@
+{
+    "extends": [
+        "tslint:recommended"
+    ],
+    "jsRules": {},
+    "rules": {
+        "quotemark": [
+            "single"
+        ],
+        "interface-name": [
+            "never-prefix"
+        ],
+        "no-reference": false,
+        "no-shadowed-variable": false
+    },
+    "rulesDirectory": []
+}

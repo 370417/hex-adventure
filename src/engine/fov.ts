@@ -1,9 +1,9 @@
-import { dir1, dir3, dir5, dir7, dir9, dir11 } from '../data/constants'
+import { dir1, dir11, dir3, dir5, dir7, dir9 } from '../data/constants';
 
 /** @file calculates fov */
 
-const normals = [dir1, dir3, dir5, dir7, dir9, dir11]
-const tangents = [dir5, dir7, dir9, dir11, dir1, dir3]
+const normals = [dir1, dir3, dir5, dir7, dir9, dir11];
+const tangents = [dir5, dir7, dir9, dir11, dir1, dir3];
 
 /**
  * calculate fov using recursive shadowcasting
@@ -12,23 +12,23 @@ const tangents = [dir5, dir7, dir9, dir11, dir1, dir3]
  * @param reveal add pos to the fov
  */
 export function shadowcast(center: number, transparent: (pos: number) => boolean, reveal: (pos: number) => void) {
-    reveal(center)
+    reveal(center);
     for (let i = 0; i < 6; i++) {
-        const transform = (x: number, y: number) => center + x * tangents[i] + y * normals[i]
-        const transformedTransparent = (x: number, y: number) => transparent(transform(x, y))
-        const transformedReveal = (x: number, y: number) => reveal(transform(x, y))
-        scan(1, 0, 1, transformedTransparent, transformedReveal)
+        const transform = (x: number, y: number) => center + x * tangents[i] + y * normals[i];
+        const transformedTransparent = (x: number, y: number) => transparent(transform(x, y));
+        const transformedReveal = (x: number, y: number) => reveal(transform(x, y));
+        scan(1, 0, 1, transformedTransparent, transformedReveal);
     }
 }
 
 /** round a number, rounding up if it ends in .5 */
 function roundHigh(n: number) {
-    return Math.round(n)
+    return Math.round(n);
 }
 
 /** round a number, rounding down if it ends in .5 */
 function roundLow(n: number) {
-    return Math.ceil(n - 0.5)
+    return Math.ceil(n - 0.5);
 }
 
 /**
@@ -46,34 +46,34 @@ function scan(
     transparent: (x: number, y: number) => boolean,
     reveal: (x: number, y: number) => void,
 ) {
-    if (start >= end) return
+    if (start >= end) { return; }
 
     // minimum and maximum x coordinates for opaque tiles
     // the fov for transparent tiles is slightly narrower to presernve symmetry
-    const xmin = roundHigh(y * start)
-    const xmax = roundLow(y * end)
+    const xmin = roundHigh(y * start);
+    const xmax = roundLow(y * end);
 
     // whether the current continous fov has transparent tiles
     // this is used to prevent disjoint fov
-    let fovExists = false
+    let fovExists = false;
 
     for (let x = xmin; x <= xmax; x++) {
         if (transparent(x, y)) {
             if (x >= y * start && x <= y * end) {
-                reveal(x, y)
-                fovExists = true
+                reveal(x, y);
+                fovExists = true;
             }
         } else {
             if (fovExists) {
-                scan(y + 1, start, (x - 0.5) / y, transparent, reveal)
+                scan(y + 1, start, (x - 0.5) / y, transparent, reveal);
             }
-            reveal(x, y)
-            fovExists = false
-            start = (x + 0.5) / y
-            if (start >= end) return
+            reveal(x, y);
+            fovExists = false;
+            start = (x + 0.5) / y;
+            if (start >= end) { return; }
         }
     }
     if (fovExists) {
-        scan(y + 1, start, end, transparent, reveal)
+        scan(y + 1, start, end, transparent, reveal);
     }
 }
