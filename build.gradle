@@ -1,5 +1,8 @@
 buildscript {
-    ext.kotlinVersion = '1.1.51'
+    ext {
+        kotlinVersion = '1.1.51'
+        gdxVersion = '1.9.6'
+    }
     
 
     repositories {
@@ -10,6 +13,7 @@ buildscript {
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
     }
 }
 
@@ -55,6 +59,13 @@ project(":core") {
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
         compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlinVersion"
     }
+}
+
+import com.badlogic.gdx.tools.texturepacker.TexturePacker
+
+task texturePacker << {
+    logger.info "Calling TexturePacker"
+    TexturePacker.process("core/assets/oryx", "core/assets/atlas", "oryx")
 }
 
 tasks.eclipse.doLast {
