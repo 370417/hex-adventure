@@ -1,5 +1,7 @@
 package com.albertford
 
+import com.badlogic.gdx.Gdx
+
 /**
  * Rectangular hexagonal grid.
  * Origin is (0, 0) at the bottom left corner.
@@ -74,11 +76,20 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
 
     fun linearToAxial(i: Int): Axial {
         val y = i / width
-        return Axial((i % y) + axialFirstX(y), y)
+        return Axial((i % width) + axialFirstX(y), y)
     }
 
-    private fun axialToLinear(x: Int, y: Int): Int {
+    fun axialToLinear(x: Int, y: Int): Int {
         return y * width + x - axialFirstX(y)
+    }
+
+    fun floodfill(x: Int, y: Int, floodable: (x: Int, y: Int) -> Boolean, flood: (x: Int, y: Int) -> Unit) {
+        if (inBounds(x, y) && floodable(x, y)) {
+            flood(x, y)
+            for ((dx, dy) in directions) {
+                floodfill(x + dx, y + dy, floodable, flood)
+            }
+        }
     }
 
     /* Find the value of the first x-coordinate of a given row */
