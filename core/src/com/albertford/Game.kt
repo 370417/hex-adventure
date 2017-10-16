@@ -3,29 +3,36 @@ package com.albertford
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 
 class Game : ApplicationAdapter() {
-    lateinit internal var batch: SpriteBatch
+    private lateinit var batch: SpriteBatch
 
     private lateinit var atlas: TextureAtlas
 
-    private lateinit var wall: Sprite
+    private lateinit var level: Level
+
+    private lateinit var display: Display
 
     override fun create() {
         batch = SpriteBatch()
         atlas = TextureAtlas("atlas/oryx.atlas")
-        wall = atlas.createSprite("wall")
+
+        level = Level()
+        level.init(0, Axial(5, 5))
+        display = Display(level, atlas)
+
+        Gdx.graphics.isContinuousRendering = false
+        Gdx.graphics.requestRendering()
     }
 
     override fun render() {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
         batch.begin()
-        batch.draw(wall, 0f, 0f)
+        display.render(batch)
         batch.end()
     }
 
