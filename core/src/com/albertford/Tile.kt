@@ -1,8 +1,6 @@
 package com.albertford
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion
-
-class Tile(var terrain: Terrain) {
+class Tile(var terrain: Terrain, var mob: Mob? = null) {
 
 }
 

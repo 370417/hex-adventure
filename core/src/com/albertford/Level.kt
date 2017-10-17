@@ -3,9 +3,9 @@ package com.albertford
 import com.badlogic.gdx.utils.IntSet
 import java.util.*
 
-class Level {
+class Level(width: Int, height: Int) {
 
-    val tiles = Grid(48, 31) { Tile(Terrain.WALL) }
+    val tiles = Grid(width, height) { Tile(Terrain.WALL) }
 
     fun init(seed: Long, start: Axial) {
         val rand = Random(seed)
@@ -23,9 +23,9 @@ class Level {
     /* Turn everything to wall except starting position */
     private fun resetTerrain(start: Axial) {
         tiles.forEach { _, i ->
-            tiles.get(i).terrain = Terrain.WALL
+            tiles[i].terrain = Terrain.WALL
         }
-        tiles.get(start).terrain = Terrain.FLOOR
+        tiles[start].terrain = Terrain.FLOOR
     }
 
     private fun carveCaves(rand: Random) {
@@ -38,8 +38,8 @@ class Level {
         }
         shuffle(innerIndices, rand)
         for (i in innerIndices) {
-            if (tiles.get(i).terrain == Terrain.WALL && countFloorGroups(i) != 1) {
-                tiles.get(i).terrain = Terrain.FLOOR
+            if (tiles[i].terrain == Terrain.WALL && countFloorGroups(i) != 1) {
+                tiles[i].terrain = Terrain.FLOOR
             }
         }
     }
@@ -55,8 +55,8 @@ class Level {
             if (tile.terrain == Terrain.FLOOR) {
                 return@forEach
             }
-            if (groupIndex.get(i) >= 0) {
-                if (smallGroups.contains(groupIndex.get(i))) {
+            if (groupIndex[i] >= 0) {
+                if (smallGroups.contains(groupIndex[i])) {
                     tile.terrain = Terrain.FLOOR
                 }
                 return@forEach
@@ -64,9 +64,9 @@ class Level {
             val (x, y) = tiles.linearToAxial(i)
             var groupSize = 0
             tiles.floodfill(x, y, { x1, y1 ->
-                tiles.get(x1, y1).terrain == Terrain.WALL && groupIndex.get(x1, y1) == -1
+                tiles[x1, y1].terrain == Terrain.WALL && groupIndex[x1, y1] == -1
             }, { x1, y1 ->
-                groupIndex.set(x1, y1, i)
+                groupIndex[x1, y1] = i
                 groupSize++
             })
             if (groupSize in 1..5) {
@@ -80,14 +80,14 @@ class Level {
         val visitedTiles = Grid(tiles.width, tiles.height) { false }
         var mainCaveSize = 0
         tiles.floodfill(start.x, start.y, { x, y ->
-            !visitedTiles.get(x, y) && tiles.get(x, y).terrain == Terrain.FLOOR
+            !visitedTiles[x, y] && tiles[x, y].terrain == Terrain.FLOOR
         }, { x, y ->
-            visitedTiles.set(x, y, true)
+            visitedTiles[x, y] = true
             mainCaveSize++
         })
         visitedTiles.forEach { visited, i ->
             if (!visited) {
-                tiles.get(i).terrain = Terrain.WALL
+                tiles[i].terrain = Terrain.WALL
             }
         }
         return mainCaveSize
@@ -121,15 +121,15 @@ class Level {
         var groups = 0
         var curr = axial
         for (j in 0 until 6) {
-            curr = axial.sum(Grid.directions[j])
-            val next = axial.sum(Grid.directions[(j + 1) % 6])
-            if (tiles.get(curr).terrain == Terrain.FLOOR && tiles.get(next).terrain != Terrain.FLOOR) {
+            curr = axial + Grid.directions[j]
+            val next = axial + Grid.directions[(j + 1) % 6]
+            if (tiles[curr].terrain == Terrain.FLOOR && tiles[next].terrain != Terrain.FLOOR) {
                 groups++
             }
         }
         return when {
             groups > 0 -> groups
-            tiles.get(curr).terrain == Terrain.FLOOR -> 1
+            tiles[curr].terrain == Terrain.FLOOR -> 1
             else -> 0
         }
     }
@@ -142,12 +142,12 @@ class Level {
         if (!isDeadEnd(x, y)) {
             return
         }
-        tiles.get(x, y).terrain = Terrain.WALL
+        tiles[x, y].terrain = Terrain.WALL
         var relocateStart = start.x == x && start.y == y
         for ((dx, dy) in Grid.directions) {
             val newX = x + dx
             val newY = y + dy
-            if (relocateStart && tiles.get(newX, newY).terrain == Terrain.FLOOR) {
+            if (relocateStart && tiles[newX, newY].terrain == Terrain.FLOOR) {
                 relocateStart = false
                 start.x = newX
                 start.y = newY
@@ -157,9 +157,9 @@ class Level {
     }
 
     private fun isDeadEnd(axial: Axial): Boolean {
-        if (tiles.get(axial).terrain == Terrain.FLOOR && countFloorGroups(axial) == 1) {
+        if (tiles[axial].terrain == Terrain.FLOOR && countFloorGroups(axial) == 1) {
             for (dir in Grid.directions) {
-                if (isCave(axial.sum(dir))) {
+                if (isCave(axial + dir)) {
                     return false
                 }
             }
@@ -173,7 +173,7 @@ class Level {
     }
 
     private fun isCave(axial: Axial): Boolean {
-        return tiles.get(axial).terrain == Terrain.FLOOR && countFloorGroups(axial) == 1
+        return tiles[axial].terrain == Terrain.FLOOR && countFloorGroups(axial) == 1
     }
 }
 

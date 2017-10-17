@@ -3,16 +3,15 @@ package com.albertford
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 
-class Game : ApplicationAdapter() {
+class Game(private val width: Int, private val height: Int) : ApplicationAdapter() {
     private lateinit var batch: SpriteBatch
 
     private lateinit var atlas: TextureAtlas
 
-    private lateinit var level: Level
+    private lateinit var gameState: GameState
 
     private lateinit var display: Display
 
@@ -20,9 +19,8 @@ class Game : ApplicationAdapter() {
         batch = SpriteBatch()
         atlas = TextureAtlas("atlas/oryx.atlas")
 
-        level = Level()
-        level.init(0, Axial(5, 5))
-        display = Display(level, atlas)
+        gameState = GameState(width, height)
+        display = Display(gameState, atlas)
 
         Gdx.graphics.isContinuousRendering = false
         Gdx.graphics.requestRendering()

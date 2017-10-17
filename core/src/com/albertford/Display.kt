@@ -5,15 +5,17 @@ import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 
-class Display(var level: Level, val atlas: TextureAtlas) {
+class Display(private var gameState: GameState, atlas: TextureAtlas) {
 
     private val floor = atlas.findRegion("floor")
     private val wall = atlas.findRegion("wall")
     private val shortGrass = atlas.findRegion("shortGrass")
     private val tallGrass = atlas.findRegion("tallGrass")
 
-    private val sprites = Grid(level.tiles.width, level.tiles.height) { i ->
-        val (x, y) = level.tiles.linearToRectangular(i)
+    private val player = atlas.findRegion("player")
+
+    private val sprites = Grid(gameState.level.tiles.width, gameState.level.tiles.height) { i ->
+        val (x, y) = gameState.level.tiles.linearToRectangular(i)
         val sprite = Sprite(wall)
         sprite.x = (9 * x).toFloat()
         sprite.y = (16 * y).toFloat()
@@ -22,9 +24,23 @@ class Display(var level: Level, val atlas: TextureAtlas) {
 
     fun render(batch: Batch) {
         sprites.forEach { sprite, i: Int ->
-            val tile = level.tiles.get(i)
-            sprite.setRegion(terrainRegion(tile.terrain))
-            sprite.draw(batch)
+            val tile = gameState.level.tiles[i]
+            if (gameState.memory[i].visible) {
+                val mob = tile.mob
+                if (mob != null) {
+                    sprite.setRegion(mobRegion(mob.type))
+                } else {
+                    sprite.setRegion(terrainRegion(tile.terrain))
+                }
+                sprite.draw(batch)
+
+            } else {
+                val tileMemory = gameState.memory[i]
+                if (tileMemory.remembered) {
+                    sprite.setRegion(terrainRegion(tileMemory.terrain))
+                    sprite.draw(batch)
+                }
+            }
         }
     }
 
@@ -34,6 +50,12 @@ class Display(var level: Level, val atlas: TextureAtlas) {
             Terrain.FLOOR -> floor
             Terrain.SHORT_GRASS -> shortGrass
             Terrain.TALL_GRASS -> tallGrass
+        }
+    }
+
+    private fun mobRegion(type: MobType): TextureRegion {
+        return when (type) {
+            MobType.PLAYER -> player
         }
     }
 

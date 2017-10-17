@@ -1,7 +1,5 @@
 package com.albertford
 
-import com.badlogic.gdx.Gdx
-
 /**
  * Rectangular hexagonal grid.
  * Origin is (0, 0) at the bottom left corner.
@@ -25,27 +23,27 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
     @Suppress("UNCHECKED_CAST")
     private val arr = Array(width * height) { init(it) as Any } as Array<T>
 
-    fun get(i: Int): T {
+    operator fun get(i: Int): T {
         return arr[i]
     }
 
-    fun get(x: Int, y: Int): T {
+    operator fun get(x: Int, y: Int): T {
         return arr[axialToLinear(x, y)]
     }
 
-    fun get(axial: Axial): T {
+    operator fun get(axial: Axial): T {
         return arr[axialToLinear(axial.x, axial.y)]
     }
 
-    fun set(i: Int, t: T) {
+    operator fun set(i: Int, t: T) {
         arr[i] = t
     }
 
-    fun set(x: Int, y: Int, t: T) {
+    operator fun set(x: Int, y: Int, t: T) {
         arr[axialToLinear(x, y)] = t
     }
 
-    fun set(axial: Axial, t: T) {
+    operator fun set(axial: Axial, t: T) {
         arr[axialToLinear(axial.x, axial.y)] = t
     }
 
@@ -107,6 +105,69 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
                 Axial(-1, 0),
                 Axial(0, 1)
         )
+
+        private val tangents = arrayOf(
+                directions[2],
+                directions[3],
+                directions[4],
+                directions[5],
+                directions[0],
+                directions[1]
+        )
+
+        fun shadowcast(center: Axial, transparent: (axial: Axial) -> Boolean, reveal: (axial: Axial) -> Unit) {
+            reveal(center)
+            for (i in 0 until 6) {
+                val transform = { x: Int, y: Int ->
+                    center + tangents[i] * x + directions[i] * y
+                }
+                scan(1, 0f, 1f, { x, y ->
+                    transparent(transform(x, y))
+                }, { x, y ->
+                    reveal(transform(x, y))
+                })
+            }
+        }
+
+        private fun roundHigh(n: Float): Int {
+            return Math.round(n)
+        }
+
+        private fun roundLow(n: Float): Int {
+            return if (n % 1 == 0.5f) {
+                Math.round(n) - 1
+            } else {
+                Math.round(n)
+            }
+        }
+
+        private fun scan(y: Int, start: Float, end: Float,
+                         transparent: (x: Int, y: Int) -> Boolean,
+                         reveal: (x: Int, y: Int) -> Unit) {
+            @Suppress("NAME_SHADOWING")
+            var start = start
+            var fovExists = false
+            for (x in roundHigh(y * start)..roundLow(y * end)) {
+                if (transparent(x, y)) {
+                    if (x >= y * start && x <= y * end) {
+                        reveal(x, y)
+                        fovExists = true
+                    }
+                } else {
+                    val newEnd = (x - 0.5f) / y
+                    if (fovExists && start < newEnd) {
+                        scan(y + 1, start, newEnd, transparent, reveal)
+                    }
+                    reveal(x, y)
+                    fovExists = false
+                    start = (x + 0.5f) / y
+                    if (start >= end) return
+                }
+            }
+            if (fovExists && start < end) {
+                scan(y + 1, start, end, transparent, reveal)
+            }
+        }
     }
 
 }
