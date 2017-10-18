@@ -6,11 +6,31 @@ import java.util.*
 class Level(width: Int, height: Int) {
 
     val tiles = Grid(width, height) { Tile(Terrain.WALL) }
+    var ambushFactors: Grid<Float>? = null
+
+    fun moveMob(mob: Mob, direction: Axial): Boolean {
+        val targetTile = tiles[mob.axial + direction]
+        if (!targetTile.terrain.passable || targetTile.mob != null) {
+            return false
+        }
+        tiles[mob.axial].mob = null
+        mob.axial.plusAssign(direction)
+        tiles[mob.axial].mob = mob
+        return true
+    }
+
+    fun bump(mob: Mob, direction: Axial) {
+        val targetTile = tiles[mob.axial + direction]
+        if (targetTile.terrain == Terrain.CLOSED_DOOR) {
+            targetTile.terrain = Terrain.OPEN_DOOR
+        }
+    }
 
     fun init(seed: Long, start: Axial) {
         val rand = Random(seed)
         resetTerrain(start)
-        carveCaves(rand)
+        val innerIndices = shuffledInnerIndeces(rand)
+        carveCaves(innerIndices)
         removeSmallWalls()
         val size = removeOtherCaves(start)
         if (size < tiles.width * tiles.height / 4) {
@@ -18,6 +38,35 @@ class Level(width: Int, height: Int) {
             return
         }
         fillSmallCaves(start)
+        val fovSizes = Grid(tiles.width, tiles.height) { i ->
+            var fovSize = 0
+            if (tiles[i].terrain.passable) {
+                Grid.shadowcast(tiles.linearToAxial(i), { axial ->
+                    tiles[axial].terrain.transparent
+                }, { axial ->
+                    if (tiles[axial].terrain.transparent) {
+                        fovSize++
+                    }
+                })
+            }
+            fovSize
+        }
+        ambushFactors = Grid(tiles.width, tiles.height) { i ->
+            if (fovSizes[i] > 0) {
+                val axial = tiles.linearToAxial(i)
+                Grid.directions.map { direction ->
+                    fovSizes[axial + direction].toFloat() / fovSizes[i]
+                }.max() ?: 0f
+            } else {
+                0f
+            }
+        }
+        // doors
+        for (i in innerIndices) {
+            if (tiles[i].terrain == Terrain.FLOOR && countFloorGroups(i) > 1 && countFloorNeighbors(i) > 2) {
+                tiles[i].terrain = Terrain.CLOSED_DOOR
+            }
+        }
     }
 
     /* Turn everything to wall except starting position */
@@ -28,7 +77,7 @@ class Level(width: Int, height: Int) {
         tiles[start].terrain = Terrain.FLOOR
     }
 
-    private fun carveCaves(rand: Random) {
+    private fun shuffledInnerIndeces(rand: Random): IntArray {
         val width = tiles.width
         val height = tiles.height
         val innerIndices = IntArray((width - 2) * (height - 2)) { i ->
@@ -37,6 +86,10 @@ class Level(width: Int, height: Int) {
             (y + 1) * width + (x + 1)
         }
         shuffle(innerIndices, rand)
+        return innerIndices
+    }
+
+    private fun carveCaves(innerIndices: IntArray) {
         for (i in innerIndices) {
             if (tiles[i].terrain == Terrain.WALL && countFloorGroups(i) != 1) {
                 tiles[i].terrain = Terrain.FLOOR
@@ -136,6 +189,20 @@ class Level(width: Int, height: Int) {
 
     private fun countFloorGroups(i: Int): Int {
         return countFloorGroups(tiles.linearToAxial(i))
+    }
+
+    private fun countFloorNeighbors(axial: Axial): Int {
+        var floors = 0
+        for (direction in Grid.directions) {
+            if (tiles[axial + direction].terrain == Terrain.FLOOR) {
+                floors++
+            }
+        }
+        return floors
+    }
+
+    private fun countFloorNeighbors(i: Int): Int {
+        return countFloorNeighbors(tiles.linearToAxial(i))
     }
 
     private fun fillDeadEnd(start: Axial, x: Int, y: Int) {

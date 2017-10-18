@@ -2,26 +2,41 @@ package com.albertford
 
 class GameState(width: Int, height: Int) {
 
-    val player = Mob(0, 0, MobType.PLAYER)
+    var turn = 0
+    val actors = ArrayList<Any>()
+    val delayedActors = ArrayList<Any>()
+    val player = Player(Axial(0, 0))
     var level = Level(width, height)
-    val memory = Grid(width, height) { TileMemory(false, false, Terrain.WALL) }
+    val fov = Grid(width, height) { TileView(-1, Terrain.WALL) }
 
     init {
-        val start = level.tiles.linearToAxial(width * height / 2)
-        level.init(0, start)
-        player.x = start.x
-        player.y = start.y
-        level.tiles[start].mob = player
+        player.axial = level.tiles.linearToAxial(width * height / 2)
+        level.init(0, player.axial)
+        level.tiles[player.axial].mob = player
 
-        memory.forEach { _, i ->
-             memory[i].visible = false
-        }
-        Grid.shadowcast(start, { axial -> level.tiles[axial].terrain.transparent }, { axial ->
-            val tileMemory = memory[axial]
-            tileMemory.visible = true
-            tileMemory.remembered = true
-            tileMemory.terrain = level.tiles[axial].terrain
-        })
+        beginTurn()
     }
 
+    fun beginTurn() {
+        updateFov()
+    }
+
+    fun endTurn() {
+        turn++
+    }
+
+    fun updateFov() {
+        turn++
+        Grid.shadowcast(player.axial, this::transparent, this::reveal)
+    }
+
+    private fun transparent(axial: Axial): Boolean {
+        return level.tiles[axial].terrain.transparent
+    }
+
+    private fun reveal(axial: Axial) {
+        val tileView = fov[axial]
+        tileView.lastSeen = turn
+        tileView.terrain = level.tiles[axial].terrain
+    }
 }

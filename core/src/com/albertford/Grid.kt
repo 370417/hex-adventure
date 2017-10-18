@@ -96,24 +96,17 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
     }
 
     companion object {
-        // The six unit vectors, ordered clockwise starting from the top right
-        val directions = arrayOf(
-                Axial(1, 1),
-                Axial(1, 0),
-                Axial(0, -1),
-                Axial(-1, -1),
-                Axial(-1, 0),
-                Axial(0, 1)
-        )
+        val NORTHEAST = Axial(1, 1)
+        val EAST = Axial(1, 0)
+        val SOUTHEAST = Axial(0, -1)
+        val SOUTHWEST = Axial(-1, -1)
+        val WEST = Axial(-1, 0)
+        val NORTHWEST = Axial(0, 1)
 
-        private val tangents = arrayOf(
-                directions[2],
-                directions[3],
-                directions[4],
-                directions[5],
-                directions[0],
-                directions[1]
-        )
+        // The six unit vectors, ordered clockwise starting from the top right
+        val directions = arrayOf(NORTHEAST, EAST, SOUTHEAST, SOUTHWEST, WEST, NORTHWEST)
+
+        private val tangents = arrayOf(SOUTHEAST, SOUTHWEST, WEST, NORTHWEST, NORTHEAST, EAST)
 
         fun shadowcast(center: Axial, transparent: (axial: Axial) -> Boolean, reveal: (axial: Axial) -> Unit) {
             reveal(center)

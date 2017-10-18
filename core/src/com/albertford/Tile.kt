@@ -1,7 +1,9 @@
 package com.albertford
 
-class Tile(var terrain: Terrain, var mob: Mob? = null) {
+import com.badlogic.gdx.utils.Array
 
+class Tile(var terrain: Terrain, var mob: Mob? = null) {
+    val projectiles = Array<Any>(2)
 }
 
 enum class Terrain(
@@ -23,5 +25,13 @@ enum class Terrain(
     TALL_GRASS(
             passable = true,
             transparent = false
+    ),
+    CLOSED_DOOR(
+            passable = false,
+            transparent = false
+    ),
+    OPEN_DOOR(
+            passable = true,
+            transparent = true
     )
 }

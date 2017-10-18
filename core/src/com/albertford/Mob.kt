@@ -1,9 +1,15 @@
 package com.albertford
 
-class Mob(var x: Int, var y: Int, val type: MobType) {
+interface Mob {
+    var axial: Axial
+}
 
+interface Test {
+    var b: Int
 }
 
 enum class MobType {
     PLAYER
 }
+
+class Player(override var axial: Axial) : Mob
