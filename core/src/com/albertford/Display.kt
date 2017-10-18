@@ -43,7 +43,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas) {
             Command.MOVE_NORTHWEST -> movePlayer(Grid.NORTHWEST)
             Command.REST -> {}
             Command.DEBUG -> {
-                Gdx.app.log("ambush factor: ", "${gameState.level.ambushFactors?.get(gameState.player.axial)}")
+                gameState = GameState(gameState.level.tiles.width, gameState.level.tiles.height)
             }
         }
         gameState.updateFov()

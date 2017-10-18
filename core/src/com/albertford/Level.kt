@@ -27,7 +27,7 @@ class Level(width: Int, height: Int) {
     }
 
     fun init(seed: Long, start: Axial) {
-        val rand = Random(seed)
+        val rand = Random(/*seed*/)
         resetTerrain(start)
         val innerIndices = shuffledInnerIndeces(rand)
         carveCaves(innerIndices)
@@ -61,12 +61,7 @@ class Level(width: Int, height: Int) {
                 0f
             }
         }
-        // doors
-        for (i in innerIndices) {
-            if (tiles[i].terrain == Terrain.FLOOR && countFloorGroups(i) > 1 && countFloorNeighbors(i) > 2) {
-                tiles[i].terrain = Terrain.CLOSED_DOOR
-            }
-        }
+        addDoors(innerIndices, rand)
     }
 
     /* Turn everything to wall except starting position */
@@ -191,20 +186,6 @@ class Level(width: Int, height: Int) {
         return countFloorGroups(tiles.linearToAxial(i))
     }
 
-    private fun countFloorNeighbors(axial: Axial): Int {
-        var floors = 0
-        for (direction in Grid.directions) {
-            if (tiles[axial + direction].terrain == Terrain.FLOOR) {
-                floors++
-            }
-        }
-        return floors
-    }
-
-    private fun countFloorNeighbors(i: Int): Int {
-        return countFloorNeighbors(tiles.linearToAxial(i))
-    }
-
     private fun fillDeadEnd(start: Axial, x: Int, y: Int) {
         if (!isDeadEnd(x, y)) {
             return
@@ -241,6 +222,56 @@ class Level(width: Int, height: Int) {
 
     private fun isCave(axial: Axial): Boolean {
         return tiles[axial].terrain == Terrain.FLOOR && countFloorGroups(axial) == 1
+    }
+
+    private fun isTunnel(axial: Axial): Boolean {
+        return tiles[axial].terrain == Terrain.FLOOR && countFloorGroups(axial) > 1
+    }
+
+    private fun addDoors(innerIndices: IntArray, rand: Random) {
+        for (i in innerIndices) {
+            val axial = tiles.linearToAxial(i)
+            if (isTunnel(axial)) {
+                when (countTerrainNeighbors(axial, Terrain.FLOOR)) {
+                    3 -> {
+                        if (notNearDoor(axial)) {
+                            tiles[i].terrain = Terrain.CLOSED_DOOR
+                        }
+                    }
+                    4 -> {
+                        var doorPlaced = false
+                        for (direction in Grid.directions) {
+                            if (isTunnel(axial + direction) && notNearDoor(axial + direction)) {
+                                tiles[axial + direction].terrain = Terrain.CLOSED_DOOR
+                                doorPlaced = true
+                            }
+                        }
+                        if (!doorPlaced && notNearDoor(axial)) {
+                            tiles[axial].terrain = Terrain.CLOSED_DOOR
+                        }
+                    }
+                }
+            }
+        }
+        for (i in innerIndices) {
+            if (tiles[i].terrain == Terrain.CLOSED_DOOR && rand.nextInt(3) != 0) {
+                tiles[i].terrain = Terrain.FLOOR
+            }
+        }
+    }
+
+    private fun countTerrainNeighbors(axial: Axial, terrain: Terrain): Int {
+        var floors = 0
+        for (direction in Grid.directions) {
+            if (tiles[axial + direction].terrain == terrain) {
+                floors++
+            }
+        }
+        return floors
+    }
+
+    private fun notNearDoor(axial: Axial): Boolean {
+        return countTerrainNeighbors(axial, Terrain.CLOSED_DOOR) == 0
     }
 }
 
