@@ -33,5 +33,13 @@ enum class Terrain(
     OPEN_DOOR(
             passable = true,
             transparent = true
+    ),
+    EXIT(
+            passable = false,
+            transparent = true
+    ),
+    EXIT_LOCKED(
+            passable = false,
+            transparent = true
     )
 }

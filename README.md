@@ -1,4 +1,6 @@
-# Hex Adventure
+# Skealkh
+
+*Skunk + Stealth*
 
 ## Texture packing:
 

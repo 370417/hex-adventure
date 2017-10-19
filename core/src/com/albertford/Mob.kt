@@ -2,14 +2,7 @@ package com.albertford
 
 interface Mob {
     var pos: Pos
+    var facingRight: Boolean
 }
 
-interface Test {
-    var b: Int
-}
-
-enum class MobType {
-    PLAYER
-}
-
-class Player(override var pos: Pos) : Mob
+class Player(override var pos: Pos, override var facingRight: Boolean) : Mob

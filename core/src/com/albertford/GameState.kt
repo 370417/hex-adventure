@@ -1,33 +1,47 @@
 package com.albertford
 
+import com.badlogic.gdx.Gdx
+import java.util.*
+
 class GameState(width: Int, height: Int) {
 
     var turn = 0
     val actors = ArrayList<Any>()
     val delayedActors = ArrayList<Any>()
-    val player = Player(Pos(0, 0))
-    var level = Level(width, height)
+    val player = Player(Pos(0, 0), true)
+    val level = Level(width, height)
     val fov = Grid(width, height) { TileView(-1, Terrain.WALL) }
+    val rand = Random()
 
     init {
         player.pos = level.tiles.linearToPos(width * height / 2)
-        level.init(0, player.pos)
-        level.tiles[player.pos].mob = player
-
-        beginTurn()
-    }
-
-    fun beginTurn() {
-        updateFov()
-    }
-
-    fun endTurn() {
-        turn++
+        descend()
     }
 
     fun updateFov() {
         turn++
         Grid.shadowcast(player.pos, this::transparent, this::reveal)
+    }
+
+    fun movePlayer(direction: Pos) {
+        if (!level.moveMob(player, direction)) {
+            level.bump(player, direction)
+            if (level.tiles[player.pos + direction].terrain == Terrain.EXIT) {
+                descend()
+            } else if (level.tiles[player.pos + direction].terrain == Terrain.EXIT_LOCKED) {
+                level.tiles[player.pos + direction].terrain = Terrain.EXIT
+                Gdx.graphics.requestRendering()
+            }
+        }
+    }
+
+    private fun descend() {
+        level.init(rand.nextLong(), player.pos)
+        level.tiles[player.pos].mob = player
+        fov.forEach { tileView, i ->
+            tileView.lastSeen = -1
+        }
+        updateFov()
     }
 
     private fun transparent(pos: Pos): Boolean {

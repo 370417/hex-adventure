@@ -15,6 +15,10 @@ class Level(width: Int, height: Int) {
         tiles[mob.pos].mob = null
         mob.pos.plusAssign(direction)
         tiles[mob.pos].mob = mob
+        mob.facingRight = when (direction) {
+            Grid.EAST, Grid.NORTHEAST, Grid.SOUTHEAST -> true
+            else -> false
+        }
         return true
     }
 
@@ -26,7 +30,7 @@ class Level(width: Int, height: Int) {
     }
 
     fun init(seed: Long, start: Pos) {
-        val rand = Random(/*seed*/)
+        val rand = Random(seed)
         resetTerrain(start)
         val innerIndices = shuffledInnerIndices(rand)
         carveCaves(innerIndices)
@@ -40,12 +44,14 @@ class Level(width: Int, height: Int) {
         addDoors(innerIndices)
 //        val fovSizes = generateVisibility()
 //        growGrass(fovSizes)
+        addExit(innerIndices)
     }
 
     /* Turn everything to wall except starting position */
     private fun resetTerrain(start: Pos) {
         tiles.forEach { _, i ->
             tiles[i].terrain = Terrain.WALL
+            tiles[i].mob = null
         }
         tiles[start].terrain = Terrain.FLOOR
     }
@@ -257,10 +263,10 @@ class Level(width: Int, height: Int) {
         return Grid(tiles.width, tiles.height) { i ->
             var fovSize = 0
             if (tiles[i].terrain.passable) {
-                Grid.shadowcast(tiles.linearToPos(i), { axial ->
-                    tiles[axial].terrain.transparent
-                }, { axial ->
-                    if (tiles[axial].terrain.transparent) {
+                Grid.shadowcast(tiles.linearToPos(i), { pos ->
+                    tiles[pos].terrain.transparent
+                }, { pos ->
+                    if (tiles[pos].terrain.transparent) {
                         fovSize++
                     }
                 })
@@ -274,6 +280,18 @@ class Level(width: Int, height: Int) {
         fovSizes.forEach { fovSize, i ->
             if (fovSize > shortGrassThreshold) {
                 tiles[i].terrain = Terrain.SHORT_GRASS
+            }
+        }
+    }
+
+    private fun addExit(innerIndices: IntArray) {
+        for (i in innerIndices) {
+            val pos = tiles.linearToPos(i)
+            if (tiles[i].terrain == Terrain.WALL &&
+                    countTerrainNeighbors(pos, Terrain.WALL) == 4 &&
+                    countFloorGroups(pos) == 1) {
+                tiles[i].terrain = Terrain.EXIT_LOCKED
+                break
             }
         }
     }

@@ -15,18 +15,22 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     private val tallGrass = atlas.findRegion("tallGrass")
     private val closedDoor = atlas.findRegion("closedDoor")
     private val openDoor = atlas.findRegion("openDoor")
+    private val exit = atlas.findRegion("exit")
+    private val exitLocked = atlas.findRegion("exitLocked")
 
     private val letters = TextureRegion.split(font, 9, 16)
 
-    private val player = atlas.findRegion("player")
+    private val player = atlas.findRegion("skunk")
 
     private val sprites = Grid(gameState.level.tiles.width, gameState.level.tiles.height) { i ->
         val (x, y) = gameState.level.tiles.linearToRectangular(i)
         val sprite = Sprite(wall)
         sprite.x = (9 * x).toFloat()
-        sprite.y = (16 * y).toFloat()
+        sprite.y = (16 * y + 16).toFloat()
         sprite
     }
+
+    private var bottomText: String? = null
 
     private val commandBuffer = ArrayList<Command>()
 
@@ -35,15 +39,13 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     }
 
     fun runCommand(command: Command) {
-        val level = gameState.level
-        val player = gameState.player
         when (command) {
-            Command.MOVE_SOUTHEAST -> movePlayer(Grid.SOUTHEAST)
-            Command.MOVE_SOUTHWEST -> movePlayer(Grid.SOUTHWEST)
-            Command.MOVE_EAST -> movePlayer(Grid.EAST)
-            Command.MOVE_WEST -> movePlayer(Grid.WEST)
-            Command.MOVE_NORTHEAST -> movePlayer(Grid.NORTHEAST)
-            Command.MOVE_NORTHWEST -> movePlayer(Grid.NORTHWEST)
+            Command.MOVE_SOUTHEAST -> gameState.movePlayer(Grid.SOUTHEAST)
+            Command.MOVE_SOUTHWEST -> gameState.movePlayer(Grid.SOUTHWEST)
+            Command.MOVE_EAST -> gameState.movePlayer(Grid.EAST)
+            Command.MOVE_WEST -> gameState.movePlayer(Grid.WEST)
+            Command.MOVE_NORTHEAST -> gameState.movePlayer(Grid.NORTHEAST)
+            Command.MOVE_NORTHWEST -> gameState.movePlayer(Grid.NORTHWEST)
             Command.REST -> {}
             Command.DEBUG -> {
                 gameState = GameState(gameState.level.tiles.width, gameState.level.tiles.height)
@@ -65,11 +67,21 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
                     else -> terrainRegion(tile.terrain)
                 }
                 sprite.setRegion(region)
+                if (mob != null) {
+                    sprite.setFlip(mob.facingRight, false)
+                }
                 sprite.draw(batch)
             } else if (tileView.lastSeen >= 0) {
                 sprite.setColor(0.5f, 0.5f, 0.5f, 1f)
                 sprite.setRegion(terrainRegion(tileView.terrain))
                 sprite.draw(batch)
+            }
+        }
+        bottomText = "Skealkh"
+        bottomText?.forEachIndexed { i, char ->
+            val texture = charToTexture(char)
+            if (texture != null) {
+                batch.draw(charToTexture(char), 9f * i + 10f, 0f)
             }
         }
     }
@@ -82,12 +94,23 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             Terrain.TALL_GRASS -> tallGrass
             Terrain.CLOSED_DOOR -> closedDoor
             Terrain.OPEN_DOOR -> openDoor
+            Terrain.EXIT -> exit
+            Terrain.EXIT_LOCKED -> exitLocked
         }
     }
 
-    private fun movePlayer(direction: Pos) {
-        if (!gameState.level.moveMob(gameState.player, direction)) {
-            gameState.level.bump(gameState.player, direction)
+    private fun charToTexture(char: Char): TextureRegion? {
+        val int = char.toInt()
+        return when (int) {
+            44 -> letters[0][13]
+            46 -> letters[1][13]
+            63 -> letters[2][13]
+            in 97..109 -> letters[0][int - 97]
+            in 110..122 -> letters[1][int - 110]
+            in 65..77 -> letters[2][int - 65]
+            in 78..90 -> letters[3][int - 78]
+            in 48..57 -> letters[4][int - 48]
+            else -> null
         }
     }
 }
