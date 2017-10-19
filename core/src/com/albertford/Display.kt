@@ -85,7 +85,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
         }
     }
 
-    private fun movePlayer(direction: Axial) {
+    private fun movePlayer(direction: Pos) {
         if (!gameState.level.moveMob(gameState.player, direction)) {
             gameState.level.bump(gameState.player, direction)
         }

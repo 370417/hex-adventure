@@ -1,7 +1,7 @@
 package com.albertford
 
 interface Mob {
-    var axial: Axial
+    var pos: Pos
 }
 
 interface Test {
@@ -12,4 +12,4 @@ enum class MobType {
     PLAYER
 }
 
-class Player(override var axial: Axial) : Mob
+class Player(override var pos: Pos) : Mob

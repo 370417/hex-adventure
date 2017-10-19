@@ -28,11 +28,11 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
     }
 
     operator fun get(x: Int, y: Int): T {
-        return arr[axialToLinear(x, y)]
+        return arr[posToLinear(x, y)]
     }
 
-    operator fun get(axial: Axial): T {
-        return arr[axialToLinear(axial.x, axial.y)]
+    operator fun get(pos: Pos): T {
+        return arr[posToLinear(pos.x, pos.y)]
     }
 
     operator fun set(i: Int, t: T) {
@@ -40,19 +40,19 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
     }
 
     operator fun set(x: Int, y: Int, t: T) {
-        arr[axialToLinear(x, y)] = t
+        arr[posToLinear(x, y)] = t
     }
 
-    operator fun set(axial: Axial, t: T) {
-        arr[axialToLinear(axial.x, axial.y)] = t
+    operator fun set(pos: Pos, t: T) {
+        arr[posToLinear(pos.x, pos.y)] = t
     }
 
     fun inBounds(x: Int, y: Int): Boolean {
-        return y in 0 until height && x - axialFirstX(y) in 0 until width
+        return y in 0 until height && x - posFirstX(y) in 0 until width
     }
 
     fun inInnerBounds(x: Int, y: Int): Boolean {
-        return y in 1..height - 2 && x - axialFirstX(y) in 1..width - 2
+        return y in 1..height - 2 && x - posFirstX(y) in 1..width - 2
     }
 
     fun forEach(function: (t: T, i: Int) -> Unit) {
@@ -72,13 +72,13 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
         return Rectangular(x, y)
     }
 
-    fun linearToAxial(i: Int): Axial {
+    fun linearToPos(i: Int): Pos {
         val y = i / width
-        return Axial((i % width) + axialFirstX(y), y)
+        return Pos((i % width) + posFirstX(y), y)
     }
 
-    fun axialToLinear(x: Int, y: Int): Int {
-        return y * width + x - axialFirstX(y)
+    fun posToLinear(x: Int, y: Int): Int {
+        return y * width + x - posFirstX(y)
     }
 
     fun floodfill(x: Int, y: Int, floodable: (x: Int, y: Int) -> Boolean, flood: (x: Int, y: Int) -> Unit) {
@@ -91,24 +91,24 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
     }
 
     /* Find the value of the first x-coordinate of a given row */
-    private fun axialFirstX(y: Int): Int {
+    private fun posFirstX(y: Int): Int {
         return (y + 1) / 2
     }
 
     companion object {
-        val NORTHEAST = Axial(1, 1)
-        val EAST = Axial(1, 0)
-        val SOUTHEAST = Axial(0, -1)
-        val SOUTHWEST = Axial(-1, -1)
-        val WEST = Axial(-1, 0)
-        val NORTHWEST = Axial(0, 1)
+        val NORTHEAST = Pos(1, 1)
+        val EAST = Pos(1, 0)
+        val SOUTHEAST = Pos(0, -1)
+        val SOUTHWEST = Pos(-1, -1)
+        val WEST = Pos(-1, 0)
+        val NORTHWEST = Pos(0, 1)
 
         // The six unit vectors, ordered clockwise starting from the top right
         val directions = arrayOf(NORTHEAST, EAST, SOUTHEAST, SOUTHWEST, WEST, NORTHWEST)
 
         private val tangents = arrayOf(SOUTHEAST, SOUTHWEST, WEST, NORTHWEST, NORTHEAST, EAST)
 
-        fun shadowcast(center: Axial, transparent: (axial: Axial) -> Boolean, reveal: (axial: Axial) -> Unit) {
+        fun shadowcast(center: Pos, transparent: (pos: Pos) -> Boolean, reveal: (pos: Pos) -> Unit) {
             reveal(center)
             for (i in 0 until 6) {
                 val transform = { x: Int, y: Int ->

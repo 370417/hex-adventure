@@ -5,14 +5,14 @@ class GameState(width: Int, height: Int) {
     var turn = 0
     val actors = ArrayList<Any>()
     val delayedActors = ArrayList<Any>()
-    val player = Player(Axial(0, 0))
+    val player = Player(Pos(0, 0))
     var level = Level(width, height)
     val fov = Grid(width, height) { TileView(-1, Terrain.WALL) }
 
     init {
-        player.axial = level.tiles.linearToAxial(width * height / 2)
-        level.init(0, player.axial)
-        level.tiles[player.axial].mob = player
+        player.pos = level.tiles.linearToPos(width * height / 2)
+        level.init(0, player.pos)
+        level.tiles[player.pos].mob = player
 
         beginTurn()
     }
@@ -27,16 +27,16 @@ class GameState(width: Int, height: Int) {
 
     fun updateFov() {
         turn++
-        Grid.shadowcast(player.axial, this::transparent, this::reveal)
+        Grid.shadowcast(player.pos, this::transparent, this::reveal)
     }
 
-    private fun transparent(axial: Axial): Boolean {
-        return level.tiles[axial].terrain.transparent
+    private fun transparent(pos: Pos): Boolean {
+        return level.tiles[pos].terrain.transparent
     }
 
-    private fun reveal(axial: Axial) {
-        val tileView = fov[axial]
+    private fun reveal(pos: Pos) {
+        val tileView = fov[pos]
         tileView.lastSeen = turn
-        tileView.terrain = level.tiles[axial].terrain
+        tileView.terrain = level.tiles[pos].terrain
     }
 }
