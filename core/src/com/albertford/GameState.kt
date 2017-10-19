@@ -8,7 +8,7 @@ class GameState(width: Int, height: Int) {
     var turn = 0
     val actors = ArrayList<Any>()
     val delayedActors = ArrayList<Any>()
-    val player = Player(Pos(0, 0), true)
+    val player = Player(Pos(0, 0), false)
     val level = Level(width, height)
     val fov = Grid(width, height) { TileView(-1, Terrain.WALL) }
     val rand = Random()
@@ -27,6 +27,7 @@ class GameState(width: Int, height: Int) {
         if (!level.moveMob(player, direction)) {
             level.bump(player, direction)
             if (level.tiles[player.pos + direction].terrain == Terrain.EXIT) {
+                player.facingRight = !player.facingRight
                 descend()
             } else if (level.tiles[player.pos + direction].terrain == Terrain.EXIT_LOCKED) {
                 level.tiles[player.pos + direction].terrain = Terrain.EXIT

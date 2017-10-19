@@ -9,6 +9,10 @@ data class Pos(var x: Int, var y: Int) {
         y += pos.y
     }
 
+    fun distance(pos: Pos): Int {
+        return (Math.abs(x - pos.x) + Math.abs(y - pos.y) + Math.abs(x + y - pos.x - pos.y)) / 2
+    }
+
     override fun equals(other: Any?): Boolean {
         return other is Pos && other.x == x && other.y == y
     }
@@ -23,5 +27,9 @@ data class Pos(var x: Int, var y: Int) {
 
     operator fun times(n: Int): Pos {
         return Pos(n * x, n * y)
+    }
+
+    override fun toString(): String {
+        return "($x, $y)"
     }
 }

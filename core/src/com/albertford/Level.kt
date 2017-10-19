@@ -8,6 +8,10 @@ class Level(width: Int, height: Int) {
     val tiles = Grid(width, height) { Tile(Terrain.WALL) }
 
     fun moveMob(mob: Mob, direction: Pos): Boolean {
+        mob.facingRight = when (direction) {
+            Grid.EAST, Grid.NORTHEAST, Grid.SOUTHEAST -> true
+            else -> false
+        }
         val targetTile = tiles[mob.pos + direction]
         if (!targetTile.terrain.passable || targetTile.mob != null) {
             return false
@@ -15,10 +19,6 @@ class Level(width: Int, height: Int) {
         tiles[mob.pos].mob = null
         mob.pos.plusAssign(direction)
         tiles[mob.pos].mob = mob
-        mob.facingRight = when (direction) {
-            Grid.EAST, Grid.NORTHEAST, Grid.SOUTHEAST -> true
-            else -> false
-        }
         return true
     }
 
@@ -36,11 +36,12 @@ class Level(width: Int, height: Int) {
         carveCaves(innerIndices)
         removeSmallWalls()
         val size = removeOtherCaves(start)
-        if (size < tiles.width * tiles.height / 4) {
+        if (size < tiles.width * tiles.height / 3) {
             init(rand.nextLong(), start)
             return
         }
         fillSmallCaves(start)
+        adjustStart(start)
         addDoors(innerIndices)
 //        val fovSizes = generateVisibility()
 //        growGrass(fovSizes)
@@ -149,6 +150,26 @@ class Level(width: Int, height: Int) {
         }
     }
 
+    private fun adjustStart(start: Pos) {
+        if (tiles[start].terrain == Terrain.WALL) {
+            var bestIndex = 0
+            var bestDistance = Int.MAX_VALUE
+            tiles.forEach { tile, i ->
+                if (tile.terrain.passable) {
+                    val pos = tiles.linearToPos(i)
+                    val distance = start.distance(pos)
+                    if (distance < bestDistance) {
+                        bestIndex = i
+                        bestDistance = distance
+                    }
+                }
+            }
+            val bestPos = tiles.linearToPos(bestIndex)
+            start.x = bestPos.x
+            start.y = bestPos.y
+        }
+    }
+
     private fun countFloorGroups(pos: Pos): Int {
         var groups = 0
         var curr = pos
@@ -175,15 +196,9 @@ class Level(width: Int, height: Int) {
             return
         }
         tiles[x, y].terrain = Terrain.WALL
-        var relocateStart = start.x == x && start.y == y
         for ((dx, dy) in Grid.directions) {
             val newX = x + dx
             val newY = y + dy
-            if (relocateStart && tiles[newX, newY].terrain == Terrain.FLOOR) {
-                relocateStart = false
-                start.x = newX
-                start.y = newY
-            }
             fillDeadEnd(start, newX, newY)
         }
     }
