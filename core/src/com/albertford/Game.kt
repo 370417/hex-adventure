@@ -3,13 +3,15 @@ package com.albertford
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 
 class Game(private val width: Int, private val height: Int) : ApplicationAdapter() {
     private lateinit var batch: SpriteBatch
-
     private lateinit var atlas: TextureAtlas
+    private lateinit var font: Texture
 
     private lateinit var gameState: GameState
 
@@ -18,9 +20,10 @@ class Game(private val width: Int, private val height: Int) : ApplicationAdapter
     override fun create() {
         batch = SpriteBatch()
         atlas = TextureAtlas("atlas/oryx.atlas")
+        font = Texture("font/font.png")
 
         gameState = GameState(width, height)
-        display = Display(gameState, atlas)
+        display = Display(gameState, atlas, font)
 
         Gdx.graphics.isContinuousRendering = false
         Gdx.graphics.requestRendering()
@@ -37,5 +40,6 @@ class Game(private val width: Int, private val height: Int) : ApplicationAdapter
     override fun dispose() {
         batch.dispose()
         atlas.dispose()
+        font.dispose()
     }
 }

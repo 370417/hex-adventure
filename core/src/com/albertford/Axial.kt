@@ -9,8 +9,16 @@ data class Axial(var x: Int, var y: Int) {
         y += axial.y
     }
 
+    override fun equals(other: Any?): Boolean {
+        return other is Axial && other.x == x && other.y == y
+    }
+
     operator fun plus(axial: Axial): Axial {
         return Axial(x + axial.x, y + axial.y)
+    }
+
+    operator fun minus(axial: Axial): Axial {
+        return Axial(x - axial.x, y - axial.y)
     }
 
     operator fun times(n: Int): Axial {

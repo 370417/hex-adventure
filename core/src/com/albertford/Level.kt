@@ -6,7 +6,6 @@ import java.util.*
 class Level(width: Int, height: Int) {
 
     val tiles = Grid(width, height) { Tile(Terrain.WALL) }
-    var ambushFactors: Grid<Float>? = null
 
     fun moveMob(mob: Mob, direction: Axial): Boolean {
         val targetTile = tiles[mob.axial + direction]
@@ -29,7 +28,7 @@ class Level(width: Int, height: Int) {
     fun init(seed: Long, start: Axial) {
         val rand = Random(/*seed*/)
         resetTerrain(start)
-        val innerIndices = shuffledInnerIndeces(rand)
+        val innerIndices = shuffledInnerIndices(rand)
         carveCaves(innerIndices)
         removeSmallWalls()
         val size = removeOtherCaves(start)
@@ -38,30 +37,9 @@ class Level(width: Int, height: Int) {
             return
         }
         fillSmallCaves(start)
-        val fovSizes = Grid(tiles.width, tiles.height) { i ->
-            var fovSize = 0
-            if (tiles[i].terrain.passable) {
-                Grid.shadowcast(tiles.linearToAxial(i), { axial ->
-                    tiles[axial].terrain.transparent
-                }, { axial ->
-                    if (tiles[axial].terrain.transparent) {
-                        fovSize++
-                    }
-                })
-            }
-            fovSize
-        }
-        ambushFactors = Grid(tiles.width, tiles.height) { i ->
-            if (fovSizes[i] > 0) {
-                val axial = tiles.linearToAxial(i)
-                Grid.directions.map { direction ->
-                    fovSizes[axial + direction].toFloat() / fovSizes[i]
-                }.max() ?: 0f
-            } else {
-                0f
-            }
-        }
-        addDoors(innerIndices, rand)
+        addDoors(innerIndices)
+//        val fovSizes = generateVisibility()
+//        growGrass(fovSizes)
     }
 
     /* Turn everything to wall except starting position */
@@ -72,7 +50,7 @@ class Level(width: Int, height: Int) {
         tiles[start].terrain = Terrain.FLOOR
     }
 
-    private fun shuffledInnerIndeces(rand: Random): IntArray {
+    private fun shuffledInnerIndices(rand: Random): IntArray {
         val width = tiles.width
         val height = tiles.height
         val innerIndices = IntArray((width - 2) * (height - 2)) { i ->
@@ -228,7 +206,7 @@ class Level(width: Int, height: Int) {
         return tiles[axial].terrain == Terrain.FLOOR && countFloorGroups(axial) > 1
     }
 
-    private fun addDoors(innerIndices: IntArray, rand: Random) {
+    private fun addDoors(innerIndices: IntArray) {
         for (i in innerIndices) {
             val axial = tiles.linearToAxial(i)
             if (isTunnel(axial)) {
@@ -239,23 +217,24 @@ class Level(width: Int, height: Int) {
                         }
                     }
                     4 -> {
-                        var doorPlaced = false
+                        val netFloorDirection = Axial(0, 0)
                         for (direction in Grid.directions) {
-                            if (isTunnel(axial + direction) && notNearDoor(axial + direction)) {
-                                tiles[axial + direction].terrain = Terrain.CLOSED_DOOR
-                                doorPlaced = true
+                            if (tiles[axial + direction].terrain == Terrain.FLOOR) {
+                                netFloorDirection.plusAssign(direction)
                             }
                         }
-                        if (!doorPlaced && notNearDoor(axial)) {
+                        if (netFloorDirection == Axial(0, 0) && notNearDoor(axial)) {
                             tiles[axial].terrain = Terrain.CLOSED_DOOR
+                        } else if (notNearDoor(axial - netFloorDirection)) {
+                            tiles[axial - netFloorDirection].terrain = Terrain.CLOSED_DOOR
                         }
                     }
                 }
             }
         }
-        for (i in innerIndices) {
-            if (tiles[i].terrain == Terrain.CLOSED_DOOR && rand.nextInt(3) != 0) {
-                tiles[i].terrain = Terrain.FLOOR
+        innerIndices.forEachIndexed { arrayIndex, shuffledIndex ->
+            if (arrayIndex % 3 != 0 && tiles[shuffledIndex].terrain == Terrain.CLOSED_DOOR) {
+                tiles[shuffledIndex].terrain = Terrain.FLOOR
             }
         }
     }
@@ -272,6 +251,31 @@ class Level(width: Int, height: Int) {
 
     private fun notNearDoor(axial: Axial): Boolean {
         return countTerrainNeighbors(axial, Terrain.CLOSED_DOOR) == 0
+    }
+
+    private fun generateVisibility(): Grid<Int> {
+        return Grid(tiles.width, tiles.height) { i ->
+            var fovSize = 0
+            if (tiles[i].terrain.passable) {
+                Grid.shadowcast(tiles.linearToAxial(i), { axial ->
+                    tiles[axial].terrain.transparent
+                }, { axial ->
+                    if (tiles[axial].terrain.transparent) {
+                        fovSize++
+                    }
+                })
+            }
+            fovSize
+        }
+    }
+
+    private fun growGrass(fovSizes: Grid<Int>) {
+        val shortGrassThreshold = 90
+        fovSizes.forEach { fovSize, i ->
+            if (fovSize > shortGrassThreshold) {
+                tiles[i].terrain = Terrain.SHORT_GRASS
+            }
+        }
     }
 }
 

@@ -1,12 +1,13 @@
 package com.albertford
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 
-class Display(private var gameState: GameState, atlas: TextureAtlas) {
+class Display(private var gameState: GameState, atlas: TextureAtlas, font: Texture) {
 
     private val floor = atlas.findRegion("floor")
     private val wall = atlas.findRegion("wall")
@@ -14,6 +15,8 @@ class Display(private var gameState: GameState, atlas: TextureAtlas) {
     private val tallGrass = atlas.findRegion("tallGrass")
     private val closedDoor = atlas.findRegion("closedDoor")
     private val openDoor = atlas.findRegion("openDoor")
+
+    private val letters = TextureRegion.split(font, 9, 16)
 
     private val player = atlas.findRegion("player")
 
