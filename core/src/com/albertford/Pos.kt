@@ -2,6 +2,16 @@ package com.albertford
 
 data class Pos(var x: Int, var y: Int) {
 
+    fun set(x: Int, y: Int) {
+        this.x = x
+        this.y = y
+    }
+
+    fun set(pos: Pos) {
+        x = pos.x
+        y = pos.y
+    }
+
     // Not operator because it would conflict with plus.
     // Can't use plus because plus doesn't mutate.
     fun plusAssign(pos: Pos) {

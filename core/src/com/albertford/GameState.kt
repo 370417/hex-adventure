@@ -12,7 +12,7 @@ class GameState(width: Int, height: Int) {
     val player = Player()
     val level = Level(width, height)
     val fov = Grid(width, height) { TileView(-1, Terrain.WALL) }
-    val rand = Random()
+    private val rand = Random()
 
     init {
         player.pos = level.tiles.linearToPos(width * height / 2)
@@ -25,6 +25,7 @@ class GameState(width: Int, height: Int) {
     }
 
     fun movePlayer(direction: Pos) {
+        val wasStill = player.lastMove == Pos(0, 0)
         if (!level.moveMob(player, direction)) {
             level.bump(player, direction)
             if (level.tiles[player.pos + direction].terrain == Terrain.EXIT) {
@@ -34,9 +35,14 @@ class GameState(width: Int, height: Int) {
                 level.tiles[player.pos + direction].terrain = Terrain.EXIT
                 player.hasKey = false
             }
-        } else if (level.tiles[player.pos].item == Item.KEY) {
-            level.tiles[player.pos].item = null
-            player.hasKey = true
+        } else {
+            if (level.tiles[player.pos].item == Item.KEY) {
+                level.tiles[player.pos].item = null
+                player.hasKey = true
+            }
+            if (!wasStill) {
+                player.sneaky = false
+            }
         }
     }
 

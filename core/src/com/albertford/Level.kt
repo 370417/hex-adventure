@@ -19,6 +19,7 @@ class Level(width: Int, height: Int) {
         tiles[mob.pos].mob = null
         mob.pos.plusAssign(direction)
         tiles[mob.pos].mob = mob
+        mob.lastMove.set(direction)
         return true
     }
 

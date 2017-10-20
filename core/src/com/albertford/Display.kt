@@ -21,6 +21,8 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     private val letters = TextureRegion.split(font, 9, 16)
 
     private val player = atlas.findRegion("skunk")
+    private val sneakyPlayer = atlas.findRegion("skunkSneak")
+    private val sneakyPlayerTail = atlas.findRegion("tailTip")
 
     private val key = atlas.findRegion("key")
 
@@ -34,8 +36,6 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
 
     private var bottomText: String? = null
 
-    private val commandBuffer = ArrayList<Command>()
-
     init {
         Gdx.input.inputProcessor = Input(this)
     }
@@ -48,10 +48,11 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             Command.MOVE_WEST -> gameState.movePlayer(Grid.WEST)
             Command.MOVE_NORTHEAST -> gameState.movePlayer(Grid.NORTHEAST)
             Command.MOVE_NORTHWEST -> gameState.movePlayer(Grid.NORTHWEST)
-            Command.REST -> {}
-            Command.DEBUG -> {
-                gameState = GameState(gameState.level.tiles.width, gameState.level.tiles.height)
+            Command.REST -> {
+                gameState.player.lastMove.set(0, 0)
+                gameState.player.sneaky = true
             }
+            Command.DEBUG -> {}
         }
         gameState.updateFov()
         Gdx.graphics.requestRendering()
@@ -66,6 +67,9 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
                 val mob = tile.mob
                 val item = tile.item
                 when {
+                    mob == gameState.player -> {
+                        return@forEach
+                    }
                     mob != null -> {
                         sprite.setRegion(player)
                         sprite.setFlip(mob.facingRight, false)
@@ -84,6 +88,20 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
                 sprite.draw(batch)
             }
         }
+        val playerSprite = sprites[gameState.player.pos]
+        if (gameState.player.sneaky) {
+            playerSprite.setRegion(sneakyPlayer)
+            if (gameState.player.facingRight) {
+                playerSprite.flip(true, false)
+                batch.draw(sneakyPlayerTail, playerSprite.x, playerSprite.y, -16f, 24f)
+            } else {
+                batch.draw(sneakyPlayerTail, playerSprite.x + 18, playerSprite.y)
+            }
+        } else {
+            playerSprite.setRegion(player)
+            playerSprite.flip(gameState.player.facingRight, false)
+        }
+        playerSprite.draw(batch)
         bottomText = "Skealkh"
         bottomText?.forEachIndexed { i, char ->
             val texture = charToTexture(char)
