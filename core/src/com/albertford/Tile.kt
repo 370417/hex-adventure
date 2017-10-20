@@ -2,7 +2,7 @@ package com.albertford
 
 import com.badlogic.gdx.utils.Array
 
-class Tile(var terrain: Terrain, var mob: Mob? = null) {
+class Tile(var terrain: Terrain, var mob: Mob? = null, var item: Item? = null) {
     val projectiles = Array<Any>(2)
 }
 
@@ -27,7 +27,7 @@ enum class Terrain(
             transparent = false
     ),
     CLOSED_DOOR(
-            passable = false,
+            passable = true,
             transparent = false
     ),
     OPEN_DOOR(
@@ -42,4 +42,8 @@ enum class Terrain(
             passable = false,
             transparent = true
     )
+}
+
+enum class Item {
+    KEY
 }

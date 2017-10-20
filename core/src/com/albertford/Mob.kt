@@ -5,4 +5,8 @@ interface Mob {
     var facingRight: Boolean
 }
 
-class Player(override var pos: Pos, override var facingRight: Boolean) : Mob
+class Player : Mob {
+    override var pos = Pos(0, 0)
+    override var facingRight = false
+    var hasKey = false
+}

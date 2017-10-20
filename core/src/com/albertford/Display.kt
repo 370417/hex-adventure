@@ -22,6 +22,8 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
 
     private val player = atlas.findRegion("skunk")
 
+    private val key = atlas.findRegion("key")
+
     private val sprites = Grid(gameState.level.tiles.width, gameState.level.tiles.height) { i ->
         val (x, y) = gameState.level.tiles.linearToRectangular(i)
         val sprite = Sprite(wall)
@@ -62,16 +64,21 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             if (tileView.lastSeen == gameState.turn) {
                 sprite.setColor(1f, 1f, 1f, 1f)
                 val mob = tile.mob
-                val region = when (mob) {
-                    is Player -> player
-                    else -> terrainRegion(tile.terrain)
-                }
-                sprite.setRegion(region)
-                if (mob != null) {
-                    sprite.setFlip(mob.facingRight, false)
+                val item = tile.item
+                when {
+                    mob != null -> {
+                        sprite.setRegion(player)
+                        sprite.setFlip(mob.facingRight, false)
+                    }
+                    item != null -> {
+                        sprite.setRegion(itemRegion(item))
+                    }
+                    else -> {
+                        sprite.setRegion(terrainRegion(tile.terrain))
+                    }
                 }
                 sprite.draw(batch)
-            } else if (tileView.lastSeen >= 0) {
+            } else if (tileView.lastSeen > gameState.firstTurn) {
                 sprite.setColor(0.5f, 0.5f, 0.5f, 1f)
                 sprite.setRegion(terrainRegion(tileView.terrain))
                 sprite.draw(batch)
@@ -96,6 +103,12 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             Terrain.OPEN_DOOR -> openDoor
             Terrain.EXIT -> exit
             Terrain.EXIT_LOCKED -> exitLocked
+        }
+    }
+
+    private  fun itemRegion(item: Item): TextureRegion {
+        return when (item) {
+            Item.KEY -> key
         }
     }
 

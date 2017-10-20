@@ -5,10 +5,11 @@ import java.util.*
 
 class GameState(width: Int, height: Int) {
 
+    var firstTurn = 0
     var turn = 0
     val actors = ArrayList<Any>()
     val delayedActors = ArrayList<Any>()
-    val player = Player(Pos(0, 0), false)
+    val player = Player()
     val level = Level(width, height)
     val fov = Grid(width, height) { TileView(-1, Terrain.WALL) }
     val rand = Random()
@@ -29,19 +30,20 @@ class GameState(width: Int, height: Int) {
             if (level.tiles[player.pos + direction].terrain == Terrain.EXIT) {
                 player.facingRight = !player.facingRight
                 descend()
-            } else if (level.tiles[player.pos + direction].terrain == Terrain.EXIT_LOCKED) {
+            } else if (level.tiles[player.pos + direction].terrain == Terrain.EXIT_LOCKED && player.hasKey) {
                 level.tiles[player.pos + direction].terrain = Terrain.EXIT
-                Gdx.graphics.requestRendering()
+                player.hasKey = false
             }
+        } else if (level.tiles[player.pos].item == Item.KEY) {
+            level.tiles[player.pos].item = null
+            player.hasKey = true
         }
     }
 
     private fun descend() {
         level.init(rand.nextLong(), player.pos)
         level.tiles[player.pos].mob = player
-        fov.forEach { tileView, i ->
-            tileView.lastSeen = -1
-        }
+        firstTurn = turn
         updateFov()
     }
 

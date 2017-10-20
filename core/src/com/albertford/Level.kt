@@ -45,7 +45,7 @@ class Level(width: Int, height: Int) {
         addDoors(innerIndices)
 //        val fovSizes = generateVisibility()
 //        growGrass(fovSizes)
-        addExit(innerIndices)
+        addExit(innerIndices, start)
     }
 
     /* Turn everything to wall except starting position */
@@ -299,13 +299,20 @@ class Level(width: Int, height: Int) {
         }
     }
 
-    private fun addExit(innerIndices: IntArray) {
+    private fun addExit(innerIndices: IntArray, start: Pos) {
         for (i in innerIndices) {
             val pos = tiles.linearToPos(i)
             if (tiles[i].terrain == Terrain.WALL &&
                     countTerrainNeighbors(pos, Terrain.WALL) == 4 &&
                     countFloorGroups(pos) == 1) {
                 tiles[i].terrain = Terrain.EXIT_LOCKED
+                break
+            }
+        }
+        val startIndex = tiles.posToLinear(start.x, start.y)
+        for (i in innerIndices) {
+            if (tiles[i].terrain.passable && tiles[i].item == null && i != startIndex) {
+                tiles[i].item = Item.KEY
                 break
             }
         }
