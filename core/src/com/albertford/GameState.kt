@@ -11,7 +11,7 @@ class GameState(width: Int, height: Int) {
     val delayedActors = ArrayList<Any>()
     val player = Player()
     val level = Level(width, height)
-    val fov = Grid(width, height) { TileView(-1, Terrain.WALL) }
+    val fov = Grid(width, height) { TileView(-1, Terrain.WALL, null) }
     private val rand = Random()
 
     init {
@@ -61,5 +61,6 @@ class GameState(width: Int, height: Int) {
         val tileView = fov[pos]
         tileView.lastSeen = turn
         tileView.terrain = level.tiles[pos].terrain
+        tileView.item = level.tiles[pos].item
     }
 }

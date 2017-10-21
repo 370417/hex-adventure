@@ -1,6 +1,7 @@
 package com.albertford
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.Sprite
@@ -59,62 +60,100 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     }
 
     fun render(batch: Batch) {
-        sprites.forEach { sprite, i: Int ->
-            val tile = gameState.level.tiles[i]
+        renderTerrain(batch)
+        renderSprites(batch)
+        renderPlayerTail(batch)
+//        bottomText = "Skealkh"
+//        bottomText?.forEachIndexed { i, char ->
+//            val texture = charToTexture(char)
+//            if (texture != null) {
+//                batch.draw(charToTexture(char), 9f * i + 10f, 0f)
+//            }
+//        }
+    }
+
+    private fun renderTerrain(batch: Batch) {
+        sprites.forEach { sprite, i ->
             val tileView = gameState.fov[i]
-            if (tileView.lastSeen == gameState.turn) {
-                sprite.setColor(1f, 1f, 1f, 1f)
-                val mob = tile.mob
-                val item = tile.item
-                when {
-                    mob == gameState.player -> {
-                        return@forEach
-                    }
-                    mob != null -> {
-                        sprite.setRegion(player)
-                        sprite.setFlip(mob.facingRight, false)
-                    }
-                    item != null -> {
-                        sprite.setRegion(itemRegion(item))
-                    }
-                    else -> {
-                        sprite.setRegion(terrainRegion(tile.terrain))
-                    }
-                }
+            val terrain = tileView.terrain
+            sprite.setRegion(wall)
+            if (tileView.lastSeen > gameState.firstTurn) {
+                sprite.color = terrainBgColor(terrain, tileView.lastSeen != gameState.turn)
                 sprite.draw(batch)
-            } else if (tileView.lastSeen > gameState.firstTurn) {
-                sprite.setColor(0.5f, 0.5f, 0.5f, 1f)
-                sprite.setRegion(terrainRegion(tileView.terrain))
-                sprite.draw(batch)
-            }
-        }
-        val playerSprite = sprites[gameState.player.pos]
-        if (gameState.player.sneaky) {
-            playerSprite.setRegion(sneakyPlayer)
-            if (gameState.player.facingRight) {
-                playerSprite.flip(true, false)
-                batch.draw(sneakyPlayerTail, playerSprite.x, playerSprite.y, -16f, 24f)
-            } else {
-                batch.draw(sneakyPlayerTail, playerSprite.x + 18, playerSprite.y)
-            }
-        } else {
-            playerSprite.setRegion(player)
-            playerSprite.flip(gameState.player.facingRight, false)
-        }
-        playerSprite.draw(batch)
-        bottomText = "Skealkh"
-        bottomText?.forEachIndexed { i, char ->
-            val texture = charToTexture(char)
-            if (texture != null) {
-                batch.draw(charToTexture(char), 9f * i + 10f, 0f)
             }
         }
     }
 
-    private fun terrainRegion(terrain: Terrain): TextureRegion {
+    private fun renderSprites(batch: Batch) {
+        sprites.forEach { sprite, i ->
+            val tile = gameState.level.tiles[i]
+            val tileView = gameState.fov[i]
+            val terrRegion = terrainRegion(tileView.terrain)
+            if (tileView.lastSeen == gameState.turn) {
+                val mob = tile.mob
+                val mRegion = mobRegion(mob)
+                val item = tile.item
+                when {
+                    mRegion != null -> {
+                        sprite.setRegion(mRegion)
+                        sprite.setFlip(mob!!.facingRight, false)
+                        sprite.setColor(1f, 1f, 1f, 1f)
+                        sprite.draw(batch)
+                    }
+                    item != null -> {
+                        sprite.setRegion(itemRegion(item))
+                        sprite.setColor(1f, 1f, 1f, 1f)
+                        sprite.draw(batch)
+                    }
+                    terrRegion != null -> {
+                        sprite.setRegion(terrRegion)
+                        sprite.color = terrainFgColor(tileView.terrain)
+                        sprite.draw(batch)
+                    }
+                }
+            } else if (tileView.lastSeen > gameState.firstTurn) {
+                val item = tileView.item
+                if (item != null) {
+                    sprite.setRegion(itemRegion(item))
+                    sprite.setColor(1f, 1f, 1f, 1f)
+                    sprite.draw(batch)
+                } else if (terrRegion != null) {
+                    sprite.setRegion(terrRegion)
+                    sprite.color = terrainFgColor(tileView.terrain)
+                    sprite.draw(batch)
+                }
+            }
+        }
+    }
+
+    private fun renderPlayerTail(batch: Batch) {
+        if (gameState.player.sneaky) {
+            val tailSprite = if (gameState.player.facingRight) {
+                sprites[gameState.player.pos - Pos(1, 0)]
+            } else {
+                sprites[gameState.player.pos + Pos(1, 0)]
+            }
+            tailSprite.setRegion(sneakyPlayerTail)
+            tailSprite.flip(gameState.player.facingRight, false)
+            tailSprite.setColor(1f, 1f, 1f, 1f)
+            tailSprite.draw(batch)
+        }
+    }
+
+    private fun mobRegion(mob: Mob?): TextureRegion? {
+        return when (mob) {
+            is Player -> if (mob.sneaky) {
+                sneakyPlayer
+            } else {
+                player
+            }
+            else -> null
+        }
+    }
+
+    private fun terrainRegion(terrain: Terrain): TextureRegion? {
         return when (terrain) {
-            Terrain.WALL -> wall
-            Terrain.FLOOR -> floor
+            Terrain.WALL, Terrain.FLOOR -> null
             Terrain.SHORT_GRASS -> shortGrass
             Terrain.TALL_GRASS -> tallGrass
             Terrain.CLOSED_DOOR -> closedDoor
@@ -122,6 +161,32 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             Terrain.EXIT -> exit
             Terrain.EXIT_LOCKED -> exitLocked
         }
+    }
+
+    private fun terrainBgColor(terrain: Terrain, remembered: Boolean): Color {
+        return if (remembered) when (terrain) {
+            Terrain.WALL -> Color(100 / 256f, 100 / 256f, 100 / 256f, 1f)
+            Terrain.EXIT -> Color(0f, 0f, 0f, 1f)
+            Terrain.EXIT_LOCKED -> Color(0f, 0f, 0f, 1f)
+            Terrain.CLOSED_DOOR -> Color(0.25f, 0f, 0f, 1f)
+            Terrain.OPEN_DOOR -> Color(0f, 0f, 0f, 1f)
+            Terrain.FLOOR -> Color(40 / 256f, 40 / 256f, 40 / 256f, 1f)
+            Terrain.TALL_GRASS -> Color(0f, 0f, 0f, 1f)
+            Terrain.SHORT_GRASS -> Color(0f, 0f, 0f, 1f)
+        } else when (terrain) {
+            Terrain.WALL -> Color(179 / 256f, 174 / 256f, 162 / 256f, 1f)
+            Terrain.EXIT -> Color(0f, 0f, 0f, 1f)
+            Terrain.EXIT_LOCKED -> Color(0f, 0f, 0f, 1f)
+            Terrain.CLOSED_DOOR -> Color(0.5f, 0f, 0f, 1f)
+            Terrain.OPEN_DOOR -> Color(0f, 0f, 0f, 1f)
+            Terrain.FLOOR -> Color(70 / 256f, 66 / 256f, 57 / 256f, 1f)
+            Terrain.TALL_GRASS -> Color(0f, 0f, 0f, 1f)
+            Terrain.SHORT_GRASS -> Color(0f, 0f, 0f, 1f)
+        }
+    }
+
+    private fun terrainFgColor(terrain: Terrain): Color {
+        return Color(1f, 1f, 1f, 1f)
     }
 
     private  fun itemRegion(item: Item): TextureRegion {
