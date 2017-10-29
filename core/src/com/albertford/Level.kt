@@ -7,30 +7,14 @@ class Level(width: Int, height: Int) {
 
     val tiles = Grid(width, height) { Tile(Terrain.WALL) }
 
-    fun moveMob(mob: Mob, direction: Pos): Boolean {
-        mob.facingRight = when (direction) {
-            Grid.EAST, Grid.NORTHEAST, Grid.SOUTHEAST -> true
-            else -> false
-        }
-        val targetTile = tiles[mob.pos + direction]
-        if (!targetTile.terrain.passable || targetTile.mob != null) {
-            return false
-        }
-        tiles[mob.pos].mob = null
-        mob.pos.plusAssign(direction)
-        tiles[mob.pos].mob = mob
-        mob.lastMove.set(direction)
-        return true
-    }
-
-    fun bump(mob: Mob, direction: Pos) {
+    fun bump(mob: Mob, direction: Displacement) {
         val targetTile = tiles[mob.pos + direction]
         if (targetTile.terrain == Terrain.CLOSED_DOOR) {
             targetTile.terrain = Terrain.OPEN_DOOR
         }
     }
 
-    fun init(seed: Long, start: Pos) {
+    fun init(seed: Long, start: Pos): Pos {
         val rand = Random(seed)
         resetTerrain(start)
         val innerIndices = shuffledInnerIndices(rand)
@@ -38,15 +22,15 @@ class Level(width: Int, height: Int) {
         removeSmallWalls()
         val size = removeOtherCaves(start)
         if (size < tiles.width * tiles.height / 3) {
-            init(rand.nextLong(), start)
-            return
+            return init(rand.nextLong(), start)
         }
         fillSmallCaves(start)
-        adjustStart(start)
+        val newStart = adjustStart(start)
         addDoors(innerIndices)
 //        val fovSizes = generateVisibility()
 //        growGrass(fovSizes)
-        addExit(innerIndices, start)
+        addExit(innerIndices, newStart)
+        return start
     }
 
     /* Turn everything to wall except starting position */
@@ -95,12 +79,12 @@ class Level(width: Int, height: Int) {
                 }
                 return@forEach
             }
-            val (x, y) = tiles.linearToPos(i)
+            val pos = tiles.linearToPos(i)
             var groupSize = 0
-            tiles.floodfill(x, y, { x1, y1 ->
-                tiles[x1, y1].terrain == Terrain.WALL && groupIndex[x1, y1] == -1
-            }, { x1, y1 ->
-                groupIndex[x1, y1] = i
+            tiles.floodfill(pos, { pos ->
+                tiles[pos].terrain == Terrain.WALL && groupIndex[pos] == -1
+            }, { pos ->
+                groupIndex[pos] = i
                 groupSize++
             })
             if (groupSize in 1..5) {
@@ -113,10 +97,10 @@ class Level(width: Int, height: Int) {
     private fun removeOtherCaves(start: Pos): Int {
         val visitedTiles = Grid(tiles.width, tiles.height) { false }
         var mainCaveSize = 0
-        tiles.floodfill(start.x, start.y, { x, y ->
-            !visitedTiles[x, y] && tiles[x, y].terrain == Terrain.FLOOR
-        }, { x, y ->
-            visitedTiles[x, y] = true
+        tiles.floodfill(start, { pos ->
+            !visitedTiles[pos] && tiles[pos].terrain == Terrain.FLOOR
+        }, { pos ->
+            visitedTiles[pos] = true
             mainCaveSize++
         })
         visitedTiles.forEach { visited, i ->
@@ -129,14 +113,14 @@ class Level(width: Int, height: Int) {
 
     private fun fillSmallCaves(start: Pos) {
         tiles.forEach { tile, i ->
-            val (x, y) = tiles.linearToPos(i)
-            fillDeadEnd(start, x, y)
+            val pos = tiles.linearToPos(i)
+            fillDeadEnd(start, pos)
             val caveSet = IntSet(4)
-            tiles.floodfill(x, y, { x1, y1 ->
-                val i1 = tiles.posToLinear(x1, y1)
-                !caveSet.contains(i1) && isCave(Pos(x1, y1)) && caveSet.size < 4
-            }, { x1, y1 ->
-                val i1 = tiles.posToLinear(x1, y1)
+            tiles.floodfill(pos, { pos ->
+                val i1 = tiles.posToLinear(pos)
+                !caveSet.contains(i1) && isCave(pos) && caveSet.size < 4
+            }, { pos ->
+                val i1 = tiles.posToLinear(pos)
                 caveSet.add(i1)
             })
             if (caveSet.size in 2..3) {
@@ -144,14 +128,13 @@ class Level(width: Int, height: Int) {
                 val iterator = caveSet.iterator()
                 while (iterator.hasNext) {
                     val i1 = iterator.next()
-                    val (x1, y1) = tiles.linearToPos(i1)
-                    fillDeadEnd(start, x1, y1)
+                    fillDeadEnd(start, tiles.linearToPos(i1))
                 }
             }
         }
     }
 
-    private fun adjustStart(start: Pos) {
+    private fun adjustStart(start: Pos): Pos {
         if (tiles[start].terrain == Terrain.WALL) {
             var bestIndex = 0
             var bestDistance = Int.MAX_VALUE
@@ -165,9 +148,9 @@ class Level(width: Int, height: Int) {
                     }
                 }
             }
-            val bestPos = tiles.linearToPos(bestIndex)
-            start.x = bestPos.x
-            start.y = bestPos.y
+            return tiles.linearToPos(bestIndex)
+        } else {
+            return start
         }
     }
 
@@ -192,15 +175,13 @@ class Level(width: Int, height: Int) {
         return countFloorGroups(tiles.linearToPos(i))
     }
 
-    private fun fillDeadEnd(start: Pos, x: Int, y: Int) {
-        if (!isDeadEnd(x, y)) {
+    private fun fillDeadEnd(start: Pos, pos: Pos) {
+        if (!isDeadEnd(pos)) {
             return
         }
-        tiles[x, y].terrain = Terrain.WALL
-        for ((dx, dy) in Grid.directions) {
-            val newX = x + dx
-            val newY = y + dy
-            fillDeadEnd(start, newX, newY)
+        tiles[pos].terrain = Terrain.WALL
+        for (direction in Grid.directions) {
+            fillDeadEnd(start, pos + direction)
         }
     }
 
@@ -239,13 +220,13 @@ class Level(width: Int, height: Int) {
                         }
                     }
                     4 -> {
-                        val netFloorDirection = Pos(0, 0)
+                        var netFloorDirection = Displacement(0, 0)
                         for (direction in Grid.directions) {
                             if (tiles[pos + direction].terrain == Terrain.FLOOR) {
-                                netFloorDirection.plusAssign(direction)
+                                netFloorDirection += direction
                             }
                         }
-                        if (netFloorDirection == Pos(0, 0) && notNearDoor(pos)) {
+                        if (netFloorDirection == Displacement(0, 0) && notNearDoor(pos)) {
                             tiles[pos].terrain = Terrain.CLOSED_DOOR
                         } else if (notNearDoor(pos - netFloorDirection)) {
                             tiles[pos - netFloorDirection].terrain = Terrain.CLOSED_DOOR
@@ -310,7 +291,7 @@ class Level(width: Int, height: Int) {
                 break
             }
         }
-        val startIndex = tiles.posToLinear(start.x, start.y)
+        val startIndex = tiles.posToLinear(start)
         for (i in innerIndices) {
             if (tiles[i].terrain.passable && tiles[i].item == null && i != startIndex) {
                 tiles[i].item = Item.KEY

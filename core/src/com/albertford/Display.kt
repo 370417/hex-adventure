@@ -10,7 +10,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 
 class Display(private var gameState: GameState, atlas: TextureAtlas, font: Texture) {
 
-    private val floor = atlas.findRegion("floor")
     private val wall = atlas.findRegion("wall")
     private val shortGrass = atlas.findRegion("shortGrass")
     private val tallGrass = atlas.findRegion("tallGrass")
@@ -31,7 +30,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
         val (x, y) = gameState.level.tiles.linearToRectangular(i)
         val sprite = Sprite(wall)
         sprite.x = (9 * x).toFloat()
-        sprite.y = (16 * y + 16).toFloat()
+        sprite.y = (16 * y).toFloat()
         sprite
     }
 
@@ -50,7 +49,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             Command.MOVE_NORTHEAST -> gameState.movePlayer(Grid.NORTHEAST)
             Command.MOVE_NORTHWEST -> gameState.movePlayer(Grid.NORTHWEST)
             Command.REST -> {
-                gameState.player.lastMove.set(0, 0)
+                gameState.player.lastMove = Displacement(0, 0)
                 gameState.player.sneaky = true
             }
             Command.DEBUG -> {}
@@ -129,9 +128,9 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     private fun renderPlayerTail(batch: Batch) {
         if (gameState.player.sneaky) {
             val tailSprite = if (gameState.player.facingRight) {
-                sprites[gameState.player.pos - Pos(1, 0)]
+                sprites[gameState.player.pos + Grid.WEST]
             } else {
-                sprites[gameState.player.pos + Pos(1, 0)]
+                sprites[gameState.player.pos + Grid.EAST]
             }
             tailSprite.setRegion(sneakyPlayerTail)
             tailSprite.flip(gameState.player.facingRight, false)

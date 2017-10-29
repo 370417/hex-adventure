@@ -24,9 +24,9 @@ class GameState(width: Int, height: Int) {
         Grid.shadowcast(player.pos, this::transparent, this::reveal)
     }
 
-    fun movePlayer(direction: Pos) {
-        val wasStill = player.lastMove == Pos(0, 0)
-        if (!level.moveMob(player, direction)) {
+    fun movePlayer(direction: Displacement) {
+        val wasStill = player.lastMove == Displacement(0, 0)
+        if (!player.move(level, direction)) {
             level.bump(player, direction)
             if (level.tiles[player.pos + direction].terrain == Terrain.EXIT) {
                 player.facingRight = !player.facingRight

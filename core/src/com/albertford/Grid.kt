@@ -3,20 +3,7 @@ package com.albertford
 /**
  * Rectangular hexagonal grid.
  * Origin is (0, 0) at the bottom left corner.
- * X-axis is horizontal right. Y-axis is diagonal up and left to avoid negative numbers.
  */
-
-// Example
-//   width = 6
-//   height = 7
-
-// 3,6 4,6 5,6 6,6 7,6 8,6
-//   3,5 4,5 5,5 6,5 7,5 8,5
-// 2,4 3,4 4,4 5,4 6,4 7,4
-//   2,3 3,3 4,3 5,3 6,3 7,3
-// 1,1 2,2 3,2 4,2 5,2 6,2
-//   1,1 2,1 3,1 4,1 5,1 6,1
-// 0,0 1,0 2,0 3,0 4,0 5,0
 
 class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
 
@@ -27,32 +14,22 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
         return arr[i]
     }
 
-    operator fun get(x: Int, y: Int): T {
-        return arr[posToLinear(x, y)]
-    }
-
     operator fun get(pos: Pos): T {
-        return arr[posToLinear(pos.x, pos.y)]
+        return arr[posToLinear(pos)]
     }
 
     operator fun set(i: Int, t: T) {
         arr[i] = t
     }
 
-    operator fun set(x: Int, y: Int, t: T) {
-        arr[posToLinear(x, y)] = t
-    }
-
     operator fun set(pos: Pos, t: T) {
-        arr[posToLinear(pos.x, pos.y)] = t
+        arr[posToLinear(pos)] = t
     }
 
-    fun inBounds(x: Int, y: Int): Boolean {
-        return y in 0 until height && x - posFirstX(y) in 0 until width
-    }
-
-    fun inInnerBounds(x: Int, y: Int): Boolean {
-        return y in 1..height - 2 && x - posFirstX(y) in 1..width - 2
+    private fun inBounds(pos: Pos): Boolean {
+        val (x, y) = pos
+        val row = x + y
+        return row in 0 until height && x - rowFirstX(row) in 0 until width
     }
 
     fun forEach(function: (t: T, i: Int) -> Unit) {
@@ -73,35 +50,44 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
     }
 
     fun linearToPos(i: Int): Pos {
-        val y = i / width
-        return Pos((i % width) + posFirstX(y), y)
+        val row = i / width
+        val col = i % width
+        return Pos(rowFirstX(row) + col, rowFirstY(row) - col)
     }
 
-    fun posToLinear(x: Int, y: Int): Int {
-        return y * width + x - posFirstX(y)
+    fun posToLinear(pos: Pos): Int {
+        val (x, y) = pos
+        val row = x + y
+        val col = x - rowFirstX(row)
+        return row * width + col
     }
 
-    fun floodfill(x: Int, y: Int, floodable: (x: Int, y: Int) -> Boolean, flood: (x: Int, y: Int) -> Unit) {
-        if (inBounds(x, y) && floodable(x, y)) {
-            flood(x, y)
-            for ((dx, dy) in directions) {
-                floodfill(x + dx, y + dy, floodable, flood)
+    fun floodfill(pos: Pos, floodable: (pos: Pos) -> Boolean, flood: (pos: Pos) -> Unit) {
+        if (inBounds(pos) && floodable(pos)) {
+            flood(pos)
+            for (direction in directions) {
+                floodfill(pos + direction, floodable, flood)
             }
         }
     }
 
     /* Find the value of the first x-coordinate of a given row */
-    private fun posFirstX(y: Int): Int {
-        return (y + 1) / 2
+    private fun rowFirstX(row: Int): Int {
+        return (row + 1) / 2
+    }
+
+    /* Find the value of the first y-coordinate of a given row */
+    private fun rowFirstY(row: Int): Int {
+        return row / 2
     }
 
     companion object {
-        val NORTHEAST = Pos(1, 1)
-        val EAST = Pos(1, 0)
-        val SOUTHEAST = Pos(0, -1)
-        val SOUTHWEST = Pos(-1, -1)
-        val WEST = Pos(-1, 0)
-        val NORTHWEST = Pos(0, 1)
+        val NORTHEAST = Displacement(1, 0)
+        val EAST = Displacement(1, -1)
+        val SOUTHEAST = Displacement(0, -1)
+        val SOUTHWEST = Displacement(-1, 0)
+        val WEST = Displacement(-1, 1)
+        val NORTHWEST = Displacement(0, 1)
 
         // The six unit vectors, ordered clockwise starting from the top right
         val directions = arrayOf(NORTHEAST, EAST, SOUTHEAST, SOUTHWEST, WEST, NORTHWEST)
