@@ -1,5 +1,6 @@
 package com.albertford
 
+import com.badlogic.gdx.Gdx
 import java.util.*
 
 class GameState(width: Int, height: Int) {
@@ -20,6 +21,11 @@ class GameState(width: Int, height: Int) {
 
     fun updateFov() {
         turn++
+//        fov.forEach { tileView, i ->
+//            tileView.lastSeen = turn
+//            tileView.item = level.tiles[i].item
+//            tileView.terrain = level.tiles[i].terrain
+//        }
         Grid.shadowcast(player.pos, this::transparent, this::reveal)
     }
 
@@ -45,8 +51,10 @@ class GameState(width: Int, height: Int) {
         }
     }
 
-    private fun descend() {
-        player.pos = level.init(rand.nextLong(), player.pos)
+    fun descend() {
+        val seed = rand.nextLong()
+        player.pos = level.init(seed, player.pos)
+        Gdx.app.log("SEED", "$seed")
         level.tiles[player.pos].mob = player
         firstTurn = turn
         updateFov()

@@ -18,8 +18,8 @@ class Level(width: Int, height: Int) {
         val rand = Random(seed)
         resetTerrain(start)
         val innerIndices = shuffledInnerIndices(rand)
-        carveCaves(innerIndices)
-        removeSmallWalls()
+        carveCaves(innerIndices, tiles)
+        removeSmallWalls(tiles)
         val size = removeOtherCaves(start)
         if (size < tiles.width * tiles.height / 3) {
             return init(rand.nextLong(), start)
@@ -27,10 +27,14 @@ class Level(width: Int, height: Int) {
         fillSmallCaves(start)
         val newStart = adjustStart(start)
         addDoors(innerIndices)
-//        val fovSizes = generateVisibility()
-//        growGrass(fovSizes)
+
+        val lakeTilesArray = Array(1) { Grid(tiles.width, tiles.height) { Tile(Terrain.WALL) } }
+        for (lakeTiles in lakeTilesArray) {
+            carveCaves(shuffledInnerIndices(rand), lakeTiles)
+            removeSmallWalls(lakeTiles)
+            addLakes(start, innerIndices, lakeTiles)
+        }
         addExit(innerIndices, newStart)
-        addItems(innerIndices, newStart, rand)
         return newStart
     }
 
@@ -54,47 +58,6 @@ class Level(width: Int, height: Int) {
         }
         shuffle(innerIndices, rand)
         return innerIndices
-    }
-
-    private fun carveCaves(innerIndices: IntArray) {
-        for (i in innerIndices) {
-            if (tiles[i].terrain == Terrain.WALL && countFloorGroups(i) != 1) {
-                tiles[i].terrain = Terrain.FLOOR
-            }
-        }
-    }
-
-    /** Remove groups of less than 6 walls */
-    @Suppress("NAME_SHADOWING")
-    private fun removeSmallWalls() {
-        // Each tile is either in a floor tile or in a group of wall tiles
-        // Keeps track of the smallest index of the group of walls, or -1 for floor
-        val groupIndex = Grid(tiles.width, tiles.height) { -1 }
-        // A set of smallest group indices for groups smaller than 6 tiles
-        val smallGroups = IntSet()
-        tiles.forEach { tile, i ->
-            if (tile.terrain == Terrain.FLOOR) {
-                return@forEach
-            }
-            if (groupIndex[i] >= 0) {
-                if (smallGroups.contains(groupIndex[i])) {
-                    tile.terrain = Terrain.FLOOR
-                }
-                return@forEach
-            }
-            val pos = tiles.linearToPos(i)
-            var groupSize = 0
-            tiles.floodfill(pos, { pos ->
-                tiles[pos].terrain == Terrain.WALL && groupIndex[pos] == -1
-            }, { pos ->
-                groupIndex[pos] = i
-                groupSize++
-            })
-            if (groupSize in 1..5) {
-                tile.terrain = Terrain.FLOOR
-                smallGroups.add(i)
-            }
-        }
     }
 
     private fun removeOtherCaves(start: Pos): Int {
@@ -300,6 +263,62 @@ class Level(width: Int, height: Int) {
         }
     }
 
+    /** Add lakes based on the caves of another level */
+    private fun addLakes(start: Pos, innerIndices: IntArray, lakeTiles: Grid<Tile>) {
+        val (lakes, lakeCount) = calcLakes(innerIndices, lakeTiles)
+        // 0 if unreachable from start
+        // x where x is a lake index if reachable from start without going through that lake
+        // for performance, we reuse the same grid for each lake, and just override values
+        val reachable = Grid(tiles.width, tiles.height) { 0 }
+        for (lakeIndex in 1..lakeCount) {
+            tiles.floodfill(start, { pos ->
+                tiles[pos].terrain.passable && lakes[pos] != lakeIndex && reachable[pos] != lakeIndex
+            }, { pos ->
+                reachable[pos] = lakeIndex
+            })
+            var lakeSplitsLevel = false
+            tiles.forEach { tile, i ->
+                if (tile.terrain.passable && reachable[i] != lakeIndex && lakes[i] != lakeIndex) {
+                    lakeSplitsLevel = true
+                }
+            }
+            if (!lakeSplitsLevel) {
+                tiles.forEach { tile, i ->
+                    if (lakes[i] == lakeIndex) {
+                        tile.terrain = Terrain.DEEP_WATER
+                    }
+                }
+            }
+        }
+    }
+
+    private fun calcLakes(innerIndices: IntArray, lakeTiles: Grid<Tile>): Pair<Grid<Int>, Int> {
+        // 0 means no lake. A positive number corresponds to a certain lake
+        val lakes = Grid(tiles.width, tiles.height) { 0 }
+        var lakeCount = 0
+        // we iterate in random order to prevent possibly favoring lakes in one corner of the map
+        for (i in innerIndices) {
+            val pos = tiles.linearToPos(i)
+            if (lakes[i] == 0 && isCave(pos, lakeTiles)) {
+                lakeCount++
+                val lakePositions = HashSet<Pos>()
+                lakeTiles.floodfill(pos, {
+                    lakes[it] == 0 && isCave(it, lakeTiles)
+                }, {
+                    lakes[it] = lakeCount
+                    lakePositions.add(it)
+                })
+                if (lakePositions.size < 6) {
+                    lakePositions.forEach {
+                        lakes[it] = 0
+                    }
+                    lakeCount--
+                }
+            }
+        }
+        return Pair(lakes, lakeCount)
+    }
+
     private fun addItems(innerIndices: IntArray, start: Pos, rand: Random) {
         val startIndex = tiles.posToLinear(start)
         for (i in innerIndices) {
@@ -319,4 +338,70 @@ private fun shuffle(arr: IntArray, rand: Random) {
         arr[i] = arr[j]
         arr[j] = temp
     }
+}
+
+private fun carveCaves(innerIndices: IntArray, tiles: Grid<Tile>) {
+    for (i in innerIndices) {
+        if (tiles[i].terrain == Terrain.WALL && countFloorGroups(i, tiles) != 1) {
+            tiles[i].terrain = Terrain.FLOOR
+        }
+    }
+}
+
+private fun countFloorGroups(pos: Pos, tiles: Grid<Tile>): Int {
+    var groups = 0
+    var curr = pos
+    Direction.forEach { direction ->
+        curr = pos + direction
+        val next = pos + direction.rotate(1)
+        if (tiles[curr].terrain == Terrain.FLOOR && tiles[next].terrain != Terrain.FLOOR) {
+            groups++
+        }
+    }
+    return when {
+        groups > 0 -> groups
+        tiles[curr].terrain == Terrain.FLOOR -> 1
+        else -> 0
+    }
+}
+
+private fun countFloorGroups(i: Int, tiles: Grid<Tile>): Int {
+    return countFloorGroups(tiles.linearToPos(i), tiles)
+}
+
+/** Remove groups of less than 6 walls */
+@Suppress("NAME_SHADOWING")
+private fun removeSmallWalls(tiles: Grid<Tile>) {
+    // Each tile is either in a floor tile or in a group of wall tiles
+    // Keeps track of the smallest index of the group of walls, or -1 for floor
+    val groupIndex = Grid(tiles.width, tiles.height) { -1 }
+    // A set of smallest group indices for groups smaller than 6 tiles
+    val smallGroups = IntSet()
+    tiles.forEach { tile, i ->
+        if (tile.terrain == Terrain.FLOOR) {
+            return@forEach
+        }
+        if (groupIndex[i] >= 0) {
+            if (smallGroups.contains(groupIndex[i])) {
+                tile.terrain = Terrain.FLOOR
+            }
+            return@forEach
+        }
+        val pos = tiles.linearToPos(i)
+        var groupSize = 0
+        tiles.floodfill(pos, { pos ->
+            tiles[pos].terrain == Terrain.WALL && groupIndex[pos] == -1
+        }, { pos ->
+            groupIndex[pos] = i
+            groupSize++
+        })
+        if (groupSize in 1..5) {
+            tile.terrain = Terrain.FLOOR
+            smallGroups.add(i)
+        }
+    }
+}
+
+private fun isCave(pos: Pos, tiles: Grid<Tile>): Boolean {
+    return tiles[pos].terrain == Terrain.FLOOR && countFloorGroups(pos, tiles) == 1
 }

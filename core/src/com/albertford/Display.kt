@@ -53,7 +53,9 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
                 gameState.player.lastMove = null
                 gameState.player.sneaky = true
             }
-            Command.DEBUG -> {}
+            Command.DEBUG -> {
+                gameState.descend()
+            }
         }
         gameState.updateFov()
         Gdx.graphics.requestRendering()
@@ -153,7 +155,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
 
     private fun terrainRegion(terrain: Terrain): TextureRegion? {
         return when (terrain) {
-            Terrain.WALL, Terrain.FLOOR -> null
+            Terrain.WALL, Terrain.FLOOR, Terrain.DEEP_WATER, Terrain.SHALLOW_WATER -> null
             Terrain.SHORT_GRASS -> shortGrass
             Terrain.TALL_GRASS -> tallGrass
             Terrain.CLOSED_DOOR -> closedDoor
@@ -173,6 +175,8 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             Terrain.FLOOR -> Color(40 / 256f, 40 / 256f, 40 / 256f, 1f)
             Terrain.TALL_GRASS -> Color(0f, 0f, 0f, 1f)
             Terrain.SHORT_GRASS -> Color(0f, 0f, 0f, 1f)
+            Terrain.DEEP_WATER -> Color(0f, 0f, 1f, 1f)
+            Terrain.SHALLOW_WATER -> Color(0f, 0f, 1f, 1f)
         } else when (terrain) {
             Terrain.WALL -> Color(179 / 256f, 174 / 256f, 162 / 256f, 1f)
             Terrain.EXIT -> Color(0f, 0f, 0f, 1f)
@@ -182,6 +186,8 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             Terrain.FLOOR -> Color(70 / 256f, 66 / 256f, 57 / 256f, 1f)
             Terrain.TALL_GRASS -> Color(0f, 0f, 0f, 1f)
             Terrain.SHORT_GRASS -> Color(0f, 0f, 0f, 1f)
+            Terrain.DEEP_WATER -> Color(0f, 0f, 1f, 1f)
+            Terrain.SHALLOW_WATER -> Color(0f, 0f, 1f, 1f)
         }
     }
 

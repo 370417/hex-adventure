@@ -43,6 +43,14 @@ enum class Terrain(
     EXIT_LOCKED(
             passable = false,
             transparent = true
+    ),
+    DEEP_WATER(
+            passable = false,
+            transparent = true
+    ),
+    SHALLOW_WATER(
+            passable = true,
+            transparent = true
     )
 }
 
