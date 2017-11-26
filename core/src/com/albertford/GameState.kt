@@ -1,6 +1,5 @@
 package com.albertford
 
-import com.badlogic.gdx.Gdx
 import java.util.*
 
 class GameState(width: Int, height: Int) {
@@ -24,8 +23,8 @@ class GameState(width: Int, height: Int) {
         Grid.shadowcast(player.pos, this::transparent, this::reveal)
     }
 
-    fun movePlayer(direction: Displacement) {
-        val wasStill = player.lastMove == Displacement(0, 0)
+    fun movePlayer(direction: Direction) {
+        val wasStill = player.lastMove == null
         if (!player.move(level, direction)) {
             level.bump(player, direction)
             if (level.tiles[player.pos + direction].terrain == Terrain.EXIT) {
@@ -47,7 +46,7 @@ class GameState(width: Int, height: Int) {
     }
 
     private fun descend() {
-        level.init(rand.nextLong(), player.pos)
+        player.pos = level.init(rand.nextLong(), player.pos)
         level.tiles[player.pos].mob = player
         firstTurn = turn
         updateFov()

@@ -7,7 +7,7 @@ class Level(width: Int, height: Int) {
 
     val tiles = Grid(width, height) { Tile(Terrain.WALL) }
 
-    fun bump(mob: Mob, direction: Displacement) {
+    fun bump(mob: Mob, direction: Direction) {
         val targetTile = tiles[mob.pos + direction]
         if (targetTile.terrain == Terrain.CLOSED_DOOR) {
             targetTile.terrain = Terrain.OPEN_DOOR
@@ -30,14 +30,16 @@ class Level(width: Int, height: Int) {
 //        val fovSizes = generateVisibility()
 //        growGrass(fovSizes)
         addExit(innerIndices, newStart)
-        return start
+        addItems(innerIndices, newStart, rand)
+        return newStart
     }
 
     /* Turn everything to wall except starting position */
     private fun resetTerrain(start: Pos) {
-        tiles.forEach { _, i ->
-            tiles[i].terrain = Terrain.WALL
-            tiles[i].mob = null
+        tiles.forEach { tile, _ ->
+            tile.terrain = Terrain.WALL
+            tile.mob = null
+            tile.item = null
         }
         tiles[start].terrain = Terrain.FLOOR
     }
@@ -63,6 +65,7 @@ class Level(width: Int, height: Int) {
     }
 
     /** Remove groups of less than 6 walls */
+    @Suppress("NAME_SHADOWING")
     private fun removeSmallWalls() {
         // Each tile is either in a floor tile or in a group of wall tiles
         // Keeps track of the smallest index of the group of walls, or -1 for floor
@@ -111,6 +114,7 @@ class Level(width: Int, height: Int) {
         return mainCaveSize
     }
 
+    @Suppress("NAME_SHADOWING")
     private fun fillSmallCaves(start: Pos) {
         tiles.forEach { tile, i ->
             val pos = tiles.linearToPos(i)
@@ -157,9 +161,9 @@ class Level(width: Int, height: Int) {
     private fun countFloorGroups(pos: Pos): Int {
         var groups = 0
         var curr = pos
-        for (j in 0 until 6) {
-            curr = pos + Grid.directions[j]
-            val next = pos + Grid.directions[(j + 1) % 6]
+        Direction.forEach { direction ->
+            curr = pos + direction
+            val next = pos + direction.rotate(1)
             if (tiles[curr].terrain == Terrain.FLOOR && tiles[next].terrain != Terrain.FLOOR) {
                 groups++
             }
@@ -180,14 +184,14 @@ class Level(width: Int, height: Int) {
             return
         }
         tiles[pos].terrain = Terrain.WALL
-        for (direction in Grid.directions) {
+        Direction.forEach { direction ->
             fillDeadEnd(start, pos + direction)
         }
     }
 
     private fun isDeadEnd(pos: Pos): Boolean {
         if (tiles[pos].terrain == Terrain.FLOOR && countFloorGroups(pos) == 1) {
-            for (dir in Grid.directions) {
+            for (dir in Direction.normals) {
                 if (isCave(pos + dir)) {
                     return false
                 }
@@ -195,10 +199,6 @@ class Level(width: Int, height: Int) {
             return true
         }
         return false
-    }
-
-    private fun isDeadEnd(x: Int, y: Int): Boolean {
-        return isDeadEnd(Pos(x, y))
     }
 
     private fun isCave(pos: Pos): Boolean {
@@ -221,7 +221,7 @@ class Level(width: Int, height: Int) {
                     }
                     4 -> {
                         var netFloorDirection = Displacement(0, 0)
-                        for (direction in Grid.directions) {
+                        Direction.forEach { direction ->
                             if (tiles[pos + direction].terrain == Terrain.FLOOR) {
                                 netFloorDirection += direction
                             }
@@ -244,7 +244,7 @@ class Level(width: Int, height: Int) {
 
     private fun countTerrainNeighbors(pos: Pos, terrain: Terrain): Int {
         var floors = 0
-        for (direction in Grid.directions) {
+        Direction.forEach { direction ->
             if (tiles[pos + direction].terrain == terrain) {
                 floors++
             }
@@ -296,6 +296,17 @@ class Level(width: Int, height: Int) {
             if (tiles[i].terrain.passable && tiles[i].item == null && i != startIndex) {
                 tiles[i].item = Item.KEY
                 break
+            }
+        }
+    }
+
+    private fun addItems(innerIndices: IntArray, start: Pos, rand: Random) {
+        val startIndex = tiles.posToLinear(start)
+        for (i in innerIndices) {
+            if (tiles[i].terrain.passable && tiles[i].item == null && i != startIndex) {
+                if (rand.nextInt(100) == 0) {
+                    tiles[i].item = Item.GOLD
+                }
             }
         }
     }

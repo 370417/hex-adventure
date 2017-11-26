@@ -25,6 +25,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     private val sneakyPlayerTail = atlas.findRegion("tailTip")
 
     private val key = atlas.findRegion("key")
+    private val gold = atlas.findRegion("gold")
 
     private val sprites = Grid(gameState.level.tiles.width, gameState.level.tiles.height) { i ->
         val (x, y) = gameState.level.tiles.linearToRectangular(i)
@@ -42,14 +43,14 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
 
     fun runCommand(command: Command) {
         when (command) {
-            Command.MOVE_SOUTHEAST -> gameState.movePlayer(Grid.SOUTHEAST)
-            Command.MOVE_SOUTHWEST -> gameState.movePlayer(Grid.SOUTHWEST)
-            Command.MOVE_EAST -> gameState.movePlayer(Grid.EAST)
-            Command.MOVE_WEST -> gameState.movePlayer(Grid.WEST)
-            Command.MOVE_NORTHEAST -> gameState.movePlayer(Grid.NORTHEAST)
-            Command.MOVE_NORTHWEST -> gameState.movePlayer(Grid.NORTHWEST)
+            Command.MOVE_SOUTHEAST -> gameState.movePlayer(Direction.SOUTHEAST)
+            Command.MOVE_SOUTHWEST -> gameState.movePlayer(Direction.SOUTHWEST)
+            Command.MOVE_EAST -> gameState.movePlayer(Direction.EAST)
+            Command.MOVE_WEST -> gameState.movePlayer(Direction.WEST)
+            Command.MOVE_NORTHEAST -> gameState.movePlayer(Direction.NORTHEAST)
+            Command.MOVE_NORTHWEST -> gameState.movePlayer(Direction.NORTHWEST)
             Command.REST -> {
-                gameState.player.lastMove = Displacement(0, 0)
+                gameState.player.lastMove = null
                 gameState.player.sneaky = true
             }
             Command.DEBUG -> {}
@@ -128,9 +129,9 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     private fun renderPlayerTail(batch: Batch) {
         if (gameState.player.sneaky) {
             val tailSprite = if (gameState.player.facingRight) {
-                sprites[gameState.player.pos + Grid.WEST]
+                sprites[gameState.player.pos + Direction.WEST]
             } else {
-                sprites[gameState.player.pos + Grid.EAST]
+                sprites[gameState.player.pos + Direction.EAST]
             }
             tailSprite.setRegion(sneakyPlayerTail)
             tailSprite.flip(gameState.player.facingRight, false)
@@ -191,6 +192,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     private  fun itemRegion(item: Item): TextureRegion {
         return when (item) {
             Item.KEY -> key
+            Item.GOLD -> gold
         }
     }
 
