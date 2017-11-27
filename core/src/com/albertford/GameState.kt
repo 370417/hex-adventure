@@ -5,8 +5,10 @@ import java.util.*
 
 class GameState(width: Int, height: Int) {
 
-    var firstTurn = 0
-    var turn = 0
+    // The first turn is 1, not 0, since fov can assign a lastSeen of turn - 1, so turn - 1 must always be non-negative
+    // for you to be able to see past tall grass
+    var firstTurn = 1
+    var turn = 1
     val actors = ArrayList<Any>()
     val delayedActors = ArrayList<Any>()
     val player = Player()
@@ -26,6 +28,7 @@ class GameState(width: Int, height: Int) {
 //            tileView.item = level.tiles[i].item
 //            tileView.terrain = level.tiles[i].terrain
 //        }
+        Grid.shadowcast(player.pos, this::semiTransparent, this::semiReveal)
         Grid.shadowcast(player.pos, this::transparent, this::reveal)
     }
 
@@ -64,10 +67,23 @@ class GameState(width: Int, height: Int) {
         return level.tiles[pos].terrain.transparent
     }
 
+    private fun semiTransparent(pos: Pos): Boolean {
+        val terrain = level.tiles[pos].terrain
+        return terrain.transparent || terrain == Terrain.TALL_GRASS
+    }
+
     private fun reveal(pos: Pos) {
         val tileView = fov[pos]
         tileView.lastSeen = turn
         tileView.terrain = level.tiles[pos].terrain
         tileView.item = level.tiles[pos].item
+    }
+
+    private fun semiReveal(pos: Pos) {
+        fov[pos].run {
+            lastSeen = turn - 1
+            terrain = level.tiles[pos].terrain
+            item = level.tiles[pos].item
+        }
     }
 }
