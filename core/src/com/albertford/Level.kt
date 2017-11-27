@@ -3,6 +3,8 @@ package com.albertford
 import com.badlogic.gdx.utils.IntSet
 import java.util.*
 
+private const val MIN_LAKE_SIZE = 9
+
 class Level(width: Int, height: Int) {
 
     val tiles = Grid(width, height) { Tile(Terrain.WALL) }
@@ -26,7 +28,7 @@ class Level(width: Int, height: Int) {
         }
         fillSmallCaves(start)
         val newStart = adjustStart(start)
-        addDoors(innerIndices)
+//        addDoors(innerIndices)
 
         val lakeTilesArray = Array(1) { Grid(tiles.width, tiles.height) { Tile(Terrain.WALL) } }
         for (lakeTiles in lakeTilesArray) {
@@ -35,6 +37,7 @@ class Level(width: Int, height: Int) {
             addLakes(start, innerIndices, lakeTiles)
         }
         addExit(innerIndices, newStart)
+        addGrass(innerIndices, rand)
         return newStart
     }
 
@@ -138,10 +141,6 @@ class Level(width: Int, height: Int) {
         }
     }
 
-    private fun countFloorGroups(i: Int): Int {
-        return countFloorGroups(tiles.linearToPos(i))
-    }
-
     private fun fillDeadEnd(start: Pos, pos: Pos) {
         if (!isDeadEnd(pos)) {
             return
@@ -219,31 +218,6 @@ class Level(width: Int, height: Int) {
         return countTerrainNeighbors(pos, Terrain.CLOSED_DOOR) == 0
     }
 
-    private fun generateVisibility(): Grid<Int> {
-        return Grid(tiles.width, tiles.height) { i ->
-            var fovSize = 0
-            if (tiles[i].terrain.passable) {
-                Grid.shadowcast(tiles.linearToPos(i), { pos ->
-                    tiles[pos].terrain.transparent
-                }, { pos ->
-                    if (tiles[pos].terrain.transparent) {
-                        fovSize++
-                    }
-                })
-            }
-            fovSize
-        }
-    }
-
-    private fun growGrass(fovSizes: Grid<Int>) {
-        val shortGrassThreshold = 90
-        fovSizes.forEach { fovSize, i ->
-            if (fovSize > shortGrassThreshold) {
-                tiles[i].terrain = Terrain.SHORT_GRASS
-            }
-        }
-    }
-
     private fun addExit(innerIndices: IntArray, start: Pos) {
         for (i in innerIndices) {
             val pos = tiles.linearToPos(i)
@@ -308,7 +282,7 @@ class Level(width: Int, height: Int) {
                     lakes[it] = lakeCount
                     lakePositions.add(it)
                 })
-                if (lakePositions.size < 6) {
+                if (lakePositions.size < MIN_LAKE_SIZE) {
                     lakePositions.forEach {
                         lakes[it] = 0
                     }
@@ -317,6 +291,42 @@ class Level(width: Int, height: Int) {
             }
         }
         return Pair(lakes, lakeCount)
+    }
+
+    private class GrassSeed(val seeds: Int, val pos: Pos)
+
+    private fun addGrass(innerIndices: IntArray, rand: Random) {
+        val growGrass = PriorityQueue<GrassSeed>(kotlin.Comparator { o1, o2 ->
+            o2.seeds - o1.seeds
+        })
+        var grasses = 5 + rand.nextInt(5)
+        for (i in innerIndices) {
+            val pos = tiles.linearToPos(i)
+            if (isCave(pos)) {
+                growGrass.add(GrassSeed(10, pos))
+                grasses--
+                if (grasses == 0) {
+                    break
+                }
+            }
+        }
+        while (growGrass.isNotEmpty()) {
+            val grassSeed = growGrass.poll()
+            Direction.forEach {
+                val neighbor = grassSeed.pos + it
+                if (tiles[neighbor].terrain == Terrain.FLOOR) {
+                    val seeds = grassSeed.seeds / 2 + rand.nextInt(1 + grassSeed.seeds / 2) - 1
+                    if (seeds > 0) {
+                        growGrass.add(GrassSeed(seeds, neighbor))
+                    }
+                    tiles[grassSeed.pos].terrain = if (grassSeed.seeds > 5) {
+                        Terrain.TALL_GRASS
+                    } else {
+                        Terrain.SHORT_GRASS
+                    }
+                }
+            }
+        }
     }
 
     private fun addItems(innerIndices: IntArray, start: Pos, rand: Random) {
@@ -342,7 +352,7 @@ private fun shuffle(arr: IntArray, rand: Random) {
 
 private fun carveCaves(innerIndices: IntArray, tiles: Grid<Tile>) {
     for (i in innerIndices) {
-        if (tiles[i].terrain == Terrain.WALL && countFloorGroups(i, tiles) != 1) {
+        if (tiles[i].terrain == Terrain.WALL && countFloorGroups(tiles.linearToPos(i), tiles) != 1) {
             tiles[i].terrain = Terrain.FLOOR
         }
     }
@@ -363,10 +373,6 @@ private fun countFloorGroups(pos: Pos, tiles: Grid<Tile>): Int {
         tiles[curr].terrain == Terrain.FLOOR -> 1
         else -> 0
     }
-}
-
-private fun countFloorGroups(i: Int, tiles: Grid<Tile>): Int {
-    return countFloorGroups(tiles.linearToPos(i), tiles)
 }
 
 /** Remove groups of less than 6 walls */

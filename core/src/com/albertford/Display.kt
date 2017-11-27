@@ -17,6 +17,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     private val openDoor = atlas.findRegion("openDoor")
     private val exit = atlas.findRegion("exit")
     private val exitLocked = atlas.findRegion("exitLocked")
+    private val water = atlas.findRegion("water")
 
     private val letters = TextureRegion.split(font, 9, 16)
 
@@ -109,7 +110,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
                     }
                     terrRegion != null -> {
                         sprite.setRegion(terrRegion)
-                        sprite.color = terrainFgColor(tileView.terrain)
+                        sprite.color = terrainFgColor(tileView.terrain, false)
                         sprite.draw(batch)
                     }
                 }
@@ -121,7 +122,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
                     sprite.draw(batch)
                 } else if (terrRegion != null) {
                     sprite.setRegion(terrRegion)
-                    sprite.color = terrainFgColor(tileView.terrain)
+                    sprite.color = terrainFgColor(tileView.terrain, true)
                     sprite.draw(batch)
                 }
             }
@@ -155,7 +156,8 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
 
     private fun terrainRegion(terrain: Terrain): TextureRegion? {
         return when (terrain) {
-            Terrain.WALL, Terrain.FLOOR, Terrain.DEEP_WATER, Terrain.SHALLOW_WATER -> null
+            Terrain.WALL, Terrain.FLOOR -> null
+            Terrain.DEEP_WATER, Terrain.SHALLOW_WATER -> water
             Terrain.SHORT_GRASS -> shortGrass
             Terrain.TALL_GRASS -> tallGrass
             Terrain.CLOSED_DOOR -> closedDoor
@@ -167,32 +169,35 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
 
     private fun terrainBgColor(terrain: Terrain, remembered: Boolean): Color {
         return if (remembered) when (terrain) {
-            Terrain.WALL -> Color(100 / 256f, 100 / 256f, 100 / 256f, 1f)
+            Terrain.WALL -> rgb(108, 108, 110)
             Terrain.EXIT -> Color(0f, 0f, 0f, 1f)
             Terrain.EXIT_LOCKED -> Color(0f, 0f, 0f, 1f)
             Terrain.CLOSED_DOOR -> Color(0.25f, 0f, 0f, 1f)
             Terrain.OPEN_DOOR -> Color(0f, 0f, 0f, 1f)
-            Terrain.FLOOR -> Color(40 / 256f, 40 / 256f, 40 / 256f, 1f)
-            Terrain.TALL_GRASS -> Color(0f, 0f, 0f, 1f)
-            Terrain.SHORT_GRASS -> Color(0f, 0f, 0f, 1f)
-            Terrain.DEEP_WATER -> Color(0f, 0f, 1f, 1f)
+            Terrain.FLOOR, Terrain.SHORT_GRASS, Terrain.TALL_GRASS -> rgb(39, 39, 39)
+            Terrain.DEEP_WATER -> rgb(0, 50, 100)
             Terrain.SHALLOW_WATER -> Color(0f, 0f, 1f, 1f)
         } else when (terrain) {
-            Terrain.WALL -> Color(179 / 256f, 174 / 256f, 162 / 256f, 1f)
+            Terrain.WALL -> rgb(179, 174, 162)
             Terrain.EXIT -> Color(0f, 0f, 0f, 1f)
             Terrain.EXIT_LOCKED -> Color(0f, 0f, 0f, 1f)
             Terrain.CLOSED_DOOR -> Color(0.5f, 0f, 0f, 1f)
             Terrain.OPEN_DOOR -> Color(0f, 0f, 0f, 1f)
-            Terrain.FLOOR -> Color(70 / 256f, 66 / 256f, 57 / 256f, 1f)
-            Terrain.TALL_GRASS -> Color(0f, 0f, 0f, 1f)
-            Terrain.SHORT_GRASS -> Color(0f, 0f, 0f, 1f)
-            Terrain.DEEP_WATER -> Color(0f, 0f, 1f, 1f)
+            Terrain.FLOOR, Terrain.SHORT_GRASS, Terrain.TALL_GRASS -> rgb(71, 65, 56)
+            Terrain.DEEP_WATER -> rgb(0, 80, 160)
             Terrain.SHALLOW_WATER -> Color(0f, 0f, 1f, 1f)
         }
     }
 
-    private fun terrainFgColor(terrain: Terrain): Color {
-        return Color(1f, 1f, 1f, 1f)
+    private fun terrainFgColor(terrain: Terrain, remembered: Boolean): Color {
+        return if (remembered) when (terrain) {
+//            Terrain.SHORT_GRASS, Terrain.TALL_GRASS -> rgb(0, 64, 0)
+            else -> Color(1f, 1f, 1f, 0.5f)
+        } else when (terrain) {
+//            Terrain.SHORT_GRASS, Terrain.TALL_GRASS -> rgb(0, 128, 0)
+            Terrain.DEEP_WATER -> Color(1f, 1f, 1f, 0.75f)
+            else -> rgb(255, 255, 255)
+        }
     }
 
     private  fun itemRegion(item: Item): TextureRegion {
@@ -216,4 +221,8 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             else -> null
         }
     }
+}
+
+private fun rgb(r: Int, g: Int, b: Int): Color {
+    return Color(r / 256f, g / 256f, b / 256f, 1f)
 }
