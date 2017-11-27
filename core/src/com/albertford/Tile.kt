@@ -6,7 +6,7 @@ class Tile(var terrain: Terrain, var mob: Mob? = null, var item: Item? = null) {
     val projectiles = Array<Any>(2)
 }
 
-class TileView(var lastSeen: Int, var terrain: Terrain, var item: Item?)
+class TileView(var lastSeen: Float, var terrain: Terrain, var item: Item?)
 
 enum class Terrain(
         val passable: Boolean,

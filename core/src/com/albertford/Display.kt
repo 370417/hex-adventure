@@ -81,7 +81,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             val terrain = tileView.terrain
             sprite.setRegion(wall)
             if (tileView.lastSeen > gameState.firstTurn) {
-                sprite.color = terrainBgColor(terrain, tileView.lastSeen != gameState.turn)
+                sprite.color = terrainBgColor(terrain, tileView.lastSeen != gameState.turn.toFloat())
                 sprite.draw(batch)
             }
         }
@@ -92,7 +92,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             val tile = gameState.level.tiles[i]
             val tileView = gameState.fov[i]
             val terrRegion = terrainRegion(tileView.terrain)
-            if (tileView.lastSeen == gameState.turn) {
+            if (tileView.lastSeen == gameState.turn.toFloat()) {
                 val mob = tile.mob
                 val mRegion = mobRegion(mob)
                 val item = tile.item
