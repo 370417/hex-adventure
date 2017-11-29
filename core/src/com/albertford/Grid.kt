@@ -65,8 +65,8 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
     fun floodfill(pos: Pos, floodable: (pos: Pos) -> Boolean, flood: (pos: Pos) -> Unit) {
         if (inBounds(pos) && floodable(pos)) {
             flood(pos)
-            Direction.forEach { direction ->
-                floodfill(pos + direction, floodable, flood)
+            pos.forEachNeighbor {
+                floodfill(it, floodable, flood)
             }
         }
     }
@@ -167,6 +167,12 @@ data class Pos(val x: Int, val y: Int) {
 
     operator fun minus(pos: Pos): Displacement {
         return Displacement(x - pos.x, y - pos.y)
+    }
+
+    fun forEachNeighbor(fn: (neighbor: Pos) -> Unit) {
+        Direction.forEach { direction ->
+            fn(this + direction)
+        }
     }
 }
 

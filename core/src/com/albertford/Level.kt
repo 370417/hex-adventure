@@ -146,8 +146,8 @@ class Level(width: Int, height: Int) {
             return
         }
         tiles[pos].terrain = Terrain.WALL
-        Direction.forEach { direction ->
-            fillDeadEnd(start, pos + direction)
+        pos.forEachNeighbor {
+            fillDeadEnd(start, it)
         }
     }
 
@@ -206,8 +206,8 @@ class Level(width: Int, height: Int) {
 
     private fun countTerrainNeighbors(pos: Pos, terrain: Terrain): Int {
         var floors = 0
-        Direction.forEach { direction ->
-            if (tiles[pos + direction].terrain == terrain) {
+        pos.forEachNeighbor {
+            if (tiles[it].terrain == terrain) {
                 floors++
             }
         }
@@ -312,8 +312,7 @@ class Level(width: Int, height: Int) {
         }
         while (growGrass.isNotEmpty()) {
             val grassSeed = growGrass.poll()
-            Direction.forEach {
-                val neighbor = grassSeed.pos + it
+            grassSeed.pos.forEachNeighbor { neighbor ->
                 if (tiles[neighbor].terrain == Terrain.FLOOR) {
                     val seeds = grassSeed.seeds / 2 + rand.nextInt(1 + grassSeed.seeds / 2) - 1
                     if (seeds > 0) {
