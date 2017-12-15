@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 class Display(private var gameState: GameState, atlas: TextureAtlas, font: Texture) {
 
     private val wall = atlas.findRegion("wall")
+    private val floor = atlas.findRegion("floor")
     private val shortGrass = atlas.findRegion("shortGrass")
     private val tallGrass = atlas.findRegion("tallGrass")
     private val closedDoor = atlas.findRegion("closedDoor")
@@ -21,7 +22,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
 
     private val letters = TextureRegion.split(font, 9, 16)
 
-    private val player = atlas.findRegion("skunk")
+    private val player = atlas.findRegion("player")
     private val sneakyPlayer = atlas.findRegion("skunkSneak")
     private val sneakyPlayerTail = atlas.findRegion("tailTip")
 
@@ -63,9 +64,9 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     }
 
     fun render(batch: Batch) {
-        renderTerrain(batch)
+//        renderTerrain(batch)
         renderSprites(batch)
-        renderPlayerTail(batch)
+//        renderPlayerTail(batch)
 //        bottomText = "Skealkh"
 //        bottomText?.forEachIndexed { i, char ->
 //            val texture = charToTexture(char)
@@ -73,18 +74,6 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
 //                batch.draw(charToTexture(char), 9f * i + 10f, 0f)
 //            }
 //        }
-    }
-
-    private fun renderTerrain(batch: Batch) {
-        sprites.forEach { sprite, i ->
-            val tileView = gameState.fov[i]
-            val terrain = tileView.terrain
-            sprite.setRegion(wall)
-            if (tileView.lastSeen > gameState.firstTurn) {
-                sprite.color = terrainBgColor(terrain, tileView.lastSeen != gameState.turn.toFloat())
-                sprite.draw(batch)
-            }
-        }
     }
 
     private fun renderSprites(batch: Batch) {
@@ -108,9 +97,9 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
                         sprite.setColor(1f, 1f, 1f, 1f)
                         sprite.draw(batch)
                     }
-                    terrRegion != null -> {
+                    else -> {
                         sprite.setRegion(terrRegion)
-                        sprite.color = terrainFgColor(tileView.terrain, false)
+                        sprite.color = terrainColor(tileView.terrain)
                         sprite.draw(batch)
                     }
                 }
@@ -118,11 +107,11 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
                 val item = tileView.item
                 if (item != null) {
                     sprite.setRegion(itemRegion(item))
-                    sprite.setColor(1f, 1f, 1f, 1f)
+                    sprite.setColor(0.5f, 0.5f, 0.5f, 1f)
                     sprite.draw(batch)
-                } else if (terrRegion != null) {
+                } else {
                     sprite.setRegion(terrRegion)
-                    sprite.color = terrainFgColor(tileView.terrain, true)
+                    sprite.color = terrainColor(tileView.terrain).mul(0.5f, 0.5f, 0.5f, 1.0f)
                     sprite.draw(batch)
                 }
             }
@@ -145,18 +134,15 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
 
     private fun mobRegion(mob: Mob?): TextureRegion? {
         return when (mob) {
-            is Player -> if (mob.sneaky) {
-                sneakyPlayer
-            } else {
-                player
-            }
+            is Player -> player
             else -> null
         }
     }
 
-    private fun terrainRegion(terrain: Terrain): TextureRegion? {
+    private fun terrainRegion(terrain: Terrain): TextureRegion {
         return when (terrain) {
-            Terrain.WALL, Terrain.FLOOR -> null
+            Terrain.WALL -> wall
+            Terrain.FLOOR -> floor
             Terrain.DEEP_WATER, Terrain.SHALLOW_WATER -> water
             Terrain.SHORT_GRASS -> shortGrass
             Terrain.TALL_GRASS -> tallGrass
@@ -167,36 +153,14 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
         }
     }
 
-    private fun terrainBgColor(terrain: Terrain, remembered: Boolean): Color {
-        return if (remembered) when (terrain) {
-            Terrain.WALL -> rgb(108, 108, 110)
-            Terrain.EXIT -> Color(0f, 0f, 0f, 1f)
-            Terrain.EXIT_LOCKED -> Color(0f, 0f, 0f, 1f)
-            Terrain.CLOSED_DOOR -> Color(0.25f, 0f, 0f, 1f)
-            Terrain.OPEN_DOOR -> Color(0f, 0f, 0f, 1f)
-            Terrain.FLOOR, Terrain.SHORT_GRASS, Terrain.TALL_GRASS -> rgb(39, 39, 39)
-            Terrain.DEEP_WATER -> rgb(0, 50, 100)
-            Terrain.SHALLOW_WATER -> Color(0f, 0f, 1f, 1f)
-        } else when (terrain) {
+    private fun terrainColor(terrain: Terrain): Color {
+        return when (terrain) {
             Terrain.WALL -> rgb(179, 174, 162)
-            Terrain.EXIT -> Color(0f, 0f, 0f, 1f)
-            Terrain.EXIT_LOCKED -> Color(0f, 0f, 0f, 1f)
-            Terrain.CLOSED_DOOR -> Color(0.5f, 0f, 0f, 1f)
-            Terrain.OPEN_DOOR -> Color(0f, 0f, 0f, 1f)
-            Terrain.FLOOR, Terrain.SHORT_GRASS, Terrain.TALL_GRASS -> rgb(71, 65, 56)
-            Terrain.DEEP_WATER -> rgb(0, 80, 160)
-            Terrain.SHALLOW_WATER -> Color(0f, 0f, 1f, 1f)
-        }
-    }
-
-    private fun terrainFgColor(terrain: Terrain, remembered: Boolean): Color {
-        return if (remembered) when (terrain) {
-//            Terrain.SHORT_GRASS, Terrain.TALL_GRASS -> rgb(0, 64, 0)
-            else -> Color(1f, 1f, 1f, 0.5f)
-        } else when (terrain) {
-//            Terrain.SHORT_GRASS, Terrain.TALL_GRASS -> rgb(0, 128, 0)
-            Terrain.DEEP_WATER -> Color(1f, 1f, 1f, 0.75f)
-            else -> rgb(255, 255, 255)
+            Terrain.FLOOR -> rgb(128, 128, 128)
+            Terrain.EXIT, Terrain.EXIT_LOCKED -> rgb(255, 255, 255)
+            Terrain.CLOSED_DOOR, Terrain.OPEN_DOOR -> rgb(128, 0, 0)
+            Terrain.SHORT_GRASS, Terrain.TALL_GRASS -> rgb(20, 180, 20)
+            Terrain.DEEP_WATER, Terrain.SHALLOW_WATER -> rgb(20, 80, 255)
         }
     }
 
