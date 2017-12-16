@@ -3,7 +3,7 @@ package com.albertford
 import com.badlogic.gdx.utils.IntSet
 import java.util.*
 
-private const val MIN_LAKE_SIZE = 9
+private const val MIN_LAKE_SIZE = 20
 
 class Level(width: Int, height: Int) {
 
@@ -30,7 +30,7 @@ class Level(width: Int, height: Int) {
         val newStart = adjustStart(start)
 //        addDoors(innerIndices)
 
-        val lakeTilesArray = Array(1) { Grid(tiles.width, tiles.height) { Tile(Terrain.WALL) } }
+        val lakeTilesArray = Array(3) { Grid(tiles.width, tiles.height) { Tile(Terrain.WALL) } }
         for (lakeTiles in lakeTilesArray) {
             carveCaves(shuffledInnerIndices(rand), lakeTiles)
             removeSmallWalls(lakeTiles)
@@ -293,12 +293,14 @@ class Level(width: Int, height: Int) {
         return Pair(lakes, lakeCount)
     }
 
-    private class GrassSeed(val seeds: Int, val pos: Pos)
+    private class GrassSeed(val seeds: Int, val pos: Pos) : Comparable<GrassSeed> {
+        override fun compareTo(other: GrassSeed): Int {
+            return other.seeds - seeds
+        }
+    }
 
     private fun addGrass(innerIndices: IntArray, rand: Random) {
-        val growGrass = PriorityQueue<GrassSeed>(kotlin.Comparator { o1, o2 ->
-            o2.seeds - o1.seeds
-        })
+        val growGrass = PriorityQueue<GrassSeed>()
         var grasses = 5 + rand.nextInt(5)
         for (i in innerIndices) {
             val pos = tiles.linearToPos(i)
