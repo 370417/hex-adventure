@@ -1,21 +1,20 @@
-package com.albertford
+package com.albertford.mob
+
+import com.albertford.Direction
+import com.albertford.Level
+import com.albertford.Pos
+import com.albertford.Tile
 
 interface Mob {
     var pos: Pos
     var facingRight: Boolean
     var lastMove: Direction?
 
-    fun move(level: Level, direction: Direction): Boolean
-}
+    fun canMove(targetTile: Tile) {
 
-class Player : Mob {
-    override var pos = Pos(0, 0)
-    override var facingRight = false
-    override var lastMove: Direction? = null
-    var hasKey = false
-    var sneaky = true
+    }
 
-    override fun move(level: Level, direction: Direction): Boolean {
+    fun move(level: Level, direction: Direction): Boolean {
         facingRight = when (direction) {
             Direction.EAST, Direction.NORTHEAST, Direction.SOUTHEAST -> true
             else -> false
@@ -30,4 +29,12 @@ class Player : Mob {
         lastMove = direction
         return true
     }
+}
+
+class Player : Mob {
+    override var pos = Pos(0, 0)
+    override var facingRight = false
+    override var lastMove: Direction? = null
+    var hasKey = false
+    var sneaky = true
 }

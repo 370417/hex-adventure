@@ -27,6 +27,16 @@ class Input(private val display: Display) : InputAdapter() {
             return false
         }
     }
+
+    override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
+        display.moveMouse(screenX, screenY)
+        return true
+    }
+
+//    override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+//        display.moveMouse()
+//        return super.touchDown(screenX, screenY, pointer, button)
+//    }
 }
 
 enum class Command {

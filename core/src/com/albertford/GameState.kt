@@ -1,5 +1,6 @@
 package com.albertford
 
+import com.albertford.mob.Player
 import com.badlogic.gdx.Gdx
 import java.util.*
 
@@ -7,11 +8,11 @@ class GameState(width: Int, height: Int) {
 
     var firstTurn = 0
     var turn = 0
-    val actors = ArrayList<Any>()
+    val actors = ArrayList<Actor>()
     val delayedActors = ArrayList<Any>()
     val player = Player()
     val level = Level(width, height)
-    val fov = Grid(width, height) { TileView(-1f, Terrain.WALL, null) }
+    val fov = Grid(width, height) { TileView(-1, Terrain.WALL, null) }
     private val rand = Random()
 
     init {
@@ -21,11 +22,6 @@ class GameState(width: Int, height: Int) {
 
     fun updateFov() {
         turn++
-//        fov.forEach { tileView, i ->
-//            tileView.lastSeen = turn
-//            tileView.item = level.tiles[i].item
-//            tileView.terrain = level.tiles[i].terrain
-//        }
         Grid.shadowcast(player.pos, this::semiTransparent, this::semiReveal)
         Grid.shadowcast(player.pos, this::transparent, this::reveal)
     }
@@ -39,7 +35,6 @@ class GameState(width: Int, height: Int) {
                 descend()
             } else if (level.tiles[player.pos + direction].terrain == Terrain.EXIT_LOCKED && player.hasKey) {
                 level.tiles[player.pos + direction].terrain = Terrain.EXIT
-                player.hasKey = false
             }
         } else {
             if (level.tiles[player.pos].item == Item.KEY) {
@@ -53,10 +48,19 @@ class GameState(width: Int, height: Int) {
     }
 
     fun descend() {
+        player.hasKey = false
         val seed = rand.nextLong()
         player.pos = level.init(seed, player.pos)
         Gdx.app.log("SEED", "$seed")
+        actors.clear()
+        level.tiles.forEach { tile, _ ->
+            val mob = tile.mob
+            if (mob != null && mob is Actor) {
+                actors.add(mob)
+            }
+        }
         level.tiles[player.pos].mob = player
+        turn++
         firstTurn = turn
         updateFov()
     }
@@ -71,15 +75,16 @@ class GameState(width: Int, height: Int) {
     }
 
     private fun reveal(pos: Pos) {
-        val tileView = fov[pos]
-        tileView.lastSeen = turn.toFloat()
-        tileView.terrain = level.tiles[pos].terrain
-        tileView.item = level.tiles[pos].item
+        fov[pos].run {
+            lastSeen = turn
+            terrain = level.tiles[pos].terrain
+            item = level.tiles[pos].item
+        }
     }
 
     private fun semiReveal(pos: Pos) {
         fov[pos].run {
-            lastSeen = turn - 0.5f
+            lastSeen = turn - 1
             terrain = level.tiles[pos].terrain
             item = level.tiles[pos].item
         }

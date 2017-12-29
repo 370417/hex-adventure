@@ -1,5 +1,7 @@
 package com.albertford
 
+import com.albertford.mob.Acolyte
+import com.albertford.mob.*
 import com.badlogic.gdx.utils.IntSet
 import java.util.*
 
@@ -30,24 +32,23 @@ class Level(width: Int, height: Int) {
         val newStart = adjustStart(start)
 //        addDoors(innerIndices)
 
-        val lakeTilesArray = Array(3) { Grid(tiles.width, tiles.height) { Tile(Terrain.WALL) } }
-        for (lakeTiles in lakeTilesArray) {
+        val lakeTiles = Grid(tiles.width, tiles.height) { Tile(Terrain.WALL) }
+        var lakesAdded = 0
+        while (lakesAdded < 5) {
             carveCaves(shuffledInnerIndices(rand), lakeTiles)
             removeSmallWalls(lakeTiles)
-            addLakes(start, innerIndices, lakeTiles)
+            lakesAdded += 1 + addLakes(start, innerIndices, lakeTiles)
+            resetEntireTerrain(lakeTiles)
         }
         addExit(innerIndices, newStart)
         addGrass(innerIndices, rand)
+        addMobs(shuffledInnerIndices(rand), newStart, rand)
         return newStart
     }
 
     /* Turn everything to wall except starting position */
     private fun resetTerrain(start: Pos) {
-        tiles.forEach { tile, _ ->
-            tile.terrain = Terrain.WALL
-            tile.mob = null
-            tile.item = null
-        }
+        resetEntireTerrain(tiles)
         tiles[start].terrain = Terrain.FLOOR
     }
 
@@ -238,8 +239,9 @@ class Level(width: Int, height: Int) {
     }
 
     /** Add lakes based on the caves of another level */
-    private fun addLakes(start: Pos, innerIndices: IntArray, lakeTiles: Grid<Tile>) {
+    private fun addLakes(start: Pos, innerIndices: IntArray, lakeTiles: Grid<Tile>): Int {
         val (lakes, lakeCount) = calcLakes(innerIndices, lakeTiles)
+        var lakesAdded = 0
         // 0 if unreachable from start
         // x where x is a lake index if reachable from start without going through that lake
         // for performance, we reuse the same grid for each lake, and just override values
@@ -257,6 +259,7 @@ class Level(width: Int, height: Int) {
                 }
             }
             if (!lakeSplitsLevel) {
+                lakesAdded++
                 tiles.forEach { tile, i ->
                     if (lakes[i] == lakeIndex) {
                         tile.terrain = Terrain.DEEP_WATER
@@ -264,6 +267,7 @@ class Level(width: Int, height: Int) {
                 }
             }
         }
+        return lakesAdded
     }
 
     private fun calcLakes(innerIndices: IntArray, lakeTiles: Grid<Tile>): Pair<Grid<Int>, Int> {
@@ -330,6 +334,31 @@ class Level(width: Int, height: Int) {
         }
     }
 
+    private val seclusionCost = { _: Pos, toPos: Pos ->
+        if (tiles[toPos].terrain.passable) {
+            1
+        } else {
+            null
+        }
+    }
+
+    private fun calcSeclusion(start: Pos, rand: Random) {
+        val seclusion = Grid(tiles.width, tiles.height) { 0 }
+        var pos = start
+        val iterations = (tiles.width + tiles.height) / 2
+        for (i in 0..iterations) {
+            var nextPosI = 0
+            while (!tiles[nextPosI].terrain.passable) {
+                nextPosI = rand.nextInt(tiles.width * tiles.height)
+            }
+            val nextPos = tiles.linearToPos(nextPosI)
+            for (pathPos in tiles.astar(pos, nextPos, seclusionCost)) {
+                seclusion[pathPos] += 1
+            }
+            pos = nextPos
+        }
+    }
+
     private fun addItems(innerIndices: IntArray, start: Pos, rand: Random) {
         val startIndex = tiles.posToLinear(start)
         for (i in innerIndices) {
@@ -340,6 +369,15 @@ class Level(width: Int, height: Int) {
             }
         }
     }
+
+    private fun addMobs(innerIndices: IntArray, start: Pos, rand: Random) {
+        for (acolyte in 1..3) {
+            val pos = tiles.random(rand, { pos ->
+                tiles[pos].terrain.passable && tiles[pos].mob == null
+            })
+            tiles[pos].mob = Acolyte(pos, false, null)
+        }
+    }
 }
 
 private fun shuffle(arr: IntArray, rand: Random) {
@@ -348,6 +386,14 @@ private fun shuffle(arr: IntArray, rand: Random) {
         val temp = arr[i]
         arr[i] = arr[j]
         arr[j] = temp
+    }
+}
+
+private fun resetEntireTerrain(tiles: Grid<Tile>) {
+    tiles.forEach { tile, _ ->
+        tile.terrain = Terrain.WALL
+        tile.item = null
+        tile.mob = null
     }
 }
 

@@ -4,4 +4,4 @@
 
 ## Texture packing:
 
-    ./gradlew texturePacker desktop:run
+    ./gradlew texturePacker

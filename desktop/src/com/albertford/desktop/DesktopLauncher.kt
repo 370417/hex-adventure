@@ -10,7 +10,7 @@ object DesktopLauncher {
         val width = 42
         val height = 31
         val config = LwjglApplicationConfiguration()
-        config.title = "Skealkh"
+        config.title = "Hex Adventure"
         config.resizable = false
         config.width = 18 * width + 9
         config.height = 16 * height + 8

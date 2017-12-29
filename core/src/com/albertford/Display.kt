@@ -1,5 +1,6 @@
 package com.albertford
 
+import com.albertford.mob.*
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
@@ -7,6 +8,10 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+
+private const val HALF_TILE_WIDTH = 9
+private const val PART_TILE_HEIGHT = 16
+private const val FULL_TILE_HEIGHT = 24
 
 class Display(private var gameState: GameState, atlas: TextureAtlas, font: Texture) {
 
@@ -20,11 +25,11 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     private val exitLocked = atlas.findRegion("exitLocked")
     private val water = atlas.findRegion("water")
 
-    private val letters = TextureRegion.split(font, 9, 16)
+    private val letters = TextureRegion.split(font, HALF_TILE_WIDTH, PART_TILE_HEIGHT)
 
     private val player = atlas.findRegion("player")
-    private val sneakyPlayer = atlas.findRegion("skunkSneak")
-    private val sneakyPlayerTail = atlas.findRegion("tailTip")
+    private val hive = atlas.findRegion("hive")
+    private val acolyte = atlas.findRegion("acolyte")
 
     private val key = atlas.findRegion("key")
     private val gold = atlas.findRegion("gold")
@@ -32,10 +37,12 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
     private val sprites = Grid(gameState.level.tiles.width, gameState.level.tiles.height) { i ->
         val (x, y) = gameState.level.tiles.linearToRectangular(i)
         val sprite = Sprite(wall)
-        sprite.x = (9 * x).toFloat()
-        sprite.y = (16 * y).toFloat()
+        sprite.x = (HALF_TILE_WIDTH * x).toFloat()
+        sprite.y = (PART_TILE_HEIGHT * (gameState.level.tiles.height - y - 1)).toFloat()
         sprite
     }
+
+    private var mouseLocation: Pos? = null
 
     private var bottomText: String? = null
 
@@ -63,17 +70,35 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
         Gdx.graphics.requestRendering()
     }
 
+    private fun pixelToPos(x: Int, y: Int): Pos {
+        val r = Rectangular(x / HALF_TILE_WIDTH, (y - FULL_TILE_HEIGHT + PART_TILE_HEIGHT) / PART_TILE_HEIGHT)
+        return sprites.rectangularToPos(r)
+//        val floatPos = FloatPos(x.toFloat() / (2 * ), y.toFloat() / PART_TILE_HEIGHT)
+    }
+
     fun render(batch: Batch) {
 //        renderTerrain(batch)
         renderSprites(batch)
 //        renderPlayerTail(batch)
 //        bottomText = "Skealkh"
 //        bottomText?.forEachIndexed { i, char ->
-//            val texture = charToTexture(char)
-//            if (texture != null) {
-//                batch.draw(charToTexture(char), 9f * i + 10f, 0f)
+//            charToTexture(char)?.run {
+//                batch.draw(this, HALF_TILE_WIDTH * i + 10f, 0f)
 //            }
 //        }
+    }
+
+    fun moveMouse(x: Int, y: Int) {
+        val pos = pixelToPos(x, y)
+        val newMouseLocation = if (sprites.inBounds(pos)) {
+            pos
+        } else {
+            null
+        }
+        if (newMouseLocation != mouseLocation) {
+            mouseLocation = newMouseLocation
+            Gdx.graphics.requestRendering()
+        }
     }
 
     private fun renderSprites(batch: Batch) {
@@ -81,7 +106,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             val tile = gameState.level.tiles[i]
             val tileView = gameState.fov[i]
             val terrRegion = terrainRegion(tileView.terrain)
-            if (tileView.lastSeen == gameState.turn.toFloat()) {
+            if (tileView.lastSeen == gameState.turn) {
                 val mob = tile.mob
                 val mRegion = mobRegion(mob)
                 val item = tile.item
@@ -116,25 +141,20 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
                 }
             }
         }
-    }
-
-    private fun renderPlayerTail(batch: Batch) {
-        if (gameState.player.sneaky) {
-            val tailSprite = if (gameState.player.facingRight) {
-                sprites[gameState.player.pos + Direction.WEST]
-            } else {
-                sprites[gameState.player.pos + Direction.EAST]
+        val mouseLocation = mouseLocation
+        if (mouseLocation != null) {
+            sprites[mouseLocation].run {
+                color = Color(1f, 1f, 0f, 1f)
+                draw(batch)
             }
-            tailSprite.setRegion(sneakyPlayerTail)
-            tailSprite.flip(gameState.player.facingRight, false)
-            tailSprite.setColor(1f, 1f, 1f, 1f)
-            tailSprite.draw(batch)
         }
     }
 
     private fun mobRegion(mob: Mob?): TextureRegion? {
         return when (mob) {
             is Player -> player
+            is Hive -> hive
+            is Acolyte -> acolyte
             else -> null
         }
     }

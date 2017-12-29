@@ -1,5 +1,11 @@
 package com.albertford
 
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
+
 /**
  * Rectangular hexagonal grid.
  * Origin is (0, 0) at the bottom left corner.
@@ -26,7 +32,7 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
         arr[posToLinear(pos)] = t
     }
 
-    private fun inBounds(pos: Pos): Boolean {
+    fun inBounds(pos: Pos): Boolean {
         val (x, y) = pos
         val row = x + y
         return row in 0 until height && x - rowFirstX(row) in 0 until width
@@ -35,6 +41,16 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
     fun forEach(function: (t: T, i: Int) -> Unit) {
         for (i in arr.indices) {
             function(arr[i], i)
+        }
+    }
+
+    /** Repeatedly choose a random pos until fn returns true */
+    fun random(rand: Random, fn: (pos: Pos) -> Boolean): Pos {
+        while (true) {
+            val pos = linearToPos(rand.nextInt(width * height))
+            if (fn(pos)) {
+                return pos
+            }
         }
     }
 
@@ -47,6 +63,17 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
         val y = i / width
         val x = (y % 2) + 2 * (i % width)
         return Rectangular(x, y)
+    }
+
+    fun rectangularToLinear(r: Rectangular): Int {
+        return r.y * width + r.x / 2
+    }
+
+    fun rectangularToPos(r: Rectangular): Pos {
+        val row = r.y
+        val col = (r.x - (r.y % 2)) / 2
+//        val col = r.x
+        return Pos(rowFirstX(row) + col, rowFirstY(row) - col)
     }
 
     fun linearToPos(i: Int): Pos {
@@ -79,6 +106,40 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
     /* Find the value of the first y-coordinate of a given row */
     private fun rowFirstY(row: Int): Int {
         return row / 2
+    }
+
+    fun astar(start: Pos, end: Pos, cost: (from: Pos, to: Pos) -> Int?): List<Pos> {
+        val steps = HashMap<Pos, PathStep>()
+        val frontier = PriorityQueue<Pos>(Comparator { a, b ->
+            steps.getValue(a).priority.compareTo(steps.getValue(b).priority)
+        })
+        steps[start] = PathStep(start.distance(end), start, 0)
+        while (frontier.isNotEmpty()) {
+            val current = frontier.poll()
+            if (current == end) {
+                break
+            }
+            current.forEachNeighbor { next ->
+                val stepCost = cost(current, next) ?: return@forEachNeighbor
+                val newCost = steps.getValue(current).costSoFar + stepCost
+                val nextCost = steps[next]?.costSoFar
+                if (nextCost == null) {
+                    steps[next] = PathStep(newCost + next.distance(end), current, newCost)
+                    frontier.add(next)
+                } else if (newCost < nextCost) {
+                    steps[next] = PathStep(newCost + next.distance(end), current, newCost)
+                    frontier.remove(next)
+                    frontier.add(next)
+                }
+            }
+        }
+        val path = ArrayList<Pos>()
+        var pos = end
+        while (pos != start) {
+            path.add(pos)
+            pos = steps.getValue(pos).prev
+        }
+        return path
     }
 
     companion object {
@@ -135,6 +196,18 @@ class Grid<T>(val width: Int, val height: Int, init: (i: Int) -> T) {
                 scan(y + 1, start, end, transparent, reveal)
             }
         }
+
+        fun dijkstra(grid: Grid<Int>, start: Collection<Pos>) {
+            val frontier = PriorityQueue<Pos>(Comparator { a, b ->
+                grid[a] - grid[b]
+            })
+            frontier.addAll(start)
+            val prev = Grid<Pos?>(grid.width, grid.height) { null }
+            while (frontier.isNotEmpty()) {
+                val current = frontier.poll()
+
+            }
+        }
     }
 }
 
@@ -171,6 +244,24 @@ data class Pos(val x: Int, val y: Int) {
     }
 }
 
+data class FloatPos(val x: Float, val y: Float) {
+
+    fun round(): Pos {
+        val z = -x-y
+        val rx = x.roundToInt()
+        val ry = y.roundToInt()
+        val rz = z.roundToInt()
+        val xDiff = (rx - x).absoluteValue
+        val yDiff = (ry - y).absoluteValue
+        val zDiff = (rz - z).absoluteValue
+        return when {
+            xDiff > yDiff && xDiff > zDiff -> Pos(-ry-rz, ry)
+            yDiff > zDiff -> Pos(rx, -rx-rz)
+            else -> Pos(rx, ry)
+        }
+    }
+}
+
 data class Displacement(val x: Int, val y: Int) {
 
     operator fun plus(displacement: Displacement): Displacement {
@@ -191,12 +282,12 @@ data class Displacement(val x: Int, val y: Int) {
 }
 
 enum class Direction(val x: Int, val y: Int) {
-    NORTHEAST(1, 0),
+    SOUTHEAST(1, 0),
     EAST(1, -1),
-    SOUTHEAST(0, -1),
-    SOUTHWEST(-1, 0),
+    NORTHEAST(0, -1),
+    NORTHWEST(-1, 0),
     WEST(-1, 1),
-    NORTHWEST(0, 1);
+    SOUTHWEST(0, 1);
 
     operator fun times(scale: Int): Displacement {
         return Displacement(scale * x, scale * y)
@@ -227,3 +318,5 @@ enum class Direction(val x: Int, val y: Int) {
 }
 
 data class Rectangular(var x: Int, var y: Int)
+
+private class PathStep(val priority: Int, val prev: Pos, val costSoFar: Int)
