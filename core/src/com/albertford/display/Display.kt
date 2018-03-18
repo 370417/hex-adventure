@@ -1,6 +1,11 @@
-package com.albertford
+package com.albertford.display
 
+import com.albertford.*
 import com.albertford.mob.*
+import com.albertford.util.Direction
+import com.albertford.util.Grid
+import com.albertford.util.Pos
+import com.albertford.util.Rectangular
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
@@ -9,9 +14,9 @@ import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 
-private const val HALF_TILE_WIDTH = 9
-private const val PART_TILE_HEIGHT = 16
-private const val FULL_TILE_HEIGHT = 24
+const val HALF_TILE_WIDTH = 9
+const val PART_TILE_HEIGHT = 16
+const val FULL_TILE_HEIGHT = 24
 
 class Display(private var gameState: GameState, atlas: TextureAtlas, font: Texture) {
 

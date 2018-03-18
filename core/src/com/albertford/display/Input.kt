@@ -1,4 +1,4 @@
-package com.albertford
+package com.albertford.display
 
 import com.badlogic.gdx.Input.Keys
 import com.badlogic.gdx.InputAdapter

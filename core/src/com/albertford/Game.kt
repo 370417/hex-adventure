@@ -1,12 +1,12 @@
 package com.albertford
 
+import com.albertford.display.Display
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
-import com.badlogic.gdx.graphics.g2d.TextureRegion
 
 class Game(private val width: Int, private val height: Int) : ApplicationAdapter() {
     private lateinit var batch: SpriteBatch

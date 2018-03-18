@@ -1,4 +1,4 @@
-package com.albertford
+package com.albertford.util
 
 import java.util.*
 import kotlin.collections.ArrayList
@@ -255,8 +255,8 @@ data class FloatPos(val x: Float, val y: Float) {
         val yDiff = (ry - y).absoluteValue
         val zDiff = (rz - z).absoluteValue
         return when {
-            xDiff > yDiff && xDiff > zDiff -> Pos(-ry-rz, ry)
-            yDiff > zDiff -> Pos(rx, -rx-rz)
+            xDiff > yDiff && xDiff > zDiff -> Pos(-ry - rz, ry)
+            yDiff > zDiff -> Pos(rx, -rx - rz)
             else -> Pos(rx, ry)
         }
     }

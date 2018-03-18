@@ -1,8 +1,8 @@
 package com.albertford.mob
 
-import com.albertford.Direction
+import com.albertford.util.Direction
 import com.albertford.Level
-import com.albertford.Pos
+import com.albertford.util.Pos
 import com.albertford.Tile
 
 interface Mob {

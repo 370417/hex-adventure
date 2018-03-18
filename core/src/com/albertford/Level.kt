@@ -2,6 +2,10 @@ package com.albertford
 
 import com.albertford.mob.Acolyte
 import com.albertford.mob.*
+import com.albertford.util.Direction
+import com.albertford.util.Displacement
+import com.albertford.util.Grid
+import com.albertford.util.Pos
 import com.badlogic.gdx.utils.IntSet
 import java.util.*
 
