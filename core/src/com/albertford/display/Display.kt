@@ -113,12 +113,11 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
             val terrRegion = terrainRegion(tileView.terrain)
             if (tileView.lastSeen == gameState.turn) {
                 val mob = tile.mob
-                val mRegion = mobRegion(mob)
                 val item = tile.item
                 when {
-                    mRegion != null -> {
-                        sprite.setRegion(mRegion)
-                        sprite.setFlip(mob!!.facingRight, false)
+                    mob != null && mobRegion(mob) != null -> {
+                        sprite.setRegion(mobRegion(mob))
+                        sprite.setFlip(mob.facingRight, false)
                         sprite.setColor(1f, 1f, 1f, 1f)
                         sprite.draw(batch)
                     }
@@ -155,7 +154,7 @@ class Display(private var gameState: GameState, atlas: TextureAtlas, font: Textu
         }
     }
 
-    private fun mobRegion(mob: Mob?): TextureRegion? {
+    private fun mobRegion(mob: Mob): TextureRegion? {
         return when (mob) {
             is Player -> player
             is Hive -> hive
