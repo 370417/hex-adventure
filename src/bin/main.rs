@@ -26,7 +26,8 @@ impl EventHandler for MainState {
 
 fn main() {
     let config = load_config();
-    let mut ctx = Context::load_from_conf("hex-adventure", "as-f", config).expect("Failed to load context from configuration.");
+    let mut ctx = Context::load_from_conf("hex-adventure", "as-f", config)
+        .expect("Failed to load context from configuration.");
     match event::run(&mut ctx, &mut MainState {}) {
         Err(e) => println!("Error encountered: {}", e),
         _ => println!("Game exited cleanly"),
