@@ -365,7 +365,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "hex-adventure"
+name = "hexadventure"
 version = "0.1.0"
 dependencies = [
  "ggez 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",

@@ -5,6 +5,9 @@ use ggez::event;
 use ggez::event::EventHandler;
 use std::fs::File;
 
+extern crate hexadventure;
+use hexadventure::grid;
+
 const CONFIG_PATH: &str = "resources/conf.toml";
 
 struct MainState {
