@@ -6,7 +6,7 @@ use ggez::event::EventHandler;
 use std::fs::File;
 
 extern crate hexadventure;
-use hexadventure::grid;
+use hexadventure::util::grid;
 
 const CONFIG_PATH: &str = "resources/conf.toml";
 

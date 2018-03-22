@@ -36,6 +36,10 @@ impl Pos {
     pub fn neighbors(self) -> Vec<Pos> {
         DIRECTIONS.into_iter().map(|&direction| self + direction).collect()
     }
+
+    pub fn distance(self, other: Pos) -> u32 {
+        (other - self).distance()
+    }
 }
 
 impl ops::Add<Displacement> for Pos {
@@ -92,6 +96,12 @@ impl ops::Sub for Pos {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
         }
+    }
+}
+
+impl Displacement {
+    pub fn distance(self) -> u32 {
+        (self.x.abs() + self.y.abs() + (self.x + self.y).abs()) as u32 / 2u32
     }
 }
 
