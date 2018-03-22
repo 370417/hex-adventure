@@ -1,6 +1,6 @@
 use std::ops;
 
-const DIRECTIONS: [Direction; 6] = [
+pub const DIRECTIONS: [Direction; 6] = [
     Direction::Northeast,
     Direction::East,
     Direction::Southeast,
@@ -9,26 +9,26 @@ const DIRECTIONS: [Direction; 6] = [
     Direction::Northwest,
 ];
 
-struct Grid<T> {
+pub struct Grid<T> {
     width: u32,
     height: u32,
     grid: Vec<T>,
 }
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
-struct Pos {
+pub struct Pos {
     x: i32,
     y: i32,
 }
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
-struct Displacement {
+pub struct Displacement {
     x: i32,
     y: i32,
 }
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
-enum Direction {
+pub enum Direction {
     Southeast, East, Northeast, Northwest, West, Southwest
 }
 
