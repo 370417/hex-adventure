@@ -1,3 +1,5 @@
+//! Field of view calculation.
+
 use util::grid;
 use util::grid::{Direction, Pos};
 
@@ -11,6 +13,7 @@ const TANGENTS: [Direction; 6] = [
     Direction::East,
 ];
 
+/// Calculate field of view.
 pub fn fov<F, G>(center: Pos, transparent: F, reveal: G) 
         where F: Fn(Pos) -> bool, G: Fn(Pos) -> () {
     for i in 0..6 {

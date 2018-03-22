@@ -1,3 +1,11 @@
+//! Representation of a hexagonal grid.
+//! 
+//! Uses axial coordinates.
+//! This grid can be thought of as any plane in 3d space that is normal to the vector {1, 1, 1}.
+//! The x-axis (of the hex grid, not of the 3d space) points in `Direction::Southeast`,
+//! which is the vector {1, 0, -1} in 3d space.
+//! The y-axis points in `Direction::Southwest`, which is the vector {0, 1, -1}.
+
 use std::ops;
 
 pub const DIRECTIONS: [Direction; 6] = [
@@ -15,6 +23,7 @@ pub struct Grid<T> {
     grid: Vec<T>,
 }
 
+/// A position on a hexagonal grid.
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Pos {
     x: i32,
@@ -204,16 +213,24 @@ impl ops::Neg for Direction {
 }
 
 impl <T> Grid<T> {
+    /// Create a new grid.
+    /// 
+    /// The `init` closure takes an `u32` which is the index of the position,
+    /// and a `Pos` which is the position itself.
     pub fn new<F>(width: u32, height: u32, init: F) -> Self
-            where F: Fn(u32, i32, i32) -> T {
+            where F: Fn(u32, Pos) -> T {
         let area = width * height;
         Grid {
             width,
             height,
-            grid: (0..area).map(|i| init(i, 0, 0)).collect(),
+            grid: (0..area).map(|i| {
+                let pos = linear_to_pos_helper(width, i as usize);
+                init(i, pos)
+            }).collect(),
         }
     }
 
+    /// Turn a position into a linear index.
     pub fn pos_to_linear(&self, pos: Pos) -> usize {
         let Pos { x, y } = pos;
         let row = x + y;
@@ -221,13 +238,9 @@ impl <T> Grid<T> {
         (row * self.width as i32 + col) as usize
     }
 
+    /// Turn a linear index into a position.
     pub fn linear_to_pos(&self, i: usize) -> Pos {
-        let row = i as i32 / self.width as i32;
-        let col = i as i32 % self.width as i32;
-        Pos {
-            x: row_first_x(row) + col,
-            y: row_first_y(row) - col,
-        }
+        linear_to_pos_helper(self.width, i)
     }
 }
 
@@ -257,6 +270,18 @@ impl <T> ops::IndexMut<Pos> for Grid<T> {
     fn index_mut(&mut self, pos: Pos) -> &mut T {
         let i = self.pos_to_linear(pos);
         &mut self.grid[i]
+    }
+}
+
+/// Turn a linear index into a position.
+/// This is a helper function instead of being a method of Grid because
+/// it needs to be called before an instance of Grid is created.
+fn linear_to_pos_helper(width: u32, i: usize) -> Pos {
+    let row = i as i32 / width as i32;
+    let col = i as i32 % width as i32;
+    Pos {
+        x: row_first_x(row) + col,
+        y: row_first_y(row) - col,
     }
 }
 
@@ -295,5 +320,13 @@ mod tests {
         assert_eq!(y - x, a);
         assert_eq!(x + a, y);
         assert_eq!(b, Direction::Southeast * b.x + Direction::Southwest * b.y);
+    }
+
+    #[test]
+    fn coordinate_conversion() {
+        let g = Grid::new(10, 10, |i, pos| i);
+        for i in 0..100 {
+            assert_eq!(i, g.pos_to_linear(g.linear_to_pos(i)));
+        }
     }
 }
