@@ -194,7 +194,70 @@ impl ops::Neg for Direction {
 }
 
 impl <T> Grid<T> {
+    pub fn new<F>(width: u32, height: u32, init: F) -> Self
+            where F: Fn(u32, i32, i32) -> T {
+        let area = width * height;
+        Grid {
+            width,
+            height,
+            grid: (0..area).map(|i| init(i, 0, 0)).collect(),
+        }
+    }
 
+    pub fn pos_to_linear(&self, pos: Pos) -> usize {
+        let Pos { x, y } = pos;
+        let row = x + y;
+        let col = x - row_first_x(row);
+        (row * self.width as i32 + col) as usize
+    }
+
+    pub fn linear_to_pos(&self, i: usize) -> Pos {
+        let row = i as i32 / self.width as i32;
+        let col = i as i32 % self.width as i32;
+        Pos {
+            x: row_first_x(row) + col,
+            y: row_first_y(row) - col,
+        }
+    }
+}
+
+impl <T> ops::Index<usize> for Grid<T> {
+    type Output = T;
+
+    fn index(&self, i: usize) -> &T {
+        &self.grid[i]
+    }
+}
+
+impl <T> ops::IndexMut<usize> for Grid<T> {
+    fn index_mut(&mut self, i: usize) -> &mut T {
+        &mut self.grid[i]
+    }
+}
+
+impl <T> ops::Index<Pos> for Grid<T> {
+    type Output = T;
+
+    fn index(&self, pos: Pos) -> &T {
+        &self.grid[self.pos_to_linear(pos)]
+    }
+}
+
+impl <T> ops::IndexMut<Pos> for Grid<T> {
+    fn index_mut(&mut self, pos: Pos) -> &mut T {
+        let i = self.pos_to_linear(pos);
+        &mut self.grid[i]
+    }
+}
+
+/// Find the first x-coordinate of a given row.
+fn row_first_x(row: i32) -> i32 {
+    (row + 1) / 2
+}
+
+/// Find the first y-coordinate of a given row.
+fn row_first_y(row: i32) -> i32 {
+    row / 2
 }
 
 #[cfg(test)]
