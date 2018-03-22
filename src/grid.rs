@@ -15,11 +15,13 @@ struct Grid<T> {
     grid: Vec<T>,
 }
 
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 struct Pos {
     x: i32,
     y: i32,
 }
 
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 struct Displacement {
     x: i32,
     y: i32,
@@ -28,6 +30,12 @@ struct Displacement {
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 enum Direction {
     Southeast, East, Northeast, Northwest, West, Southwest
+}
+
+impl Pos {
+    pub fn neighbors(self) -> Vec<Pos> {
+        DIRECTIONS.into_iter().map(|&direction| self + direction).collect()
+    }
 }
 
 impl ops::Add<Displacement> for Pos {
@@ -41,6 +49,18 @@ impl ops::Add<Displacement> for Pos {
     }
 }
 
+impl ops::Add<Direction> for Pos {
+    type Output = Pos;
+
+    fn add(self, rhs: Direction) -> Pos {
+        let displacement = rhs.to_displacement();
+        Pos {
+            x: self.x + displacement.x,
+            y: self.y + displacement.y,
+        }
+    }
+}
+
 impl ops::Sub<Displacement> for Pos {
     type Output = Pos;
 
@@ -48,6 +68,18 @@ impl ops::Sub<Displacement> for Pos {
         Pos {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
+        }
+    }
+}
+
+impl ops::Sub<Direction> for Pos {
+    type Output = Pos;
+
+    fn sub(self, rhs: Direction) -> Pos {
+        let displacement = rhs.to_displacement();
+        Pos {
+            x: self.x - displacement.x,
+            y: self.y - displacement.y,
         }
     }
 }
@@ -74,6 +106,18 @@ impl ops::Add for Displacement {
     }
 }
 
+impl ops::Add<Direction> for Displacement {
+    type Output = Displacement;
+
+    fn add(self, rhs: Direction) -> Displacement {
+        let displacement = rhs.to_displacement();
+        Displacement {
+            x: self.x + displacement.x,
+            y: self.y + displacement.y,
+        }
+    }
+}
+
 impl ops::Sub for Displacement {
     type Output = Displacement;
 
@@ -92,6 +136,17 @@ impl ops::Mul<i32> for Displacement {
         Displacement {
             x: self.x * rhs,
             y: self.y * rhs,
+        }
+    }
+}
+
+impl ops::Neg for Displacement {
+    type Output = Displacement;
+
+    fn neg(self) -> Displacement {
+        Displacement {
+            x: -self.x,
+            y: -self.y,
         }
     }
 }
@@ -130,6 +185,14 @@ impl ops::Mul<i32> for Direction {
     }
 }
 
+impl ops::Neg for Direction {
+    type Output = Direction;
+
+    fn neg(self) -> Direction {
+        self.rotate(3)
+    }
+}
+
 impl <T> Grid<T> {
 
 }
@@ -143,5 +206,21 @@ mod tests {
         assert_eq!(Direction::Northeast, Direction::Northeast.rotate(6));
         assert_eq!(Direction::Northwest, Direction::Northeast.rotate(-1));
         assert_eq!(Direction::West, Direction::Northwest.rotate(3).rotate(2));
+        assert_eq!(-Direction::West, Direction::East);
+    }
+
+    #[test]
+    fn test_pos_displacement() {
+        let a = Displacement { x: 1, y: 2 };
+        let b = Displacement { x: 3, y: -4 };
+        let c = Displacement { x: 4, y: -2 };
+        let x = Pos { x: 3, y: -4 };
+        let y = Pos { x: 4, y: -2 };
+        assert_eq!(a + b, c);
+        assert_eq!(c - b, a);
+        assert_eq!(a + a, a * 2);
+        assert_eq!(y - x, a);
+        assert_eq!(x + a, y);
+        assert_eq!(b, Direction::Southeast * b.x + Direction::Southwest * b.y);
     }
 }
