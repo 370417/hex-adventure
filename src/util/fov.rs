@@ -14,8 +14,8 @@ const TANGENTS: [Direction; 6] = [
 ];
 
 /// Calculate field of view.
-pub fn fov<F, G>(center: Pos, transparent: F, reveal: G) 
-        where F: Fn(Pos) -> bool, G: Fn(Pos) -> () {
+pub fn fov<F, G>(center: Pos, transparent: &F, reveal: &mut G) 
+        where F: Fn(Pos) -> bool, G: FnMut(Pos) -> () {
     for i in 0..6 {
         let transform = |x: u32, y: u32| -> Pos {
             center + TANGENTS[i] * x as i32 + NORMALS[i] * y as i32
@@ -23,15 +23,15 @@ pub fn fov<F, G>(center: Pos, transparent: F, reveal: G)
         let transformed_transparent = |x: u32, y: u32| -> bool {
             transparent(transform(x, y))
         };
-        let transformed_reveal = |x: u32, y: u32| -> () {
+        let mut transformed_reveal = |x: u32, y: u32| -> () {
             reveal(transform(x, y))
         };
-        scan(1, 0.0, 1.0, &transformed_transparent, &transformed_reveal);
+        scan(1, 0.0, 1.0, &transformed_transparent, &mut transformed_reveal);
     }
 }
 
-fn scan<F, G>(y: u32, mut start: f32, end: f32, transparent: &F, reveal: &G)
-        where F: Fn(u32, u32) -> bool, G: Fn(u32, u32) -> () {
+fn scan<F, G>(y: u32, mut start: f32, end: f32, transparent: &F, reveal: &mut G)
+        where F: Fn(u32, u32) -> bool, G: FnMut(u32, u32) -> () {
     let mut fov_exists = false;
     let x_min = round_high(y as f32 * start);
     let x_max = round_low(y as f32 * end);
@@ -87,5 +87,12 @@ mod tests {
         assert_eq!(round_low(15.49), 15);
         assert_eq!(round_low(15.5), 15);
         assert_eq!(round_low(15.51), 16);
+    }
+
+    #[test]
+    fn no_infinite_loop() {
+        let mut g = grid::Grid::new(10, 10, |i, pos| false);
+        let center = g.linear_to_pos(50);
+        fov(center, &|pos| false, &mut |pos| g[pos] = true);
     }
 }

@@ -26,8 +26,8 @@ pub struct Grid<T> {
 /// A position on a hexagonal grid.
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Pos {
-    x: i32,
-    y: i32,
+    pub x: i32,
+    pub y: i32,
 }
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
