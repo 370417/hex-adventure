@@ -8,6 +8,8 @@
 
 use std::ops;
 
+use util::line::Line;
+
 pub const DIRECTIONS: [Direction; 6] = [
     Direction::Northeast,
     Direction::East,
@@ -18,12 +20,12 @@ pub const DIRECTIONS: [Direction; 6] = [
 ];
 
 pub struct Grid<T> {
-    width: u32,
-    height: u32,
+    pub width: usize,
+    pub height: usize,
     grid: Vec<T>,
 }
 
-/// A position on a hexagonal grid.
+/// A position on a hexagonal grid in axial coordinates.
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Pos {
     pub x: i32,
@@ -49,6 +51,13 @@ impl Pos {
     pub fn distance(self, other: Pos) -> u32 {
         (other - self).distance()
     }
+
+    pub fn to(self, target: Pos) -> Line {
+        Line {
+            start: self,
+            end: target,
+        }
+    }
 }
 
 impl ops::Add<Displacement> for Pos {
@@ -66,11 +75,20 @@ impl ops::Add<Direction> for Pos {
     type Output = Pos;
 
     fn add(self, rhs: Direction) -> Pos {
-        let displacement = rhs.to_displacement();
-        Pos {
-            x: self.x + displacement.x,
-            y: self.y + displacement.y,
-        }
+        self + rhs.to_displacement()
+    }
+}
+
+impl ops::AddAssign<Displacement> for Pos {
+    fn add_assign(&mut self, displacement: Displacement) {
+        self.x += displacement.x;
+        self.y += displacement.y;
+    }
+}
+
+impl ops::AddAssign<Direction> for Pos {
+    fn add_assign(&mut self, direction: Direction) {
+        *self += direction.to_displacement();
     }
 }
 
@@ -111,6 +129,21 @@ impl ops::Sub for Pos {
 impl Displacement {
     pub fn distance(self) -> u32 {
         (self.x.abs() + self.y.abs() + (self.x + self.y).abs()) as u32 / 2u32
+    }
+
+    pub fn direction(self) -> Option<Direction> {
+        if self.distance() == 0 {
+            return None;
+        }
+        match self / self.distance() {
+            Displacement { x: 1, y: 0 } => Some(Direction::Southeast),
+            Displacement { x: 1, y: -1 } => Some(Direction::East),
+            Displacement { x: 0, y: -1 } => Some(Direction::Northeast),
+            Displacement { x: -1, y: 0 } => Some(Direction::Northwest),
+            Displacement { x: -1, y: 1 } => Some(Direction::West),
+            Displacement { x: 0, y: 1 } => Some(Direction::Southwest),
+            _ => None,
+        }
     }
 }
 
@@ -155,6 +188,48 @@ impl ops::Mul<i32> for Displacement {
         Displacement {
             x: self.x * rhs,
             y: self.y * rhs,
+        }
+    }
+}
+
+impl ops::Mul<u32> for Displacement {
+    type Output = Displacement;
+
+    fn mul(self, rhs: u32) -> Displacement {
+        Displacement {
+            x: self.x * rhs as i32,
+            y: self.y * rhs as i32,
+        }
+    }
+}
+
+impl ops::Div<u32> for Displacement {
+    type Output = Displacement;
+
+    fn div(self, rhs: u32) -> Displacement {
+        let x = self.x as f32 / rhs as f32;
+        let y = self.y as f32 / rhs as f32;
+        let x_int = x.round();
+        let y_int = y.round();
+        let xy_int = (x + y).round();
+        let dx = (x - x_int).abs();
+        let dy = (y - y_int).abs();
+        let dz = (x + y - xy_int).abs();
+        if dx > dy && dx > dz {
+            Displacement {
+                x: (xy_int - y_int) as i32,
+                y: y_int as i32,
+            }
+        } else if dy > dz {
+            Displacement {
+                x: x_int as i32,
+                y: (xy_int - x_int) as i32,
+            }
+        } else {
+            Displacement {
+                x: x_int as i32,
+                y: y_int as i32,
+            }
         }
     }
 }
@@ -204,6 +279,14 @@ impl ops::Mul<i32> for Direction {
     }
 }
 
+impl ops::Mul<u32> for Direction {
+    type Output = Displacement;
+
+    fn mul(self, rhs: u32) -> Displacement {
+        self.to_displacement() * rhs
+    }
+}
+
 impl ops::Neg for Direction {
     type Output = Direction;
 
@@ -215,10 +298,10 @@ impl ops::Neg for Direction {
 impl <T> Grid<T> {
     /// Create a new grid.
     /// 
-    /// The `init` closure takes an `u32` which is the index of the position,
+    /// The `init` closure takes a `usize` which is the index of the position,
     /// and a `Pos` which is the position itself.
-    pub fn new<F>(width: u32, height: u32, init: F) -> Self
-            where F: Fn(u32, Pos) -> T {
+    pub fn new<F>(width: usize, height: usize, init: F) -> Self
+            where F: Fn(usize, Pos) -> T {
         let area = width * height;
         Grid {
             width,
@@ -241,6 +324,19 @@ impl <T> Grid<T> {
     /// Turn a linear index into a position.
     pub fn linear_to_pos(&self, i: usize) -> Pos {
         linear_to_pos_helper(self.width, i)
+    }
+
+    /// Whether a position is within the bounds of this grid.
+    pub fn contains(&self, pos: Pos) -> bool {
+        let Pos { x, y } = pos;
+        let row = x + y;
+        let col = x - row_first_x(row);
+        (0..self.width as i32).contains(col) && (0..self.height as i32).contains(row)
+    }
+
+    pub fn positions(&self) -> Vec<Pos> {
+        let range = 0..self.grid.len();
+        range.map(|i| self.linear_to_pos(i)).collect()
     }
 }
 
@@ -273,10 +369,19 @@ impl <T> ops::IndexMut<Pos> for Grid<T> {
     }
 }
 
+impl <T> IntoIterator for Grid<T> {
+    type Item = T;
+    type IntoIter = ::std::vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.grid.into_iter()
+    }
+}
+
 /// Turn a linear index into a position.
 /// This is a helper function instead of being a method of Grid because
 /// it needs to be called before an instance of Grid is created.
-fn linear_to_pos_helper(width: u32, i: usize) -> Pos {
+fn linear_to_pos_helper(width: usize, i: usize) -> Pos {
     let row = i as i32 / width as i32;
     let col = i as i32 % width as i32;
     Pos {
@@ -293,6 +398,11 @@ fn row_first_x(row: i32) -> i32 {
 /// Find the first y-coordinate of a given row.
 fn row_first_y(row: i32) -> i32 {
     row / 2
+}
+
+/// Find the difference between a float and the nearest integer.
+fn diff_from_whole(n: f32) -> f32 {
+    (n - n.round()).abs()
 }
 
 #[cfg(test)]
