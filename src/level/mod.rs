@@ -1,3 +1,3 @@
 //! Level generation.
 
-mod basic;
+pub mod basic;

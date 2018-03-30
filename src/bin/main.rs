@@ -14,6 +14,13 @@ struct MainState {
 
 }
 
+impl MainState {
+    fn new() -> Self {
+        // hexadventure::level::generate();
+        MainState {}
+    }
+}
+
 impl EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         Ok(())
@@ -28,7 +35,8 @@ fn main() {
     let config = load_config();
     let mut ctx = Context::load_from_conf("hex-adventure", "as-f", config)
         .expect("Failed to load context from configuration.");
-    match event::run(&mut ctx, &mut MainState {}) {
+    let mut state = MainState::new();
+    match event::run(&mut ctx, &mut state) {
         Err(e) => println!("Error encountered: {}", e),
         _ => println!("Game exited cleanly"),
     }

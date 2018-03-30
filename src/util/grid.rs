@@ -400,11 +400,6 @@ fn row_first_y(row: i32) -> i32 {
     row / 2
 }
 
-/// Find the difference between a float and the nearest integer.
-fn diff_from_whole(n: f32) -> f32 {
-    (n - n.round()).abs()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -434,7 +429,7 @@ mod tests {
 
     #[test]
     fn coordinate_conversion() {
-        let g = Grid::new(10, 10, |i, pos| i);
+        let g = Grid::new(10, 10, |i, _pos| i);
         for i in 0..100 {
             assert_eq!(i, g.pos_to_linear(g.linear_to_pos(i)));
         }

@@ -3,14 +3,14 @@ use std::iter::{Iterator, IntoIterator};
 
 pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
         where F: Fn(Pos) -> bool {
-    let mut flooded = Grid::new(grid.width, grid.height, |i, pos| false);
+    let mut flooded = Grid::new(grid.width, grid.height, |_i, _pos| false);
     flood_helper(origin, &floodable, &mut flooded);
     flooded
 }
 
-pub fn flood_all<F, T>(origin: Pos, grid: &Grid<T>, equiv: &F) -> Grid<u32>
+pub fn flood_all<F, T>(grid: &Grid<T>, equiv: &F) -> Grid<u32>
         where F: Fn(Pos, Pos) -> bool {
-    let mut flooded = Grid::new(grid.width, grid.height, |i, pos| 0u32);
+    let mut flooded = Grid::new(grid.width, grid.height, |_i, _pos| 0u32);
     let mut count = 0;
     for pos in grid.positions() {
         if flooded[pos] == 0 {
@@ -18,7 +18,7 @@ pub fn flood_all<F, T>(origin: Pos, grid: &Grid<T>, equiv: &F) -> Grid<u32>
             flood_all_helper(pos, equiv, &mut flooded, count);
         }
     }
-    panic!();
+    flooded
 }
 
 fn flood_helper<F>(pos: Pos, floodable: &F, mut flooded: &mut Grid<bool>)
@@ -31,7 +31,7 @@ fn flood_helper<F>(pos: Pos, floodable: &F, mut flooded: &mut Grid<bool>)
     }
 }
 
-fn flood_all_helper<F>(pos: Pos, equiv: &F, mut flooded: &mut Grid<u32>, count: u32)
+fn flood_all_helper<F>(pos: Pos, equiv: &F, flooded: &mut Grid<u32>, count: u32)
         where F: Fn(Pos, Pos) -> bool {
     for neighbor in pos.neighbors() {
         if flooded.contains(neighbor) &&  flooded[pos] == 0 && equiv(pos, neighbor) {

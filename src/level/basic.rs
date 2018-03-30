@@ -3,6 +3,7 @@
 use rand::{XorShiftRng, SeedableRng, Rng};
 
 use util;
+use util::floodfill;
 use util::grid::{Pos, Grid};
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
@@ -10,12 +11,12 @@ enum Tile {
     Wall, Floor
 }
 
-fn generate(width: usize, height: usize, seed: [u32; 4]) {
-    let mut grid = Grid::new(width, height, |i, pos| Tile::Wall);
+pub fn generate(width: usize, height: usize, seed: [u32; 4]) {
+    let mut grid = Grid::new(width, height, |_i, _pos| Tile::Wall);
     let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
     let inner_indices = calc_shuffled_inner_indices(&grid, &mut rng);
     carve_caves(&inner_indices, &mut grid);
-
+    remove_isolated_walls(&mut grid);
 }
 
 fn calc_inner_indices<T>(grid: &Grid<T>) -> Vec<usize> {
@@ -23,7 +24,6 @@ fn calc_inner_indices<T>(grid: &Grid<T>) -> Vec<usize> {
     let mut indices = Vec::with_capacity(area as usize);
     for y in 1..grid.height - 1 {
         for x in 1..grid.width - 1 {
-            let i = y * grid.width + x;
             indices.push(y * grid.width + x);
         }
     }
@@ -65,5 +65,5 @@ fn count_floor_groups(pos: Pos, grid: &Grid<Tile>) -> i32 {
 
 /// Remove groups of 5 walls or less.
 fn remove_isolated_walls(grid: &mut Grid<Tile>) {
-
+    let flooded = floodfill::flood_all(grid, &|a, b| grid[a] == grid[b]);
 }
