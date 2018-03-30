@@ -6,3 +6,6 @@ authors = ["as-f <as-f@users.noreply.github.com>"]
 [dependencies]
 ggez = "0.4"
 rand = "0.4"
+
+[patch.crates-io]
+app_dirs = { git = "https://github.com/koute/app-dirs-rs" }
