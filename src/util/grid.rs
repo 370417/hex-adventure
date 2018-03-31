@@ -338,6 +338,14 @@ impl <T> Grid<T> {
         let range = 0..self.grid.len();
         range.map(|i| self.linear_to_pos(i)).collect()
     }
+
+    pub fn iter(&self) -> ::std::slice::Iter<T> {
+        self.grid.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> ::std::slice::IterMut<T> {
+        self.grid.iter_mut()
+    }
 }
 
 impl <T> ops::Index<usize> for Grid<T> {

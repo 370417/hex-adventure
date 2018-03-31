@@ -8,25 +8,26 @@ pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
     flooded
 }
 
-pub fn flood_all<F, T>(grid: &Grid<T>, equiv: &F) -> Grid<u32>
+pub fn flood_all<F, T>(grid: &Grid<T>, equiv: &F) -> (u32, Grid<u32>)
         where F: Fn(Pos, Pos) -> bool {
     let mut flooded = Grid::new(grid.width, grid.height, |_i, _pos| 0u32);
     let mut count = 0;
     for pos in grid.positions() {
         if flooded[pos] == 0 {
             count += 1;
+            flooded[pos] = count;
             flood_all_helper(pos, equiv, &mut flooded, count);
         }
     }
-    flooded
+    (count, flooded)
 }
 
-fn flood_helper<F>(pos: Pos, floodable: &F, mut flooded: &mut Grid<bool>)
+fn flood_helper<F>(pos: Pos, floodable: &F, flooded: &mut Grid<bool>)
         where F: Fn(Pos) -> bool {
-    for neighbor in pos.neighbors() {
-        if flooded.contains(neighbor) && !flooded[neighbor] && floodable(neighbor) {
-            flooded[neighbor] = true;
-            flood_helper(neighbor, floodable, &mut flooded);
+    if flooded.contains(pos) && !flooded[pos] && floodable(pos) {
+        flooded[pos] = true;
+        for neighbor in pos.neighbors() {
+            flood_helper(neighbor, floodable, flooded);
         }
     }
 }
@@ -34,24 +35,44 @@ fn flood_helper<F>(pos: Pos, floodable: &F, mut flooded: &mut Grid<bool>)
 fn flood_all_helper<F>(pos: Pos, equiv: &F, flooded: &mut Grid<u32>, count: u32)
         where F: Fn(Pos, Pos) -> bool {
     for neighbor in pos.neighbors() {
-        if flooded.contains(neighbor) &&  flooded[pos] == 0 && equiv(pos, neighbor) {
+        if flooded.contains(neighbor) && flooded[pos] == 0 && equiv(pos, neighbor) {
             flooded[neighbor] = count;
             flood_all_helper(neighbor, equiv, flooded, count);
         }
     }
 }
 
-struct Row {
-    x_min: i32,
-    x_max: i32,
-    xy: i32,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::{Rng, thread_rng};
 
-impl Row {
-    fn from_pos(origin: Pos) {
-        let xy = origin.x + origin.y;
+    #[test]
+    fn test_flood_all_is_complete() {
+        let mut rng = thread_rng();
+        let mut grid = Grid::new(40, 40, |_i, _pos| false);
+        for b in grid.iter_mut() {
+            *b = rng.gen();
+        }
+        let (count, flooded) = flood_all(&grid, &|a, b| a == b);
+        for id in flooded {
+            assert!(id > 0);
+            assert!(id <= count);
+        }
     }
 }
+
+// struct Row {
+//     x_min: i32,
+//     x_max: i32,
+//     xy: i32,
+// }
+
+// impl Row {
+//     fn from_pos(origin: Pos) {
+//         let xy = origin.x + origin.y;
+//     }
+// }
 
 // enum FloodDirection {
 //     North, South
