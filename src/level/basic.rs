@@ -6,8 +6,6 @@ use util;
 use util::floodfill;
 use util::grid::{Pos, Grid};
 
-use std::collections::HashMap;
-
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Tile {
     Wall, Floor
@@ -18,7 +16,7 @@ pub fn generate(width: usize, height: usize, seed: [u32; 4]) -> Grid<Tile> {
     let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
     let inner_indices = calc_shuffled_inner_indices(&grid, &mut rng);
     carve_caves(&inner_indices, &mut grid);
-    // remove_isolated_walls(&mut grid);
+    remove_isolated_walls(&mut grid);
     remove_small_caves(&mut grid);
     grid
 }
@@ -86,11 +84,14 @@ fn remove_small_caves(grid: &mut Grid<Tile>) {
         let id = flooded[pos] as usize;
         if sizes[id] == 2 || sizes[id] == 3 {
             grid[pos] = Tile::Wall;
+            for neighbor in pos.neighbors() {
+                fill_dead_end(neighbor, grid);
+            }
         }
     }
 }
 
-fn count_group_sizes<F>(grid: &Grid<Tile>, equiv: &F) -> (Vec<u32>, Grid<u32>)
+fn count_group_sizes<T, F>(grid: &Grid<T>, equiv: &F) -> (Vec<u32>, Grid<u32>)
         where F: Fn(Pos, Pos) -> bool {
     let (count, mut flooded) = floodfill::flood_all(grid, equiv);
     let mut sizes = vec![0; count as usize];
@@ -98,6 +99,10 @@ fn count_group_sizes<F>(grid: &Grid<Tile>, equiv: &F) -> (Vec<u32>, Grid<u32>)
         *id -= 1;
         sizes[*id as usize] += 1;
     }
+    // for pos in flooded.positions() {
+    //     flooded[pos] -= 1;
+    //     sizes[flooded[pos] as usize] += 1;
+    // }
     (sizes, flooded)
 }
 
@@ -105,7 +110,7 @@ fn fill_dead_end(pos: Pos, grid: &mut Grid<Tile>) {
     if is_dead_end(pos, grid) {
         grid[pos] = Tile::Wall;
         for neighbor in pos.neighbors() {
-            fill_dead_end(pos, grid);
+            fill_dead_end(neighbor, grid);
         }
     }
 }
@@ -121,6 +126,7 @@ fn is_cave(pos: Pos, grid: &Grid<Tile>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::thread_rng;
 
     #[test]
     fn test_no_dead_ends() {
@@ -140,5 +146,17 @@ mod tests {
         let indices = calc_inner_indices(&grid);
         let positions: Vec<Pos> = indices.iter().map(|&i| grid.linear_to_pos(i)).collect();
         assert!(positions.iter().all(|&pos| !on_outer_edge(pos, &grid)));
+    }
+
+    #[test]
+    fn test_count_group_sizes() {
+        let mut rng = thread_rng();
+        let mut grid = Grid::new(40, 40, |_i, _pos| false);
+        for b in grid.iter_mut() {
+            *b = rng.gen();
+        }
+        let (sizes, flooded) = count_group_sizes(&grid, &|a, b| a == b);
+        assert_eq!(flooded.width * flooded.height, 1600);
+        assert_eq!(sizes.into_iter().sum::<u32>(), 1600);
     }
 }

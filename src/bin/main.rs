@@ -3,21 +3,29 @@ use ggez::{Context, GameResult};
 use ggez::conf::Conf;
 use ggez::event;
 use ggez::event::EventHandler;
+use ggez::graphics;
+use ggez::graphics::Image;
 use std::fs::File;
 
 extern crate hexadventure;
-use hexadventure::util::grid;
+use hexadventure::util::grid::{Grid, Location};
+use hexadventure::level::basic::{self, Tile};
 
 const CONFIG_PATH: &str = "resources/conf.toml";
 
 struct MainState {
-
+    grid: Grid<Tile>,
+    wall: Image,
+    floor: Image,
 }
 
 impl MainState {
-    fn new() -> Self {
-        // hexadventure::level::generate();
-        MainState {}
+    fn new(ctx: &mut Context) -> Self {
+        MainState {
+            grid: basic::generate(40, 40, [1, 2, 3, 4]),
+            wall: Image::new(ctx, "/oryx/wall.png").unwrap(),
+            floor: Image::new(ctx, "/oryx/floor.png").unwrap(),
+        }
     }
 }
 
@@ -27,6 +35,17 @@ impl EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        graphics::clear(ctx);
+        for pos in self.grid.positions() {
+            let Location { x, y } = self.grid.pos_to_location(pos);
+            let dest = graphics::Point2::new(9.0 * x as f32, 16.0 * y as f32);
+            let img = match self.grid[pos] {
+                Tile::Floor => &self.floor,
+                Tile::Wall => &self.wall,
+            };
+            graphics::draw(ctx, img, dest, 0f32)?;
+        }
+        graphics::present(ctx);
         Ok(())
     }
 }
@@ -35,7 +54,8 @@ fn main() {
     let config = load_config();
     let mut ctx = Context::load_from_conf("hex-adventure", "as-f", config)
         .expect("Failed to load context from configuration.");
-    let mut state = MainState::new();
+    graphics::set_default_filter(&mut ctx, graphics::FilterMode::Nearest);
+    let mut state = MainState::new(&mut ctx);
     match event::run(&mut ctx, &mut state) {
         Err(e) => println!("Error encountered: {}", e),
         _ => println!("Game exited cleanly"),

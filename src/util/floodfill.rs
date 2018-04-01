@@ -35,7 +35,7 @@ fn flood_helper<F>(pos: Pos, floodable: &F, flooded: &mut Grid<bool>)
 fn flood_all_helper<F>(pos: Pos, equiv: &F, flooded: &mut Grid<u32>, count: u32)
         where F: Fn(Pos, Pos) -> bool {
     for neighbor in pos.neighbors() {
-        if flooded.contains(neighbor) && flooded[pos] == 0 && equiv(pos, neighbor) {
+        if flooded.contains(neighbor) && flooded[neighbor] == 0 && equiv(pos, neighbor) {
             flooded[neighbor] = count;
             flood_all_helper(neighbor, equiv, flooded, count);
         }
@@ -59,6 +59,14 @@ mod tests {
             assert!(id > 0);
             assert!(id <= count);
         }
+    }
+
+    #[test]
+    fn test_flood_all() {
+        let mut grid = Grid::new(40, 40, |_i, _pos| false);
+        let (count, flooded) = flood_all(&grid, &|a, b| true);
+        assert_eq!(count, 1);
+        assert!(flooded.into_iter().all(|id| id == 1));
     }
 }
 

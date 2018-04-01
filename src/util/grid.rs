@@ -34,8 +34,14 @@ pub struct Pos {
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Displacement {
-    x: i32,
-    y: i32,
+    pub x: i32,
+    pub y: i32,
+}
+
+/// The location of a position as shown on screen.
+pub struct Location {
+    pub x: i32,
+    pub y: i32,
 }
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
@@ -324,6 +330,17 @@ impl <T> Grid<T> {
     /// Turn a linear index into a position.
     pub fn linear_to_pos(&self, i: usize) -> Pos {
         linear_to_pos_helper(self.width, i)
+    }
+
+    /// Turn a position in a grid into a location.
+    pub fn pos_to_location(&self, pos: Pos) -> Location {
+        let i = self.pos_to_linear(pos);
+        let y = i / self.width;
+        let x = (y % 2) + 2 * (i % self.width);
+        Location {
+            x: x as i32,
+            y: y as i32,
+        }
     }
 
     /// Whether a position is within the bounds of this grid.

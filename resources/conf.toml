@@ -1,6 +1,6 @@
 [window_mode]
-width = 600
-height = 400
+width = 1000
+height = 600
 borderless = false
 fullscreen_type = "Off"
 vsync = true
