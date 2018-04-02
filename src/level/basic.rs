@@ -78,14 +78,22 @@ fn remove_isolated_walls(grid: &mut Grid<Tile>) {
 
 /// Remove caves of less than 4 tiles in size.
 fn remove_small_caves(grid: &mut Grid<Tile>) {
-    let (sizes, flooded) = count_group_sizes(grid, &|a, b| is_cave(a, grid) && is_cave(b, grid));
+    let mut visited = Grid::new(grid.width, grid.height, |_i, _pos| false);
     for pos in grid.positions() {
         fill_dead_end(pos, grid);
-        let id = flooded[pos] as usize;
-        if sizes[id] == 2 || sizes[id] == 3 {
+        let (size, flooded) = floodfill::flood_with_size(pos, grid, &|pos| !visited[pos] && is_cave(pos, grid));
+        if size > 3 {
+            for pos in flooded.positions() {
+                if flooded[pos] {
+                    visited[pos] = true;
+                }
+            }
+        } else if size == 3 || size == 2 {
             grid[pos] = Tile::Wall;
-            for neighbor in pos.neighbors() {
-                fill_dead_end(neighbor, grid);
+            for pos in flooded.positions() {
+                if flooded[pos] {
+                    fill_dead_end(pos, grid);
+                }
             }
         }
     }
@@ -99,10 +107,6 @@ fn count_group_sizes<T, F>(grid: &Grid<T>, equiv: &F) -> (Vec<u32>, Grid<u32>)
         *id -= 1;
         sizes[*id as usize] += 1;
     }
-    // for pos in flooded.positions() {
-    //     flooded[pos] -= 1;
-    //     sizes[flooded[pos] as usize] += 1;
-    // }
     (sizes, flooded)
 }
 

@@ -22,7 +22,7 @@ struct MainState {
 impl MainState {
     fn new(ctx: &mut Context) -> Self {
         MainState {
-            grid: basic::generate(40, 40, [1, 2, 3, 4]),
+            grid: basic::generate(40, 30, [0, 0, 0, 1]),
             wall: Image::new(ctx, "/oryx/wall.png").unwrap(),
             floor: Image::new(ctx, "/oryx/floor.png").unwrap(),
         }

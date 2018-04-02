@@ -8,6 +8,13 @@ pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
     flooded
 }
 
+pub fn flood_with_size<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> (u32, Grid<bool>)
+        where F: Fn(Pos) -> bool {
+    let mut flooded = Grid::new(grid.width, grid.height, |_i, _pos| false);
+    let size = flood_with_size_helper(origin, &floodable, &mut flooded);
+    (size, flooded)
+}
+
 pub fn flood_all<F, T>(grid: &Grid<T>, equiv: &F) -> (u32, Grid<u32>)
         where F: Fn(Pos, Pos) -> bool {
     let mut flooded = Grid::new(grid.width, grid.height, |_i, _pos| 0u32);
@@ -30,6 +37,19 @@ fn flood_helper<F>(pos: Pos, floodable: &F, flooded: &mut Grid<bool>)
             flood_helper(neighbor, floodable, flooded);
         }
     }
+}
+
+fn flood_with_size_helper<F>(pos: Pos, floodable: &F, flooded: &mut Grid<bool>) -> u32
+        where F: Fn(Pos) -> bool {
+    let mut size = 0u32;
+    if flooded.contains(pos) && !flooded[pos] && floodable(pos) {
+        flooded[pos] = true;
+        size += 1;
+        for neighbor in pos.neighbors() {
+            size += flood_with_size_helper(neighbor, floodable, flooded);
+        }
+    }
+    size
 }
 
 fn flood_all_helper<F>(pos: Pos, equiv: &F, flooded: &mut Grid<u32>, count: u32)
@@ -107,11 +127,6 @@ mod tests {
 //             FloodDirection::South => Direction::Southwest,
 //         }
 //     }
-// }
-
-// pub fn flood_all<F, T>(grid: &Grid<T>, equiv: F)
-//         where F: Fn(Pos, Pos) -> bool {
-
 // }
 
 // pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F)
