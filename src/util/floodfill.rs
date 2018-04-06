@@ -83,7 +83,7 @@ mod tests {
     #[test]
     fn test_flood_all() {
         let grid = Grid::new(40, 40, |_pos| false);
-        let (count, flooded) = flood_all(&grid, &|a, b| true);
+        let (count, flooded) = flood_all(&grid, &|_a, _b| true);
         assert_eq!(count, 1);
         assert!(flooded.into_iter().all(|id| id == 1));
     }

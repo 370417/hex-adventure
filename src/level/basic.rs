@@ -14,28 +14,17 @@ pub enum Tile {
 pub fn generate(width: usize, height: usize, seed: [u32; 4]) -> Grid<Tile> {
     let mut grid = Grid::new(width, height, |_pos| Tile::Wall);
     let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
-    let inner_indices = calc_shuffled_inner_indices(&grid, &mut rng);
-    carve_caves(&inner_indices, &mut grid);
+    let positions = calc_shuffled_positions(&grid, &mut rng);
+    carve_caves(&positions, &mut grid);
     remove_isolated_walls(&mut grid);
     remove_small_caves(&mut grid);
     grid
 }
 
-// fn calc_inner_indices<T>(grid: &Grid<T>) -> Vec<usize> {
-//     let area = (grid.width - 2) * (grid.height - 2);
-//     let mut indices = Vec::with_capacity(area as usize);
-//     for y in 1..grid.height - 1 {
-//         for x in 1..grid.width - 1 {
-//             indices.push(y * grid.width + x);
-//         }
-//     }
-//     indices
-// }
-
-fn calc_shuffled_inner_indices<T, R: Rng>(grid: &Grid<T>, rng: &mut R) -> Vec<Pos> {
-    let mut indices = grid.inner_positions();
-    rng.shuffle(&mut indices);
-    indices
+fn calc_shuffled_positions<T, R: Rng>(grid: &Grid<T>, rng: &mut R) -> Vec<Pos> {
+    let mut positions = grid.inner_positions();
+    rng.shuffle(&mut positions);
+    positions
 }
 
 fn carve_caves(positions: &Vec<Pos>, grid: &mut Grid<Tile>) {
@@ -89,9 +78,12 @@ fn remove_small_caves(grid: &mut Grid<Tile>) {
             }
         } else if size == 3 || size == 2 {
             grid[pos] = Tile::Wall;
-            for pos in flooded.positions() {
-                if flooded[pos] {
-                    fill_dead_end(pos, grid);
+            for pos2 in flooded.positions() {
+                if flooded[pos2] {
+                    fill_dead_end(pos2, grid);
+                }
+                if pos2 == pos {
+                    break;
                 }
             }
         }
@@ -138,19 +130,6 @@ mod tests {
             assert!(!is_dead_end(pos, &grid));
         }
     }
-
-    fn on_outer_edge<T>(pos: Pos, grid: &Grid<T>) -> bool {
-        grid.contains(pos) && pos.neighbors().iter().any(|&pos| !grid.contains(pos))
-    }
-
-    // Move this to grid.rs?
-    // #[test]
-    // fn test_calc_inner_indicies() {
-    //     let grid = Grid::new(40, 40, |_i, _pos| false);
-    //     let indices = calc_inner_indices(&grid);
-    //     let positions: Vec<Pos> = indices.iter().map(|&i| grid.linear_to_pos(i)).collect();
-    //     assert!(positions.iter().all(|&pos| !on_outer_edge(pos, &grid)));
-    // }
 
     #[test]
     fn test_count_group_sizes() {

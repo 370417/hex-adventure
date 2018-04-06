@@ -37,14 +37,14 @@ struct Index2d {
 /// A position on a hexagonal grid in axial coordinates.
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Pos {
-    pub x: i32,
-    pub y: i32,
+    x: i32,
+    y: i32,
 }
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Displacement {
-    pub x: i32,
-    pub y: i32,
+    x: i32,
+    y: i32,
 }
 
 /// The location of a position as shown on screen.
@@ -222,6 +222,9 @@ impl ops::Div<u32> for Displacement {
     type Output = Displacement;
 
     fn div(self, rhs: u32) -> Displacement {
+        if rhs == 0 {
+            panic!("attempt to divide by zero");
+        }
         let x = self.x as f32 / rhs as f32;
         let y = self.y as f32 / rhs as f32;
         let x_int = x.round();
@@ -363,11 +366,6 @@ impl <T> Grid<T> {
             }
         }
         positions
-        // (0..self.height).flat_map(|row| {
-        //     (0..self.width).map(move |col| {
-        //         index_to_pos(Index2d { row, col })
-        //     })
-        // }).collect()
     }
 
     pub fn inner_positions(&self) -> Vec<Pos> {
@@ -379,11 +377,6 @@ impl <T> Grid<T> {
             }
         }
         inner_positions
-        // (1..self.height-1).flat_map(|row| {
-        //     (1..self.width-1).map(move |col| {
-        //         index_to_pos(Index2d { row, col })
-        //     })
-        // }).collect()
     }
 
     pub fn iter(&self) -> ::std::slice::Iter<T> {
@@ -515,5 +508,16 @@ mod tests {
             let index = pos_to_index(pos);
             assert_eq!(index, g[pos]);
         }
+    }
+
+    fn on_outer_edge<T>(pos: Pos, grid: &Grid<T>) -> bool {
+        grid.contains(pos) && pos.neighbors().iter().any(|&pos| !grid.contains(pos))
+    }
+
+    #[test]
+    fn test_inner_positions() {
+        let grid = Grid::new(40, 40, |_pos| false);
+        let positions = grid.inner_positions();
+        assert!(positions.iter().all(|&pos| !on_outer_edge(pos, &grid)));
     }
 }
