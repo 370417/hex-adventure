@@ -91,8 +91,8 @@ mod tests {
 
     #[test]
     fn no_infinite_loop() {
-        let mut g = grid::Grid::new(10, 10, |_i, _pos| false);
-        let center = g.linear_to_pos(50);
+        let mut g = grid::Grid::new(10, 10, |_pos| false);
+        let center = g.center();
         fov(center, &|_pos| false, &mut |pos| g[pos] = true);
     }
 }

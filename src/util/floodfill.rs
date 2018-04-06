@@ -1,23 +1,22 @@
-use util::grid::{Grid, Pos, Direction};
-use std::iter::{Iterator, IntoIterator};
+use util::grid::{Grid, Pos};
 
 pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
         where F: Fn(Pos) -> bool {
-    let mut flooded = Grid::new(grid.width, grid.height, |_i, _pos| false);
+    let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
     flood_helper(origin, &floodable, &mut flooded);
     flooded
 }
 
 pub fn flood_with_size<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> (u32, Grid<bool>)
         where F: Fn(Pos) -> bool {
-    let mut flooded = Grid::new(grid.width, grid.height, |_i, _pos| false);
+    let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
     let size = flood_with_size_helper(origin, &floodable, &mut flooded);
     (size, flooded)
 }
 
 pub fn flood_all<F, T>(grid: &Grid<T>, equiv: &F) -> (u32, Grid<u32>)
         where F: Fn(Pos, Pos) -> bool {
-    let mut flooded = Grid::new(grid.width, grid.height, |_i, _pos| 0u32);
+    let mut flooded = Grid::new(grid.width, grid.height, |_pos| 0u32);
     let mut count = 0;
     for pos in grid.positions() {
         if flooded[pos] == 0 {
@@ -70,7 +69,7 @@ mod tests {
     #[test]
     fn test_flood_all_is_complete() {
         let mut rng = thread_rng();
-        let mut grid = Grid::new(40, 40, |_i, _pos| false);
+        let mut grid = Grid::new(40, 40, |_pos| false);
         for b in grid.iter_mut() {
             *b = rng.gen();
         }
@@ -83,12 +82,25 @@ mod tests {
 
     #[test]
     fn test_flood_all() {
-        let mut grid = Grid::new(40, 40, |_i, _pos| false);
+        let grid = Grid::new(40, 40, |_pos| false);
         let (count, flooded) = flood_all(&grid, &|a, b| true);
         assert_eq!(count, 1);
         assert!(flooded.into_iter().all(|id| id == 1));
     }
 }
+
+// pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
+//         where F: Fn(Pos) -> bool {
+//     let flooded = Grid::new(grid.width, grid.height, |_i, _pos| false);
+//     let row = Row::from_pos(origin, grid, floodable);
+
+// }
+
+// pub fn flood_north<F, T>(row: &Row, grid: &Grid<T>, floodable: &F) -> Grid<bool>
+//         where F: Fn(Pos) -> bool {
+//     let new_row = Row::from_southern_row(row, grid);
+
+// }
 
 // struct Row {
 //     x_min: i32,
@@ -97,156 +109,73 @@ mod tests {
 // }
 
 // impl Row {
-//     fn from_pos(origin: Pos) {
+//     fn from_pos<T, F>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Self
+//             where F: Fn(Pos) -> bool {
 //         let xy = origin.x + origin.y;
-//     }
-// }
-
-// enum FloodDirection {
-//     North, South
-// }
-
-// impl FloodDirection {
-//     fn opposite(&self) -> Self {
-//         match *self {
-//             FloodDirection::North => FloodDirection::South,
-//             FloodDirection::South => FloodDirection::North,
+//         if !floodable(origin) {
+//             return Row {
+//                 x_min: origin.x,
+//                 x_max: origin.x,
+//                 xy,
+//             }
 //         }
-//     }
-
-//     fn east(&self) -> Direction {
-//         match *self {
-//             FloodDirection::North => Direction::Northeast,
-//             FloodDirection::South => Direction::Southeast,
+//         let mut east_edge = origin + Direction::East;
+//         let mut west_edge = origin + Direction::West;
+//         while grid.contains(east_edge) && floodable(east_edge) {
+//             east_edge += Direction::East;
 //         }
-//     }
-
-//     fn west(&self) -> Direction {
-//         match *self {
-//             FloodDirection::North => Direction::Northwest,
-//             FloodDirection::South => Direction::Southwest,
+//         while grid.contains(west_edge) && floodable(west_edge) {
+//             west_edge += Direction::West;
 //         }
-//     }
-// }
-
-// pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F)
-//         where F: Fn(Pos) -> bool {
-//     if !floodable(origin) {
-//         return;
-//     }
-//     let mut flooded = Grid::new(grid.width, grid.height, |i, pos| false);
-//     flooded[origin] = true;
-//     let mut east_front = origin + Direction::East;
-//     while grid.contains(east_front) && floodable(east_front) {
-//         flooded[east_front] = true;
-//         east_front += Direction::East;
-//     }
-//     let mut west_front = origin + Direction::West;
-//     while grid.contains(west_front) && floodable(west_front) {
-//         flooded[west_front] = true;
-//         west_front += Direction::West;
-//     }
-//     if grid.contains(east_front + Direction::Northwest) {
-//         flood_line(
-//             Row::new(
-//                 east_front + Direction::Northeast,
-//                 west_front + Direction::Northwest,
-//             ),
-//             FloodDirection::North,
-//             &grid,
-//             &floodable,
-//             &mut flooded,
-//         );
-//     }
-//     if grid.contains(east_front + Direction::Southwest) {
-//         flood_line(
-//             Row::new(
-//                 east_front + Direction::Southeast,
-//                 west_front + Direction::Southwest,
-//             ),
-//             FloodDirection::South,
-//             &grid,
-//             &floodable,
-//             &mut flooded,
-//         )
-//     }
-// }
-
-// /// A horizontal line segment of positions.
-// struct Row {
-//     east_edge: Pos,
-//     west_edge: Pos,
-// }
-
-// struct RowIterator {
-//     east_edge: Pos,
-//     length: u32,
-//     progress: u32,
-// }
-
-// impl Row {
-//     fn new(east_edge: Pos, west_edge: Pos) -> Self {
 //         Row {
-//             east_edge,
-//             west_edge,
+//             x_min: west_edge.x + 1,
+//             x_max: east_edge.x,
+//             xy,
 //         }
 //     }
-// }
 
-// impl IntoIterator for Row {
-//     type Item = Pos;
-//     type IntoIter = RowIterator;
+//     fn from_southern_row<T>(row: &Row, grid: &Grid<T>) -> Option<Self> {
+//         let new_row = Row {
+//             x_min: row.x_min + Direction::Northwest.x(),
+//             x_max: row.x_max + Direction::Northeast.x(),
+//             xy: row.xy + Direction::Northeast.x() + Direction::Northeast.y(),
+//         };
+//         new_row.trimmed(grid)
+//     }
 
-//     fn into_iter(self) -> Self::IntoIter {
-//         RowIterator {
-//             east_edge: self.east_edge,
-//             length: (self.east_edge - self.west_edge).distance(),
-//             progress: 0,
+//     fn from_northern_row<T>(row: &Row, grid: &Grid<T>) -> Option<Self> {
+//         let new_row = Row {
+//             x_min: row.x_min + Direction::Southwest.x(),
+//             x_max: row.x_max + Direction::Southeast.x(),
+//             xy: row.xy + Direction::Southeast.x() + Direction::Southeast.y(),
+//         };
+//         new_row.trimmed(grid)
+//     }
+
+//     fn flood_horizontal
+
+//     fn trimmed<T>(self, grid: &Grid<T>) -> Option<Self> {
+//         let west_edge = self.pos(self.x_min);
+//         let east_edge = self.pos(self.x_max);
+//         match (grid.contains(west_edge), grid.contains(east_edge)) {
+//             (true, true) => Some(self),
+//             (true, false) => Some(Row { x_max: self.x_max - 1, ..self }),
+//             (false, true) => Some(Row { x_min: self.x_min + 1, ..self }),
+//             (false, false) => None,
 //         }
 //     }
-// }
 
-// impl Iterator for RowIterator {
-//     type Item = Pos;
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         if self.progress > self.length {
-//             None
-//         } else {
-//             Some(self.east_edge + Direction::West * self.progress)
+//     fn pos(&self, x: i32) -> Pos {
+//         Pos {
+//             x,
+//             y: self.xy - x,
 //         }
 //     }
-// }
 
-// fn flood_line<F, T>(mut row: Row, direction: FloodDirection, grid: &Grid<T>, floodable: &F, mut flooded: &mut Grid<bool>)
-//         where F: Fn(Pos) -> bool {
-//     if !grid.contains(row.east_edge) {
-//         row.east_edge += Direction::West;
-//     }
-//     if !grid.contains(row.west_edge) {
-//         row.west_edge += Direction::East;
-//     }
-//     let mut easternmost_floodable = if floodable(row.east_edge) {
-//         let mut east_front = row.east_edge + Direction::East;
-//         while grid.contains(east_front) && floodable(east_front) && !flooded[east_front] {
-//             flooded[east_front] = true;
-//             east_front += Direction::East;
-//         }
-//         flood_line(
-//             Row::new(
-//                 row.east_front + direction.east(),
-//                 row.east_edge + direction.east() + Direction::East,
-//             ),
-//             direction.opposite(),
-//             &grid,
-//             &floodable,
-//             &mut flooded,
-//         );
-//         Some(east_front)
-//     } else {
-//         None
-//     };
-//     for pos in row {
-
+//     fn positions(&self) -> Vec<Pos> {
+//         (self.x_min..self.x_max).map(|x| {
+//             let y = self.xy - x;
+//             Pos { x, y }
+//         }).collect()
 //     }
 // }

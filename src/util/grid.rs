@@ -25,6 +25,15 @@ pub struct Grid<T> {
     grid: Vec<T>,
 }
 
+/// A 2d index of a hexagonal grid.
+/// 
+/// Ranges from (0, 0) to (width-1, height-1).
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+struct Index2d {
+    row: usize,
+    col: usize,
+}
+
 /// A position on a hexagonal grid in axial coordinates.
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Pos {
@@ -275,6 +284,14 @@ impl Direction {
         let corrected_index = ((index % 6) + 6) % 6;
         DIRECTIONS[corrected_index as usize]
     }
+
+    pub fn x(self) -> i32 {
+        self.to_displacement().x
+    }
+
+    pub fn y(self) -> i32 {
+        self.to_displacement().y
+    }
 }
 
 impl ops::Mul<i32> for Direction {
@@ -307,53 +324,66 @@ impl <T> Grid<T> {
     /// The `init` closure takes a `usize` which is the index of the position,
     /// and a `Pos` which is the position itself.
     pub fn new<F>(width: usize, height: usize, init: F) -> Self
-            where F: Fn(usize, Pos) -> T {
-        let area = width * height;
+            where F: Fn(Pos) -> T {
+        let mut grid = Vec::with_capacity(width * height);
+        for row in 0..height {
+            for col in 0..width {
+                let pos = index_to_pos(Index2d { row, col });
+                grid.push(init(pos))
+            }
+        }
         Grid {
             width,
             height,
-            grid: (0..area).map(|i| {
-                let pos = linear_to_pos_helper(width, i as usize);
-                init(i, pos)
-            }).collect(),
+            grid,
         }
-    }
-
-    /// Turn a position into a linear index.
-    pub fn pos_to_linear(&self, pos: Pos) -> usize {
-        let Pos { x, y } = pos;
-        let row = x + y;
-        let col = x - row_first_x(row);
-        (row * self.width as i32 + col) as usize
-    }
-
-    /// Turn a linear index into a position.
-    pub fn linear_to_pos(&self, i: usize) -> Pos {
-        linear_to_pos_helper(self.width, i)
     }
 
     /// Turn a position in a grid into a location.
     pub fn pos_to_location(&self, pos: Pos) -> Location {
-        let i = self.pos_to_linear(pos);
-        let y = i / self.width;
-        let x = (y % 2) + 2 * (i % self.width);
+        let Index2d { row, col } = pos_to_index(pos);
         Location {
-            x: x as i32,
-            y: y as i32,
+            x: ((row % 2) + 2 * col) as i32,
+            y: row as i32,
         }
     }
 
     /// Whether a position is within the bounds of this grid.
     pub fn contains(&self, pos: Pos) -> bool {
-        let Pos { x, y } = pos;
-        let row = x + y;
-        let col = x - row_first_x(row);
-        (0..self.width as i32).contains(col) && (0..self.height as i32).contains(row)
+        let Index2d { row, col } = pos_to_index(pos);
+        (0..self.width).contains(col) && (0..self.height).contains(row)
     }
 
     pub fn positions(&self) -> Vec<Pos> {
-        let range = 0..self.grid.len();
-        range.map(|i| self.linear_to_pos(i)).collect()
+        let mut positions = Vec::with_capacity(self.width * self.height);
+        for row in 0..self.height {
+            for col in 0..self.width {
+                let pos = index_to_pos(Index2d { row, col });
+                positions.push(pos);
+            }
+        }
+        positions
+        // (0..self.height).flat_map(|row| {
+        //     (0..self.width).map(move |col| {
+        //         index_to_pos(Index2d { row, col })
+        //     })
+        // }).collect()
+    }
+
+    pub fn inner_positions(&self) -> Vec<Pos> {
+        let mut inner_positions = Vec::with_capacity((self.width - 2) * (self.height - 2));
+        for row in 1..self.height-1 {
+            for col in 1..self.width-1 {
+                let pos = index_to_pos(Index2d { row, col });
+                inner_positions.push(pos);
+            }
+        }
+        inner_positions
+        // (1..self.height-1).flat_map(|row| {
+        //     (1..self.width-1).map(move |col| {
+        //         index_to_pos(Index2d { row, col })
+        //     })
+        // }).collect()
     }
 
     pub fn iter(&self) -> ::std::slice::Iter<T> {
@@ -363,18 +393,28 @@ impl <T> Grid<T> {
     pub fn iter_mut(&mut self) -> ::std::slice::IterMut<T> {
         self.grid.iter_mut()
     }
+
+    /// Find the central position of this grid.
+    pub fn center(&self) -> Pos {
+        index_to_pos(Index2d {
+            row: self.height / 2,
+            col: self.width / 2,
+        })
+    }
 }
 
-impl <T> ops::Index<usize> for Grid<T> {
+impl <T> ops::Index<Index2d> for Grid<T> {
     type Output = T;
 
-    fn index(&self, i: usize) -> &T {
+    fn index(&self, Index2d { row, col }: Index2d) -> &T {
+        let i = row * self.width + col;
         &self.grid[i]
     }
 }
 
-impl <T> ops::IndexMut<usize> for Grid<T> {
-    fn index_mut(&mut self, i: usize) -> &mut T {
+impl <T> ops::IndexMut<Index2d> for Grid<T> {
+    fn index_mut(&mut self, Index2d { row, col }: Index2d) -> &mut T {
+        let i = row * self.width + col;
         &mut self.grid[i]
     }
 }
@@ -383,13 +423,16 @@ impl <T> ops::Index<Pos> for Grid<T> {
     type Output = T;
 
     fn index(&self, pos: Pos) -> &T {
-        &self.grid[self.pos_to_linear(pos)]
+        let Index2d { row, col } = pos_to_index(pos);
+        let i = row * self.width + col;
+        &self.grid[i]
     }
 }
 
 impl <T> ops::IndexMut<Pos> for Grid<T> {
     fn index_mut(&mut self, pos: Pos) -> &mut T {
-        let i = self.pos_to_linear(pos);
+        let Index2d { row, col } = pos_to_index(pos);
+        let i = row * self.width + col;
         &mut self.grid[i]
     }
 }
@@ -404,25 +447,28 @@ impl <T> IntoIterator for Grid<T> {
 }
 
 /// Turn a linear index into a position.
-/// This is a helper function instead of being a method of Grid because
-/// it needs to be called before an instance of Grid is created.
-fn linear_to_pos_helper(width: usize, i: usize) -> Pos {
-    let row = i as i32 / width as i32;
-    let col = i as i32 % width as i32;
+fn index_to_pos(i: Index2d) -> Pos {
     Pos {
-        x: row_first_x(row) + col,
-        y: row_first_y(row) - col,
+        x: row_first_x(i.row) + i.col as i32,
+        y: row_first_y(i.row) - i.col as i32,
     }
+}
+/// Turn a position into a 2d index.
+fn pos_to_index(pos: Pos) -> Index2d {
+    let Pos { x, y } = pos;
+    let row = (x + y) as usize;
+    let col = (x - row_first_x(row)) as usize;
+    Index2d { row, col }
 }
 
 /// Find the first x-coordinate of a given row.
-fn row_first_x(row: i32) -> i32 {
-    (row + 1) / 2
+fn row_first_x(row: usize) -> i32 {
+    (row as i32 + 1) / 2
 }
 
 /// Find the first y-coordinate of a given row.
-fn row_first_y(row: i32) -> i32 {
-    row / 2
+fn row_first_y(row: usize) -> i32 {
+    row as i32 / 2
 }
 
 #[cfg(test)]
@@ -453,10 +499,21 @@ mod tests {
     }
 
     #[test]
-    fn coordinate_conversion() {
-        let g = Grid::new(10, 10, |i, _pos| i);
-        for i in 0..100 {
-            assert_eq!(i, g.pos_to_linear(g.linear_to_pos(i)));
+    fn test_coordinate_conversion() {
+        for row in 0..10 {
+            for col in 0..10 {
+                let i = Index2d { row, col };
+                assert_eq!(i, pos_to_index(index_to_pos(i)));
+            }
+        }
+    }
+
+    #[test]
+    fn test_index_order() {
+        let g = Grid::new(10, 10, |pos| pos_to_index(pos));
+        for pos in g.positions() {
+            let index = pos_to_index(pos);
+            assert_eq!(index, g[pos]);
         }
     }
 }
