@@ -1,16 +1,29 @@
-use util::grid::{Grid, Pos};
+use util::grid::{Grid, Pos, Direction};
+use std::iter::{Iterator, IntoIterator};
 
-pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
+pub fn flood2<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
         where F: Fn(Pos) -> bool {
     let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
     flood_helper(origin, &floodable, &mut flooded);
     flooded
 }
 
+// pub fn flood_with_size<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> (u32, Grid<bool>)
+//         where F: Fn(Pos) -> bool {
+//     let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
+//     let size = flood_with_size_helper(origin, &floodable, &mut flooded);
+//     (size, flooded)
+// }
+
 pub fn flood_with_size<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> (u32, Grid<bool>)
         where F: Fn(Pos) -> bool {
-    let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
-    let size = flood_with_size_helper(origin, &floodable, &mut flooded);
+    let flooded = flood(origin, grid, floodable);
+    let mut size = 0;
+    for &item in flooded.iter() {
+        if item {
+            size += 1;
+        }
+    }
     (size, flooded)
 }
 
@@ -89,93 +102,183 @@ mod tests {
     }
 }
 
-// pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
-//         where F: Fn(Pos) -> bool {
-//     let flooded = Grid::new(grid.width, grid.height, |_i, _pos| false);
-//     let row = Row::from_pos(origin, grid, floodable);
+trait FloodContainer {
+    fn floodable(&self, pos: Pos) -> bool;
+    fn flood(&mut self, pos: Pos);
+}
 
-// }
+struct FloodableGrid<F> {
+    flooded: Grid<bool>,
+    floodable: F,
+}
 
-// pub fn flood_north<F, T>(row: &Row, grid: &Grid<T>, floodable: &F) -> Grid<bool>
-//         where F: Fn(Pos) -> bool {
-//     let new_row = Row::from_southern_row(row, grid);
+impl <F: Fn(Pos) -> bool> FloodContainer for FloodableGrid<F> {
+    fn floodable(&self, pos: Pos) -> bool {
+        self.flooded.contains(pos) && !self.flooded[pos] && self.floodable(pos)
+    }
 
-// }
+    fn flood(&mut self, pos: Pos) {
+        self[pos] = true
+    }
+}
 
-// struct Row {
-//     x_min: i32,
-//     x_max: i32,
-//     xy: i32,
-// }
+pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
+        where F: Fn(Pos) -> bool {
+    let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
+    flood_scanline(origin, &|pos| {
+        flooded.contains(pos) && !flooded[pos] && floodable(pos)
+    }, &mut |pos| {
+        flooded[pos] = true;
+    });
+    flooded
+}
 
-// impl Row {
-//     fn from_pos<T, F>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Self
-//             where F: Fn(Pos) -> bool {
-//         let xy = origin.x + origin.y;
-//         if !floodable(origin) {
-//             return Row {
-//                 x_min: origin.x,
-//                 x_max: origin.x,
-//                 xy,
-//             }
-//         }
-//         let mut east_edge = origin + Direction::East;
-//         let mut west_edge = origin + Direction::West;
-//         while grid.contains(east_edge) && floodable(east_edge) {
-//             east_edge += Direction::East;
-//         }
-//         while grid.contains(west_edge) && floodable(west_edge) {
-//             west_edge += Direction::West;
-//         }
-//         Row {
-//             x_min: west_edge.x + 1,
-//             x_max: east_edge.x,
-//             xy,
-//         }
-//     }
+pub fn flood_scanline<F, G>(origin: Pos, floodable: &F, flood: &mut G)
+        where F: Fn(Pos) -> bool, G: FnMut(Pos) -> () {
+    if !floodable(origin) {
+        return;
+    }
+    flood(origin);
+    let east_edge = flood_horiz(origin, Direction::East, floodable, flood);
+    let west_edge = flood_horiz(origin, Direction::West, floodable, flood);
+    let segment = Segment {
+        start: east_edge,
+        end: west_edge,
+    };
+    flood_vert(segment, FloodDirection::North, floodable, flood);
+    flood_vert(segment, FloodDirection::South, floodable, flood);
+}
 
-//     fn from_southern_row<T>(row: &Row, grid: &Grid<T>) -> Option<Self> {
-//         let new_row = Row {
-//             x_min: row.x_min + Direction::Northwest.x(),
-//             x_max: row.x_max + Direction::Northeast.x(),
-//             xy: row.xy + Direction::Northeast.x() + Direction::Northeast.y(),
-//         };
-//         new_row.trimmed(grid)
-//     }
+/// Flood to the east or west of origin, excluding origin.
+/// 
+/// Returns the outermost flooded position.
+fn flood_horiz<F, G>(origin: Pos, direction: Direction, floodable: &F, flood: &mut G) -> Pos
+        where F: Fn(Pos) -> bool, G: FnMut(Pos) -> () {
+    let mut pos = origin + direction;
+    while floodable(pos) {
+        flood(pos);
+        pos += direction;
+    }
+    pos - direction
+}
 
-//     fn from_northern_row<T>(row: &Row, grid: &Grid<T>) -> Option<Self> {
-//         let new_row = Row {
-//             x_min: row.x_min + Direction::Southwest.x(),
-//             x_max: row.x_max + Direction::Southeast.x(),
-//             xy: row.xy + Direction::Southeast.x() + Direction::Southeast.y(),
-//         };
-//         new_row.trimmed(grid)
-//     }
+fn flood_vert<F, G>(origin: Segment, direction: FloodDirection, floodable: &F, flood: &mut G)
+        where F: Fn(Pos) -> bool, G: FnMut(Pos) -> () {
+    let segment = match direction {
+        FloodDirection::North => Segment {
+            start: origin.start + Direction::Northeast,
+            end: origin.end + Direction::Northwest,
+        },
+        FloodDirection::South => Segment {
+            start: origin.start + Direction::Southeast,
+            end: origin.end + Direction::Southwest,
+        },
+    };
+    let subsegments = flood_segment(segment, floodable, flood);
+    if let Some(first) = subsegments.first() {
+        if first.start == segment.start {
+            let east_edge = flood_horiz(segment.start, Direction::East, floodable, flood);
+            let overhang = Segment {
+                start: east_edge,
+                end: segment.start + Direction::East,
+            };
+            flood_vert(overhang, direction.opposite(), floodable, flood);
+        }
+    }
+    if let Some(last) = subsegments.last() {
+        if last.end == segment.end {
+            let west_edge = flood_horiz(segment.end, Direction::West, floodable, flood);
+            let overhang = Segment {
+                start: segment.end + Direction::West,
+                end: west_edge,
+            };
+            flood_vert(overhang, direction.opposite(), floodable, flood);
+        }
+    }
+    for subsegment in subsegments {
+        flood_vert(subsegment, direction, floodable, flood);
+    }
+}
 
-//     fn flood_horizontal
+#[derive(Copy, Clone)]
+enum FloodDirection {
+    North, South
+}
 
-//     fn trimmed<T>(self, grid: &Grid<T>) -> Option<Self> {
-//         let west_edge = self.pos(self.x_min);
-//         let east_edge = self.pos(self.x_max);
-//         match (grid.contains(west_edge), grid.contains(east_edge)) {
-//             (true, true) => Some(self),
-//             (true, false) => Some(Row { x_max: self.x_max - 1, ..self }),
-//             (false, true) => Some(Row { x_min: self.x_min + 1, ..self }),
-//             (false, false) => None,
-//         }
-//     }
+impl FloodDirection {
+    fn opposite(&self) -> Self {
+        match *self {
+            FloodDirection::North => FloodDirection::South,
+            FloodDirection::South => FloodDirection::North,
+        }
+    }
+}
 
-//     fn pos(&self, x: i32) -> Pos {
-//         Pos {
-//             x,
-//             y: self.xy - x,
-//         }
-//     }
+/// A horizontal segment of positions from start to end inclusive.
+#[derive(Copy, Clone)]
+struct Segment {
+    start: Pos,
+    end: Pos,
+}
 
-//     fn positions(&self) -> Vec<Pos> {
-//         (self.x_min..self.x_max).map(|x| {
-//             let y = self.xy - x;
-//             Pos { x, y }
-//         }).collect()
-//     }
-// }
+struct SegmentIterator {
+    pos: Pos,
+    stop: Pos,
+}
+
+impl IntoIterator for Segment {
+    type Item = Pos;
+    type IntoIter = SegmentIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        SegmentIterator {
+            pos: self.start,
+            stop: self.end + Direction::West,
+        }
+    }
+}
+
+impl Iterator for SegmentIterator {
+    type Item = Pos;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos == self.stop {
+            None
+        } else {
+            let old_pos = self.pos;
+            self.pos += Direction::West;
+            Some(old_pos)
+        }
+    }
+}
+
+/// Flood from east_edge to west_edge inclusive
+fn flood_segment<F, G>(segment: Segment, floodable: &F, flood: &mut G) -> Vec<Segment>
+        where F: Fn(Pos) -> bool, G: FnMut(Pos) -> () {
+    let mut start = None;
+    let mut segments = Vec::new();
+    let end_pos = segment.end;
+    for pos in segment {
+        if floodable(pos) {
+            flood(pos);
+            if start.is_none() {
+                start = Some(pos);
+            }
+        } else {
+            if let Some(start_pos) = start {
+                segments.push(Segment {
+                    start: start_pos,
+                    end: pos,
+                });
+                start = None;
+            }
+        }
+    }
+    if let Some(start_pos) = start {
+        segments.push(Segment {
+            start: start_pos,
+            end: end_pos,
+        });
+    }
+    segments
+}
