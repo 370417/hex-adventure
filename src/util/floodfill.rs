@@ -1,29 +1,11 @@
 use util::grid::{Grid, Pos, Direction};
 use std::iter::{Iterator, IntoIterator};
-
-pub fn flood2<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
-        where F: Fn(Pos) -> bool {
-    let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
-    flood_helper(origin, &floodable, &mut flooded);
-    flooded
-}
-
-// pub fn flood_with_size<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> (u32, Grid<bool>)
-//         where F: Fn(Pos) -> bool {
-//     let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
-//     let size = flood_with_size_helper(origin, &floodable, &mut flooded);
-//     (size, flooded)
-// }
+use std::collections::HashSet;
 
 pub fn flood_with_size<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> (u32, Grid<bool>)
         where F: Fn(Pos) -> bool {
-    let flooded = flood(origin, grid, floodable);
-    let mut size = 0;
-    for &item in flooded.iter() {
-        if item {
-            size += 1;
-        }
-    }
+    let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
+    let size = flood_with_size_helper(origin, &floodable, &mut flooded);
     (size, flooded)
 }
 
@@ -39,16 +21,6 @@ pub fn flood_all<F, T>(grid: &Grid<T>, equiv: &F) -> (u32, Grid<u32>)
         }
     }
     (count, flooded)
-}
-
-fn flood_helper<F>(pos: Pos, floodable: &F, flooded: &mut Grid<bool>)
-        where F: Fn(Pos) -> bool {
-    if flooded.contains(pos) && !flooded[pos] && floodable(pos) {
-        flooded[pos] = true;
-        for neighbor in pos.neighbors() {
-            flood_helper(neighbor, floodable, flooded);
-        }
-    }
 }
 
 fn flood_with_size_helper<F>(pos: Pos, floodable: &F, flooded: &mut Grid<bool>) -> u32
@@ -74,35 +46,7 @@ fn flood_all_helper<F>(pos: Pos, equiv: &F, flooded: &mut Grid<u32>, count: u32)
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rand::{Rng, thread_rng};
-
-    #[test]
-    fn test_flood_all_is_complete() {
-        let mut rng = thread_rng();
-        let mut grid = Grid::new(40, 40, |_pos| false);
-        for b in grid.iter_mut() {
-            *b = rng.gen();
-        }
-        let (count, flooded) = flood_all(&grid, &|a, b| a == b);
-        for id in flooded {
-            assert!(id > 0);
-            assert!(id <= count);
-        }
-    }
-
-    #[test]
-    fn test_flood_all() {
-        let grid = Grid::new(40, 40, |_pos| false);
-        let (count, flooded) = flood_all(&grid, &|_a, _b| true);
-        assert_eq!(count, 1);
-        assert!(flooded.into_iter().all(|id| id == 1));
-    }
-}
-
-pub trait FloodContainer {
+pub trait FloodClosure {
     fn floodable(&self, pos: Pos) -> bool;
     fn flood(&mut self, pos: Pos);
 }
@@ -112,7 +56,7 @@ struct FloodableGrid<'a, F> {
     floodable_closure: F,
 }
 
-impl <'a, F: Fn(Pos) -> bool> FloodContainer for FloodableGrid<'a, F> {
+impl <'a, F: Fn(Pos) -> bool> FloodClosure for FloodableGrid<'a, F> {
     fn floodable(&self, pos: Pos) -> bool {
         self.flooded.contains(pos) && !self.flooded[pos] && (self.floodable_closure)(pos)
     }
@@ -122,7 +66,22 @@ impl <'a, F: Fn(Pos) -> bool> FloodContainer for FloodableGrid<'a, F> {
     }
 }
 
-pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
+struct FloodableSet<'a, F> {
+    flooded: &'a mut HashSet<Pos>,
+    floodable_closure: F,
+}
+
+impl <'a, F: Fn(Pos) -> bool> FloodClosure for FloodableSet<'a, F> {
+    fn floodable(&self, pos: Pos) -> bool {
+        !self.flooded.contains(&pos) && (self.floodable_closure)(pos)
+    }
+
+    fn flood(&mut self, pos: Pos) {
+        self.flooded.insert(pos);
+    }
+}
+
+pub fn flood_grid<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
         where F: Fn(Pos) -> bool {
     let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
     {
@@ -135,7 +94,20 @@ pub fn flood<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
     flooded
 }
 
-pub fn flood_scanline<FC: FloodContainer>(origin: Pos, container: &mut FC) {
+pub fn flood_set<F>(origin: Pos, floodable: &F) -> HashSet<Pos>
+        where F: Fn(Pos) -> bool {
+    let mut flooded = HashSet::new();
+    {
+        let mut container = FloodableSet {
+            flooded: &mut flooded,
+            floodable_closure: floodable,
+        };
+        flood_scanline(origin, &mut container);
+    }
+    flooded
+}
+
+pub fn flood_scanline<FC: FloodClosure>(origin: Pos, container: &mut FC) {
     if !container.floodable(origin) {
         return;
     }
@@ -153,7 +125,7 @@ pub fn flood_scanline<FC: FloodContainer>(origin: Pos, container: &mut FC) {
 /// Flood to the east or west of origin, excluding origin.
 /// 
 /// Returns the outermost flooded position.
-fn flood_horiz<FC: FloodContainer>(origin: Pos, direction: Direction, container: &mut FC) -> Pos {
+fn flood_horiz<FC: FloodClosure>(origin: Pos, direction: Direction, container: &mut FC) -> Pos {
     let mut pos = origin + direction;
     while container.floodable(pos) {
         container.flood(pos);
@@ -162,7 +134,7 @@ fn flood_horiz<FC: FloodContainer>(origin: Pos, direction: Direction, container:
     pos - direction
 }
 
-fn flood_vert<FC: FloodContainer>(origin: Segment, direction: FloodDirection, container: &mut FC) {
+fn flood_vert<FC: FloodClosure>(origin: Segment, direction: FloodDirection, container: &mut FC) {
     let segment = match direction {
         FloodDirection::North => Segment {
             start: origin.start + Direction::Northeast,
@@ -252,7 +224,7 @@ impl Iterator for SegmentIterator {
 }
 
 /// Flood from east_edge to west_edge inclusive
-fn flood_segment<FC: FloodContainer>(segment: Segment, container: &mut FC) -> Vec<Segment> {
+fn flood_segment<FC: FloodClosure>(segment: Segment, container: &mut FC) -> Vec<Segment> {
     let mut start = None;
     let mut segments = Vec::new();
     for pos in segment {

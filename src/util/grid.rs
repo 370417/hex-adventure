@@ -35,7 +35,7 @@ struct Index2d {
 }
 
 /// A position on a hexagonal grid in axial coordinates.
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Hash)]
 pub struct Pos {
     x: i32,
     y: i32,
