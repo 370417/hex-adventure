@@ -55,11 +55,12 @@ fn count_floor_groups(pos: Pos, grid: &Grid<Tile>) -> i32 {
 
 /// Remove groups of 5 walls or less.
 fn remove_isolated_walls(grid: &mut Grid<Tile>) {
-    let (sizes, flooded) = count_group_sizes(grid, &|a, b| grid[a] == grid[b]);
     for pos in grid.positions() {
-        let id = flooded[pos] as usize;
-        if sizes[id] <= 5 && grid[pos] == Tile::Wall {
-            grid[pos] = Tile::Floor;
+        let wall_positions = floodfill::flood_scanline(pos, |pos| grid.contains(pos) && grid[pos] == Tile::Wall);
+        if wall_positions.len() <= 5 {
+            for pos in wall_positions {
+                grid[pos] = Tile::Floor;
+            }
         }
     }
 }
@@ -69,36 +70,18 @@ fn remove_small_caves(grid: &mut Grid<Tile>) {
     let mut visited = Grid::new(grid.width, grid.height, |_pos| false);
     for pos in grid.positions() {
         fill_dead_end(pos, grid);
-        let (size, flooded) = floodfill::flood_with_size(pos, grid, &|pos| !visited[pos] && is_cave(pos, grid));
-        if size > 3 {
-            for pos in flooded.positions() {
-                if flooded[pos] {
-                    visited[pos] = true;
-                }
+        let flooded = floodfill::flood_scanline(pos, &|pos| grid.contains(pos) && !visited[pos] && is_cave(pos, grid));
+        if flooded.len() > 3 {
+            for pos in flooded {
+                visited[pos] = true;
             }
-        } else if size == 3 || size == 2 {
+        } else if flooded.len() == 3 || flooded.len() == 2 {
             grid[pos] = Tile::Wall;
-            for pos2 in flooded.positions() {
-                if flooded[pos2] {
-                    fill_dead_end(pos2, grid);
-                }
-                if pos2 == pos {
-                    break;
-                }
+            for pos in flooded {
+                fill_dead_end(pos, grid);
             }
         }
     }
-}
-
-fn count_group_sizes<T, F>(grid: &Grid<T>, equiv: &F) -> (Vec<u32>, Grid<u32>)
-        where F: Fn(Pos, Pos) -> bool {
-    let (count, mut flooded) = floodfill::flood_all(grid, equiv);
-    let mut sizes = vec![0; count as usize];
-    for mut id in flooded.iter_mut() {
-        *id -= 1;
-        sizes[*id as usize] += 1;
-    }
-    (sizes, flooded)
 }
 
 fn fill_dead_end(pos: Pos, grid: &mut Grid<Tile>) {
@@ -121,7 +104,6 @@ fn is_cave(pos: Pos, grid: &Grid<Tile>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::thread_rng;
 
     #[test]
     fn test_no_dead_ends() {
@@ -129,17 +111,5 @@ mod tests {
         for pos in grid.positions() {
             assert!(!is_dead_end(pos, &grid));
         }
-    }
-
-    #[test]
-    fn test_count_group_sizes() {
-        let mut rng = thread_rng();
-        let mut grid = Grid::new(40, 40, |_pos| false);
-        for b in grid.iter_mut() {
-            *b = rng.gen();
-        }
-        let (sizes, flooded) = count_group_sizes(&grid, &|a, b| a == b);
-        assert_eq!(flooded.width * flooded.height, 1600);
-        assert_eq!(sizes.into_iter().sum::<u32>(), 1600);
     }
 }

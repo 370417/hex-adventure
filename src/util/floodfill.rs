@@ -1,173 +1,62 @@
-use util::grid::{Grid, Pos, Direction};
+use util::grid::{Pos, Direction};
 use std::iter::{Iterator, IntoIterator};
 use std::collections::HashSet;
 
-pub fn flood_with_size<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> (u32, Grid<bool>)
-        where F: Fn(Pos) -> bool {
-    let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
-    let size = flood_with_size_helper(origin, &floodable, &mut flooded);
-    (size, flooded)
-}
-
-pub fn flood_all<F, T>(grid: &Grid<T>, equiv: &F) -> (u32, Grid<u32>)
-        where F: Fn(Pos, Pos) -> bool {
-    let mut flooded = Grid::new(grid.width, grid.height, |_pos| 0u32);
-    let mut count = 0;
-    for pos in grid.positions() {
-        if flooded[pos] == 0 {
-            count += 1;
-            flooded[pos] = count;
-            flood_all_helper(pos, equiv, &mut flooded, count);
-        }
-    }
-    (count, flooded)
-}
-
-fn flood_with_size_helper<F>(pos: Pos, floodable: &F, flooded: &mut Grid<bool>) -> u32
-        where F: Fn(Pos) -> bool {
-    let mut size = 0u32;
-    if flooded.contains(pos) && !flooded[pos] && floodable(pos) {
-        flooded[pos] = true;
-        size += 1;
-        for neighbor in pos.neighbors() {
-            size += flood_with_size_helper(neighbor, floodable, flooded);
-        }
-    }
-    size
-}
-
-fn flood_all_helper<F>(pos: Pos, equiv: &F, flooded: &mut Grid<u32>, count: u32)
-        where F: Fn(Pos, Pos) -> bool {
-    for neighbor in pos.neighbors() {
-        if flooded.contains(neighbor) && flooded[neighbor] == 0 && equiv(pos, neighbor) {
-            flooded[neighbor] = count;
-            flood_all_helper(neighbor, equiv, flooded, count);
-        }
-    }
-}
-
-pub trait FloodClosure {
-    fn floodable(&self, pos: Pos) -> bool;
-    fn flood(&mut self, pos: Pos);
-}
-
-struct FloodableGrid<'a, F> {
-    flooded: &'a mut Grid<bool>,
-    floodable_closure: F,
-}
-
-impl <'a, F: Fn(Pos) -> bool> FloodClosure for FloodableGrid<'a, F> {
-    fn floodable(&self, pos: Pos) -> bool {
-        self.flooded.contains(pos) && !self.flooded[pos] && (self.floodable_closure)(pos)
-    }
-
-    fn flood(&mut self, pos: Pos) {
-        self.flooded[pos] = true
-    }
-}
-
-struct FloodableSet<'a, F> {
-    flooded: &'a mut HashSet<Pos>,
-    floodable_closure: F,
-}
-
-impl <'a, F: Fn(Pos) -> bool> FloodClosure for FloodableSet<'a, F> {
-    fn floodable(&self, pos: Pos) -> bool {
-        !self.flooded.contains(&pos) && (self.floodable_closure)(pos)
-    }
-
-    fn flood(&mut self, pos: Pos) {
-        self.flooded.insert(pos);
-    }
-}
-
-pub fn flood_grid<F, T>(origin: Pos, grid: &Grid<T>, floodable: &F) -> Grid<bool>
-        where F: Fn(Pos) -> bool {
-    let mut flooded = Grid::new(grid.width, grid.height, |_pos| false);
-    {
-        let mut container = FloodableGrid {
-            flooded: &mut flooded,
-            floodable_closure: floodable,
-        };
-        flood_scanline(origin, &mut container);
-    }
-    flooded
-}
-
-pub fn flood_set<F>(origin: Pos, floodable: &F) -> HashSet<Pos>
+pub fn flood_scanline<F>(origin: Pos, floodable: F) -> HashSet<Pos>
         where F: Fn(Pos) -> bool {
     let mut flooded = HashSet::new();
-    {
-        let mut container = FloodableSet {
-            flooded: &mut flooded,
-            floodable_closure: floodable,
-        };
-        flood_scanline(origin, &mut container);
+    if !floodable(origin) {
+        return flooded;
     }
-    flooded
-}
-
-pub fn flood_scanline<FC: FloodClosure>(origin: Pos, container: &mut FC) {
-    if !container.floodable(origin) {
-        return;
-    }
-    container.flood(origin);
-    let east_edge = flood_horiz(origin, Direction::East, container);
-    let west_edge = flood_horiz(origin, Direction::West, container);
+    flooded.insert(origin);
     let segment = Segment {
-        start: east_edge,
-        end: west_edge,
+        start: flood_horiz(origin, Direction::East, &mut flooded, &floodable),
+        end: flood_horiz(origin, Direction::West, &mut flooded, &floodable),
     };
-    flood_vert(segment, FloodDirection::North, container);
-    flood_vert(segment, FloodDirection::South, container);
+    flood_vert(segment, FloodDirection::North, &mut flooded, &floodable);
+    flood_vert(segment, FloodDirection::South, &mut flooded, &floodable);
+    flooded
 }
 
 /// Flood to the east or west of origin, excluding origin.
 /// 
 /// Returns the outermost flooded position.
-fn flood_horiz<FC: FloodClosure>(origin: Pos, direction: Direction, container: &mut FC) -> Pos {
+fn flood_horiz<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>, floodable: &F) -> Pos
+        where F: Fn(Pos) -> bool {
     let mut pos = origin + direction;
-    while container.floodable(pos) {
-        container.flood(pos);
+    while floodable(pos) && !flooded.contains(&pos) {
+        flooded.insert(pos);
         pos += direction;
     }
     pos - direction
 }
 
-fn flood_vert<FC: FloodClosure>(origin: Segment, direction: FloodDirection, container: &mut FC) {
-    let segment = match direction {
-        FloodDirection::North => Segment {
-            start: origin.start + Direction::Northeast,
-            end: origin.end + Direction::Northwest,
-        },
-        FloodDirection::South => Segment {
-            start: origin.start + Direction::Southeast,
-            end: origin.end + Direction::Southwest,
-        },
-    };
-    let subsegments = flood_segment(segment, container);
+fn flood_vert<F>(origin: Segment, direction: FloodDirection, flooded: &mut HashSet<Pos>, floodable: &F)
+        where F: Fn(Pos) -> bool {
+    let segment = origin.expand(direction);
+    let subsegments = flood_segment(segment, flooded, floodable);
     if let Some(first) = subsegments.first() {
         if first.start == segment.start {
-            let east_edge = flood_horiz(segment.start, Direction::East, container);
+            let east_edge = flood_horiz(segment.start, Direction::East, flooded, floodable);
             let overhang = Segment {
                 start: east_edge,
                 end: segment.start + Direction::East,
             };
-            flood_vert(overhang, direction.opposite(), container);
+            flood_vert(overhang, direction.opposite(), flooded, floodable);
         }
     }
     if let Some(last) = subsegments.last() {
         if last.end == segment.end {
-            let west_edge = flood_horiz(segment.end, Direction::West, container);
+            let west_edge = flood_horiz(segment.end, Direction::West, flooded, floodable);
             let overhang = Segment {
                 start: segment.end + Direction::West,
                 end: west_edge,
             };
-            flood_vert(overhang, direction.opposite(), container);
+            flood_vert(overhang, direction.opposite(), flooded, floodable);
         }
     }
     for subsegment in subsegments {
-        flood_vert(subsegment, direction, container);
+        flood_vert(subsegment, direction, flooded, floodable);
     }
 }
 
@@ -197,6 +86,19 @@ struct SegmentIterator {
     stop: Pos,
 }
 
+impl Segment {
+    fn expand(&self, direction: FloodDirection) -> Self {
+        let (start_dir, end_dir) = match direction {
+            FloodDirection::North => (Direction::Northeast, Direction::Northwest),
+            FloodDirection::South => (Direction::Southeast, Direction::Southwest),
+        };
+        Segment {
+            start: self.start + start_dir,
+            end: self.end + end_dir,
+        }
+    }
+}
+
 impl IntoIterator for Segment {
     type Item = Pos;
     type IntoIter = SegmentIterator;
@@ -224,12 +126,13 @@ impl Iterator for SegmentIterator {
 }
 
 /// Flood from east_edge to west_edge inclusive
-fn flood_segment<FC: FloodClosure>(segment: Segment, container: &mut FC) -> Vec<Segment> {
+fn flood_segment<F>(segment: Segment, flooded: &mut HashSet<Pos>, floodable: &F) -> Vec<Segment>
+        where F: Fn(Pos) -> bool {
     let mut start = None;
     let mut segments = Vec::new();
     for pos in segment {
-        if container.floodable(pos) {
-            container.flood(pos);
+        if floodable(pos) && !flooded.contains(&pos) {
+            flooded.insert(pos);
             if start.is_none() {
                 start = Some(pos);
             }
