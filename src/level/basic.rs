@@ -1,14 +1,15 @@
 //! Generate a level of only wall and floor tiles.
 
-use rand::{XorShiftRng, SeedableRng, Rng};
+use rand::{Rng, SeedableRng, XorShiftRng};
 
 use util;
 use util::floodfill;
-use util::grid::{Pos, Grid};
+use util::grid::{Grid, Pos};
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Tile {
-    Wall, Floor
+    Wall,
+    Floor,
 }
 
 pub fn generate(width: usize, height: usize, seed: [u32; 4]) -> Grid<Tile> {
@@ -56,7 +57,8 @@ fn count_floor_groups(pos: Pos, grid: &Grid<Tile>) -> i32 {
 /// Remove groups of 5 walls or less.
 fn remove_isolated_walls(grid: &mut Grid<Tile>) {
     for pos in grid.positions() {
-        let wall_positions = floodfill::flood(pos, |pos| grid.contains(pos) && grid[pos] == Tile::Wall);
+        let wall_positions =
+            floodfill::flood(pos, |pos| grid.contains(pos) && grid[pos] == Tile::Wall);
         if wall_positions.len() <= 5 {
             for pos in wall_positions {
                 grid[pos] = Tile::Floor;
@@ -70,7 +72,9 @@ fn remove_small_caves(grid: &mut Grid<Tile>) {
     let mut visited = Grid::new(grid.width, grid.height, |_pos| false);
     for pos in grid.positions() {
         fill_dead_end(pos, grid);
-        let flooded = floodfill::flood(pos, &|pos| grid.contains(pos) && !visited[pos] && is_cave(pos, grid));
+        let flooded = floodfill::flood(pos, &|pos| {
+            grid.contains(pos) && !visited[pos] && is_cave(pos, grid)
+        });
         if flooded.len() > 3 {
             for pos in flooded {
                 visited[pos] = true;

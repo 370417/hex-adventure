@@ -1,5 +1,5 @@
+use std::iter::{IntoIterator, Iterator};
 use util::grid::Pos;
-use std::iter::{Iterator, IntoIterator};
 
 pub struct Line {
     pub start: Pos,

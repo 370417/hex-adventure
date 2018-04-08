@@ -1,5 +1,5 @@
 //! Representation of a hexagonal grid.
-//! 
+//!
 //! Uses axial coordinates.
 //! This grid can be thought of as any plane in 3d space that is normal to the vector {1, 1, 1}.
 //! The x-axis (of the hex grid, not of the 3d space) points in `Direction::Southeast`,
@@ -29,7 +29,7 @@ pub struct Grid<T> {
 }
 
 /// A 2d index of a hexagonal grid.
-/// 
+///
 /// Ranges from (0, 0) to (width-1, height-1).
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 struct Index2d {
@@ -58,12 +58,20 @@ pub struct Location {
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Direction {
-    Southeast, East, Northeast, Northwest, West, Southwest
+    Southeast,
+    East,
+    Northeast,
+    Northwest,
+    West,
+    Southwest,
 }
 
 impl Pos {
     pub fn neighbors(self) -> Vec<Pos> {
-        DIRECTIONS.into_iter().map(|&direction| self + direction).collect()
+        DIRECTIONS
+            .into_iter()
+            .map(|&direction| self + direction)
+            .collect()
     }
 
     pub fn distance(self, other: Pos) -> u32 {
@@ -324,13 +332,15 @@ impl ops::Neg for Direction {
     }
 }
 
-impl <T> Grid<T> {
+impl<T> Grid<T> {
     /// Create a new grid.
-    /// 
+    ///
     /// The `init` closure takes a `usize` which is the index of the position,
     /// and a `Pos` which is the position itself.
     pub fn new<F>(width: usize, height: usize, init: F) -> Self
-            where F: Fn(Pos) -> T {
+    where
+        F: Fn(Pos) -> T,
+    {
         let mut grid = Vec::with_capacity(width * height);
         for row in 0..height {
             for col in 0..width {
@@ -373,8 +383,8 @@ impl <T> Grid<T> {
 
     pub fn inner_positions(&self) -> Vec<Pos> {
         let mut inner_positions = Vec::with_capacity((self.width - 2) * (self.height - 2));
-        for row in 1..self.height-1 {
-            for col in 1..self.width-1 {
+        for row in 1..self.height - 1 {
+            for col in 1..self.width - 1 {
                 let pos = index_to_pos(Index2d { row, col });
                 inner_positions.push(pos);
             }
@@ -399,7 +409,7 @@ impl <T> Grid<T> {
     }
 }
 
-impl <T> ops::Index<Index2d> for Grid<T> {
+impl<T> ops::Index<Index2d> for Grid<T> {
     type Output = T;
 
     fn index(&self, Index2d { row, col }: Index2d) -> &T {
@@ -408,14 +418,14 @@ impl <T> ops::Index<Index2d> for Grid<T> {
     }
 }
 
-impl <T> ops::IndexMut<Index2d> for Grid<T> {
+impl<T> ops::IndexMut<Index2d> for Grid<T> {
     fn index_mut(&mut self, Index2d { row, col }: Index2d) -> &mut T {
         let i = row * self.width + col;
         &mut self.grid[i]
     }
 }
 
-impl <T> ops::Index<Pos> for Grid<T> {
+impl<T> ops::Index<Pos> for Grid<T> {
     type Output = T;
 
     fn index(&self, pos: Pos) -> &T {
@@ -425,7 +435,7 @@ impl <T> ops::Index<Pos> for Grid<T> {
     }
 }
 
-impl <T> ops::IndexMut<Pos> for Grid<T> {
+impl<T> ops::IndexMut<Pos> for Grid<T> {
     fn index_mut(&mut self, pos: Pos) -> &mut T {
         let Index2d { row, col } = pos_to_index(pos);
         let i = row * self.width + col;
@@ -433,7 +443,7 @@ impl <T> ops::IndexMut<Pos> for Grid<T> {
     }
 }
 
-impl <T> IntoIterator for Grid<T> {
+impl<T> IntoIterator for Grid<T> {
     type Item = T;
     type IntoIter = ::std::vec::IntoIter<T>;
 

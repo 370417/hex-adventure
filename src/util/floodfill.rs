@@ -1,9 +1,11 @@
-use util::grid::{Pos, Direction};
-use std::iter::{Iterator, IntoIterator};
 use std::collections::HashSet;
+use std::iter::{IntoIterator, Iterator};
+use util::grid::{Direction, Pos};
 
 pub fn flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>
-        where F: Fn(Pos) -> bool {
+where
+    F: Fn(Pos) -> bool,
+{
     let mut flooded = HashSet::new();
     if !floodable(origin) {
         return flooded;
@@ -19,10 +21,17 @@ pub fn flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>
 }
 
 /// Flood to the east or west of origin, excluding origin.
-/// 
+///
 /// Returns the outermost flooded position.
-fn flood_horiz<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>, floodable: &F) -> Pos
-        where F: Fn(Pos) -> bool {
+fn flood_horiz<F>(
+    origin: Pos,
+    direction: Direction,
+    flooded: &mut HashSet<Pos>,
+    floodable: &F,
+) -> Pos
+where
+    F: Fn(Pos) -> bool,
+{
     let mut pos = origin + direction;
     while floodable(pos) && !flooded.contains(&pos) {
         flooded.insert(pos);
@@ -31,8 +40,14 @@ fn flood_horiz<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>,
     pos - direction
 }
 
-fn flood_vert<F>(origin: Segment, direction: FloodDirection, flooded: &mut HashSet<Pos>, floodable: &F)
-        where F: Fn(Pos) -> bool {
+fn flood_vert<F>(
+    origin: Segment,
+    direction: FloodDirection,
+    flooded: &mut HashSet<Pos>,
+    floodable: &F,
+) where
+    F: Fn(Pos) -> bool,
+{
     let segment = origin.expand(direction);
     let subsegments = flood_segment(segment, flooded, floodable);
     if let Some(first) = subsegments.first() {
@@ -62,7 +77,8 @@ fn flood_vert<F>(origin: Segment, direction: FloodDirection, flooded: &mut HashS
 
 #[derive(Copy, Clone)]
 enum FloodDirection {
-    North, South
+    North,
+    South,
 }
 
 impl FloodDirection {
@@ -127,7 +143,9 @@ impl Iterator for SegmentIterator {
 
 /// Flood from a segment of positions. Returns a vector of subsegments
 fn flood_segment<F>(segment: Segment, flooded: &mut HashSet<Pos>, floodable: &F) -> Vec<Segment>
-        where F: Fn(Pos) -> bool {
+where
+    F: Fn(Pos) -> bool,
+{
     let mut start = None;
     let mut segments = Vec::new();
     for pos in segment {

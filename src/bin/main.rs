@@ -1,15 +1,15 @@
 extern crate ggez;
-use ggez::{Context, GameResult};
 use ggez::conf::Conf;
 use ggez::event;
 use ggez::event::EventHandler;
 use ggez::graphics;
 use ggez::graphics::Image;
+use ggez::{Context, GameResult};
 use std::fs::File;
 
 extern crate hexadventure;
-use hexadventure::util::grid::{Grid, Location};
 use hexadventure::level::basic::{self, Tile};
+use hexadventure::util::grid::{Grid, Location};
 
 const CONFIG_PATH: &str = "resources/conf.toml";
 

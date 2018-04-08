@@ -14,28 +14,34 @@ const TANGENTS: [Direction; 6] = [
 ];
 
 /// Calculate field of view.
-pub fn fov<F, G>(center: Pos, transparent: &F, reveal: &mut G) 
-        where F: Fn(Pos) -> bool, G: FnMut(Pos) -> () {
+pub fn fov<F, G>(center: Pos, transparent: &F, reveal: &mut G)
+where
+    F: Fn(Pos) -> bool,
+    G: FnMut(Pos),
+{
     for i in 0..6 {
-        let transform = |x: u32, y: u32| -> Pos {
-            center + TANGENTS[i] * x as i32 + NORMALS[i] * y as i32
-        };
-        let transformed_transparent = |x: u32, y: u32| -> bool {
-            transparent(transform(x, y))
-        };
-        let mut transformed_reveal = |x: u32, y: u32| -> () {
-            reveal(transform(x, y))
-        };
-        scan(1, 0.0, 1.0, &transformed_transparent, &mut transformed_reveal);
+        let transform = |x, y| center + TANGENTS[i] * x as i32 + NORMALS[i] * y as i32;
+        let transformed_transparent = |x, y| transparent(transform(x, y));
+        let mut transformed_reveal = |x, y| reveal(transform(x, y));
+        scan(
+            1,
+            0.0,
+            1.0,
+            &transformed_transparent,
+            &mut transformed_reveal,
+        );
     }
 }
 
 fn scan<F, G>(y: u32, mut start: f32, end: f32, transparent: &F, reveal: &mut G)
-        where F: Fn(u32, u32) -> bool, G: FnMut(u32, u32) -> () {
+where
+    F: Fn(u32, u32) -> bool,
+    G: FnMut(u32, u32),
+{
     let mut fov_exists = false;
     let x_min = round_high(y as f32 * start);
     let x_max = round_low(y as f32 * end);
-    for x in x_min..1+x_max {
+    for x in x_min..1 + x_max {
         if transparent(x, y) {
             if x as f32 >= y as f32 * start && x as f32 <= y as f32 * end {
                 reveal(x, y);
@@ -49,7 +55,9 @@ fn scan<F, G>(y: u32, mut start: f32, end: f32, transparent: &F, reveal: &mut G)
             reveal(x, y);
             fov_exists = false;
             start = (x as f32 + 0.5) / y as f32;
-            if start >= end { return; }
+            if start >= end {
+                return;
+            }
         }
     }
     if fov_exists && start < end {

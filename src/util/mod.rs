@@ -1,10 +1,10 @@
-pub mod grid;
-pub mod fov;
 pub mod floodfill;
+pub mod fov;
+pub mod grid;
 mod line;
 
 /// Zip a slice with itself but rotated forward by one.
-/// 
+///
 /// # Example
 /// ```
 /// # use hexadventure::util::self_zip;
