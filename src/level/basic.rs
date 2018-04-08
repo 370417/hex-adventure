@@ -27,7 +27,7 @@ fn calc_shuffled_positions<T, R: Rng>(grid: &Grid<T>, rng: &mut R) -> Vec<Pos> {
     positions
 }
 
-fn carve_caves(positions: &Vec<Pos>, grid: &mut Grid<Tile>) {
+fn carve_caves(positions: &[Pos], grid: &mut Grid<Tile>) {
     for &pos in positions {
         if count_floor_groups(pos, grid) != 1 {
             grid[pos] = Tile::Floor;
@@ -56,7 +56,7 @@ fn count_floor_groups(pos: Pos, grid: &Grid<Tile>) -> i32 {
 /// Remove groups of 5 walls or less.
 fn remove_isolated_walls(grid: &mut Grid<Tile>) {
     for pos in grid.positions() {
-        let wall_positions = floodfill::flood_scanline(pos, |pos| grid.contains(pos) && grid[pos] == Tile::Wall);
+        let wall_positions = floodfill::flood(pos, |pos| grid.contains(pos) && grid[pos] == Tile::Wall);
         if wall_positions.len() <= 5 {
             for pos in wall_positions {
                 grid[pos] = Tile::Floor;
@@ -70,7 +70,7 @@ fn remove_small_caves(grid: &mut Grid<Tile>) {
     let mut visited = Grid::new(grid.width, grid.height, |_pos| false);
     for pos in grid.positions() {
         fill_dead_end(pos, grid);
-        let flooded = floodfill::flood_scanline(pos, &|pos| grid.contains(pos) && !visited[pos] && is_cave(pos, grid));
+        let flooded = floodfill::flood(pos, &|pos| grid.contains(pos) && !visited[pos] && is_cave(pos, grid));
         if flooded.len() > 3 {
             for pos in flooded {
                 visited[pos] = true;

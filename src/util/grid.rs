@@ -19,6 +19,9 @@ pub const DIRECTIONS: [Direction; 6] = [
     Direction::Northwest,
 ];
 
+pub const WIDTH: usize = 40;
+pub const HEIGHT: usize = 30;
+
 pub struct Grid<T> {
     pub width: usize,
     pub height: usize,

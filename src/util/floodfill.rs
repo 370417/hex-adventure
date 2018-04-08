@@ -2,7 +2,7 @@ use util::grid::{Pos, Direction};
 use std::iter::{Iterator, IntoIterator};
 use std::collections::HashSet;
 
-pub fn flood_scanline<F>(origin: Pos, floodable: F) -> HashSet<Pos>
+pub fn flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>
         where F: Fn(Pos) -> bool {
     let mut flooded = HashSet::new();
     if !floodable(origin) {
@@ -125,7 +125,7 @@ impl Iterator for SegmentIterator {
     }
 }
 
-/// Flood from east_edge to west_edge inclusive
+/// Flood from a segment of positions. Returns a vector of subsegments
 fn flood_segment<F>(segment: Segment, flooded: &mut HashSet<Pos>, floodable: &F) -> Vec<Segment>
         where F: Fn(Pos) -> bool {
     let mut start = None;
@@ -136,14 +136,12 @@ fn flood_segment<F>(segment: Segment, flooded: &mut HashSet<Pos>, floodable: &F)
             if start.is_none() {
                 start = Some(pos);
             }
-        } else {
-            if let Some(start_pos) = start {
-                segments.push(Segment {
-                    start: start_pos,
-                    end: pos,
-                });
-                start = None;
-            }
+        } else if let Some(start_pos) = start {
+            segments.push(Segment {
+                start: start_pos,
+                end: pos,
+            });
+            start = None;
         }
     }
     if let Some(start_pos) = start {
