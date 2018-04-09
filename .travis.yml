@@ -12,7 +12,7 @@ matrix:
     - rust: nightly
 
 before_install:
- - sudo apt install libasound2-dev libsdl2-dev pkg-config
+ - sudo apt install libegl1-mesa-dev libgles2-mesa-dev libasound2-dev libsdl2-dev
 
 before_script:
  - rustup component add rustfmt-preview
