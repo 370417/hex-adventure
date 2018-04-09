@@ -7,7 +7,7 @@ import { calcDistancePos } from './position';
 
 /** @file specify actor behavior */
 
-export type Behavior = 'player' | 'snake' | 'environment' | 'spike';
+export type Behavior = 'player' | 'snake' | 'environment' | 'spike' | 'wolf';
 
 export const behaviors: Record<Behavior, (game: Game, self: number) => number> = {
     environment: (game, self) => {
@@ -44,6 +44,21 @@ export const behaviors: Record<Behavior, (game: Game, self: number) => number> =
             unschedule(game);
         }
         return 6;
+    },
+    wolf: (game, self) => {
+        const selfPos = game.prop.pos[self];
+        const playerPos = game.prop.pos[game.player];
+        if (game.fov[selfPos]) {
+            game.prop.aiTarget[self] = playerPos;
+        }
+        const target = game.prop.aiTarget[self];
+        if (target !== undefined) {
+            const displacement = playerPos - selfPos;
+            if (displacement == 0) {
+                
+            }
+        }
+        return 0;
     },
 };
 

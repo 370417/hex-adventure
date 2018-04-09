@@ -1,6 +1,7 @@
 import { canWalk, TileName } from '../data/tile';
 import { Game } from './game';
 import { randint } from './random';
+import { Mob } from '../types/game'
 
 /** @file manipulates entities that can be represented on the map */
 

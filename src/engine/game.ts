@@ -12,6 +12,7 @@ interface NumDict<T> {
 }
 
 interface Entity  {
+    aiTarget: number;
     pos: number;
     behavior: Behavior;
     velocity: number;
@@ -27,6 +28,7 @@ export interface Game {
     version: string;
     seed: number;
     schedule: number[];
+    mobs: NumDict<Mob>
     prop: {
         [Component in keyof Entity]: NumDict<Entity[Component]>
     };
@@ -79,6 +81,7 @@ function create(seed: number): Game {
         nextEntity: 3,
         player: 1,
         prop: {
+            aiTarget: {},
             behavior: {
                 1: 'player',
                 2: 'environment',

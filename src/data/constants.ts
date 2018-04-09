@@ -9,3 +9,6 @@ export const dir9 = -1;
 export const dir11 = -WIDTH;
 
 export const directions = [dir1, dir3, dir5, dir7, dir9, dir11];
+
+export const xDirections = [1, 1, 0, -1, -1, 0];
+export const yDirections = [-1, 0, 1, 1, 0, -1];

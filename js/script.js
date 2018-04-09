@@ -11,95 +11,6 @@ const dir9 = -1;
 const dir11 = -WIDTH;
 const directions = [dir1, dir3, dir5, dir7, dir9, dir11];
 
-/** @file constants related to visual style */
-/** @file constants related to visual style */ const xu = 18;
-const smallyu = 16;
-const bigyu = 24;
-const spriteNames = ['wall', 'floor', 'shortGrass', 'tallGrass', 'spikes', 'player'];
-const color = {
-    wall: 0xEEEEEE,
-    floor: 0xFFFFFF,
-    shortGrass: 0x008800,
-    tallGrass: 0x008800,
-    spikes: 0xEEEEEE,
-    player: 0xFFFFFF,
-};
-
-/** @file helper functions for working with positions */
-/** convert the coordinate pair [x], [y] into an integer position */
-function xy2pos(x, y) {
-    return x + y * WIDTH;
-}
-/** convert an integer [pos] into the coordinate pair x, y */
-function pos2xy(pos) {
-    return {
-        x: pos % WIDTH,
-        y: Math.floor(pos / WIDTH),
-    };
-}
-/** return the distance between (x1, y1) and (x2, y2) */
-
-/** return the distance between pos1 and pos2 */
-
-/** return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup] */
-function countGroups(pos, ingroup) {
-    // use var instead of let because
-    // chrome can't optimize compound let assignment
-    var groupcount = 0;
-    for (let i = 0; i < 6; i++) {
-        const curr = directions[i];
-        const next = directions[(i + 1) % 6];
-        if (!ingroup(pos + curr) && ingroup(pos + next)) {
-            groupcount += 1;
-        }
-    }
-    if (groupcount) {
-        return groupcount;
-    }
-    else {
-        return Number(ingroup(pos + dir1));
-    }
-}
-/**
- * [flood] from [pos] as long as neighbors are [floodable]
- * it is up to [flood] to make sure that [floodable] returns false for visited positions
- */
-function floodfill(pos, floodable, flood) {
-    if (floodable(pos)) {
-        flood(pos);
-        for (let i = 0; i < 6; i++) {
-            floodfill(pos + directions[i], floodable, flood);
-        }
-    }
-}
-/**
- * flood from [pos] as long as neighbors are [passable]
- * [visited] keeps track of what positions have already been flooded, and is normally set to empty
- */
-function floodfillSet(pos, passable, visited) {
-    if (passable(pos) && !visited.has(pos)) {
-        visited.add(pos);
-        forEachNeighbor(pos, neighbor => {
-            floodfillSet(neighbor, passable, visited);
-        });
-    }
-}
-/** whether [istype] is true for all positions surrounding [pos] */
-function surrounded(pos, istype) {
-    for (let i = 0; i < 6; i++) {
-        if (!istype(pos + directions[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-/** calls [callback] for each position neighboring [pos] */
-function forEachNeighbor(pos, callback) {
-    for (let i = 0; i < 6; i++) {
-        callback(pos + directions[i]);
-    }
-}
-
 // Port of alea.js to typescript
 // From http://baagoe.com/en/RandomMusings/javascript/
 // Johannes Baagøe <baagoe@baagoe.com>, 2010
@@ -153,89 +64,6 @@ function Mash() {
         }
         return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
     };
-}
-
-/** @file helper functions for working with randomness */
-/** return a random integer in the range [min, max] inclusive */
-function randint(min, max, alea) {
-    return min + Math.floor((max - min + 1) * random(alea));
-}
-/** randomly shuffle an array in place */
-function shuffle(array, alea) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = randint(0, i, alea);
-        const tempi = array[i];
-        array[i] = array[j];
-        array[j] = tempi;
-    }
-    return array;
-}
-
-/** @file calculates fov */
-const normals = [dir1, dir3, dir5, dir7, dir9, dir11];
-const tangents = [dir5, dir7, dir9, dir11, dir1, dir3];
-/**
- * calculate fov using recursive shadowcasting
- * @param center orgin of fov
- * @param transparent whether the tile at pos is transpaernt
- * @param reveal add pos to the fov
- */
-function shadowcast(center, transparent, reveal) {
-    reveal(center);
-    for (let i = 0; i < 6; i++) {
-        const transform = (x, y) => center + x * tangents[i] + y * normals[i];
-        const transformedTransparent = (x, y) => transparent(transform(x, y));
-        const transformedReveal = (x, y) => reveal(transform(x, y));
-        scan(1, 0, 1, transformedTransparent, transformedReveal);
-    }
-}
-/** round a number, rounding up if it ends in .5 */
-function roundHigh(n) {
-    return Math.round(n);
-}
-/** round a number, rounding down if it ends in .5 */
-function roundLow(n) {
-    return Math.ceil(n - 0.5);
-}
-/**
- * Calculate a 60 degree sector of fov by recursively scanning rows.
- * @param y Distance from center of fov to the row being scanned
- * @param start Slope of starting angle expressed as x / y
- * @param end Slope of ending angle expressed as x / y
- * @param transparent Whether the tile at (x, y) is transparent
- * @param reveal Add the tile at (x, y) to the fov
- */
-function scan(y, start, end, transparent, reveal) {
-    if (start >= end)
-        return;
-    // minimum and maximum x coordinates for opaque tiles
-    // the fov for transparent tiles is slightly narrower to presernve symmetry
-    const xmin = roundHigh(y * start);
-    const xmax = roundLow(y * end);
-    // whether the current continous fov has transparent tiles
-    // this is used to prevent disjoint fov
-    let fovExists = false;
-    for (let x = xmin; x <= xmax; x++) {
-        if (transparent(x, y)) {
-            if (x >= y * start && x <= y * end) {
-                reveal(x, y);
-                fovExists = true;
-            }
-        }
-        else {
-            if (fovExists) {
-                scan(y + 1, start, (x - 0.5) / y, transparent, reveal);
-            }
-            reveal(x, y);
-            fovExists = false;
-            start = (x + 0.5) / y;
-            if (start >= end)
-                return;
-        }
-    }
-    if (fovExists) {
-        scan(y + 1, start, end, transparent, reveal);
-    }
 }
 
 /*
@@ -447,16 +275,175 @@ function simplex3(xin, yin, zin) {
 
 // 3D Perlin Noise
 
+/** @file calculates fov */
+const normals = [dir1, dir3, dir5, dir7, dir9, dir11];
+const tangents = [dir5, dir7, dir9, dir11, dir1, dir3];
+/**
+ * calculate fov using recursive shadowcasting
+ * @param center orgin of fov
+ * @param transparent whether the tile at pos is transpaernt
+ * @param reveal add pos to the fov
+ */
+function shadowcast(center, transparent, reveal) {
+    reveal(center);
+    for (let i = 0; i < 6; i++) {
+        const transform = (x, y) => center + x * tangents[i] + y * normals[i];
+        const transformedTransparent = (x, y) => transparent(transform(x, y));
+        const transformedReveal = (x, y) => reveal(transform(x, y));
+        scan(1, 0, 1, transformedTransparent, transformedReveal);
+    }
+}
+/** round a number, rounding up if it ends in .5 */
+function roundHigh(n) {
+    return Math.round(n);
+}
+/** round a number, rounding down if it ends in .5 */
+function roundLow(n) {
+    return Math.ceil(n - 0.5);
+}
+/**
+ * Calculate a 60 degree sector of fov by recursively scanning rows.
+ * @param y Distance from center of fov to the row being scanned
+ * @param start Slope of starting angle expressed as x / y
+ * @param end Slope of ending angle expressed as x / y
+ * @param transparent Whether the tile at (x, y) is transparent
+ * @param reveal Add the tile at (x, y) to the fov
+ */
+function scan(y, start, end, transparent, reveal) {
+    if (start >= end) {
+        return;
+    }
+    // minimum and maximum x coordinates for opaque tiles
+    // the fov for transparent tiles is slightly narrower to presernve symmetry
+    const xmin = roundHigh(y * start);
+    const xmax = roundLow(y * end);
+    // whether the current continous fov has transparent tiles
+    // this is used to prevent disjoint fov
+    let fovExists = false;
+    for (let x = xmin; x <= xmax; x++) {
+        if (transparent(x, y)) {
+            if (x >= y * start && x <= y * end) {
+                reveal(x, y);
+                fovExists = true;
+            }
+        }
+        else {
+            if (fovExists) {
+                scan(y + 1, start, (x - 0.5) / y, transparent, reveal);
+            }
+            reveal(x, y);
+            fovExists = false;
+            start = (x + 0.5) / y;
+            if (start >= end) {
+                return;
+            }
+        }
+    }
+    if (fovExists) {
+        scan(y + 1, start, end, transparent, reveal);
+    }
+}
+
+/** @file helper functions for working with positions */
+/** convert the coordinate pair [x], [y] into an integer position */
+function xy2pos(x, y) {
+    return x + y * WIDTH;
+}
+/** convert an integer [pos] into the coordinate pair x, y */
+function pos2xy(pos) {
+    return {
+        x: pos % WIDTH,
+        y: Math.floor(pos / WIDTH),
+    };
+}
+/** return the distance between (x1, y1) and (x2, y2) */
+
+/** return the distance between pos1 and pos2 */
+
+/** return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup] */
+function countGroups(pos, ingroup) {
+    let groupcount = 0;
+    for (let i = 0; i < 6; i++) {
+        const curr = directions[i];
+        const next = directions[(i + 1) % 6];
+        if (!ingroup(pos + curr) && ingroup(pos + next)) {
+            groupcount += 1;
+        }
+    }
+    if (groupcount) {
+        return groupcount;
+    }
+    else {
+        return Number(ingroup(pos + dir1));
+    }
+}
+/**
+ * [flood] from [pos] as long as neighbors are [floodable]
+ * it is up to [flood] to make sure that [floodable] returns false for visited positions
+ */
+function floodfill(pos, floodable, flood) {
+    if (floodable(pos)) {
+        flood(pos);
+        for (let i = 0; i < 6; i++) {
+            floodfill(pos + directions[i], floodable, flood);
+        }
+    }
+}
+/**
+ * flood from [pos] as long as neighbors are [passable]
+ * [visited] keeps track of what positions have already been flooded, and is normally set to empty
+ */
+function floodfillSet(pos, passable, visited) {
+    if (passable(pos) && !visited.has(pos)) {
+        visited.add(pos);
+        forEachNeighbor(pos, (neighbor) => {
+            floodfillSet(neighbor, passable, visited);
+        });
+    }
+}
+/** whether [istype] is true for all positions surrounding [pos] */
+function surrounded(pos, istype) {
+    for (let i = 0; i < 6; i++) {
+        if (!istype(pos + directions[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+/** calls [callback] for each position neighboring [pos] */
+function forEachNeighbor(pos, callback) {
+    for (let i = 0; i < 6; i++) {
+        callback(pos + directions[i]);
+    }
+}
+
+/** @file helper functions for working with randomness */
+/** return a random integer in the range [min, max] inclusive */
+function randint(min, max, alea) {
+    return min + Math.floor((max - min + 1) * random(alea));
+}
+/** randomly shuffle an array in place */
+function shuffle(array, alea) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = randint(0, i, alea);
+        const tempi = array[i];
+        array[i] = array[j];
+        array[j] = tempi;
+    }
+    return array;
+}
+
 /** create a new level */
 function create$1(seed$$1, playerPos) {
     const alea = seed(seed$$1);
-    seed$1(random(alea));
+    const randSeed = random(alea);
+    seed$1(randSeed);
     const tiles = createTiles();
     carveCaves();
     removeSmallWalls();
     const size = removeOtherCaves();
     if (size < WIDTH * HEIGHT / 4) {
-        return create$1(seed$$1, playerPos);
+        return create$1(randSeed, playerPos);
     }
     fillSmallCaves();
     const visibility = generateVisibility();
@@ -467,7 +454,7 @@ function create$1(seed$$1, playerPos) {
      */
     function createTiles() {
         const types = {};
-        forEachPos(pos => {
+        forEachPos((pos) => {
             types[pos] = 'wall';
         });
         types[playerPos] = 'floor';
@@ -488,19 +475,17 @@ function create$1(seed$$1, playerPos) {
     /** use an (almost) cellular automaton to generate caves */
     function carveCaves() {
         const innerPositions = [];
-        forEachInnerPos(pos => innerPositions.push(pos));
-        shuffle(Array.from(innerPositions), alea).forEach(pos => {
+        forEachInnerPos((pos) => innerPositions.push(pos));
+        shuffle(Array.from(innerPositions), alea).forEach((pos) => {
             if (isWall(pos) && countGroups(pos, passable) !== 1) {
                 tiles[pos] = 'floor';
             }
         });
     }
     /** remove groups of 5 or fewer walls */
-    // TODO: investigate potential infinite loop here
-    // test seeds slightly before timestamp 4:41:19
     function removeSmallWalls() {
         const visited = new Set();
-        forEachInnerPos(pos => {
+        forEachInnerPos((pos) => {
             const wallGroup = new Set();
             const floodable = (pos) => isWall(pos) && !wallGroup.has(pos) && !visited.has(pos);
             const flood = (pos) => {
@@ -519,7 +504,7 @@ function create$1(seed$$1, playerPos) {
     function removeOtherCaves() {
         const mainCave = new Set();
         floodfillSet(playerPos, passable, mainCave);
-        forEachInnerPos(pos => {
+        forEachInnerPos((pos) => {
             if (tiles[pos] === 'floor' && !mainCave.has(pos)) {
                 tiles[pos] = 'wall';
             }
@@ -544,7 +529,7 @@ function create$1(seed$$1, playerPos) {
     function fillDeadEnd(pos) {
         if (isDeadEnd(pos)) {
             tiles[pos] = 'wall';
-            forEachNeighbor(pos, neighbor => {
+            forEachNeighbor(pos, (neighbor) => {
                 if (pos === playerPos && passable(neighbor)) {
                     playerPos = neighbor;
                 }
@@ -556,7 +541,7 @@ function create$1(seed$$1, playerPos) {
     function fillSmallCaves() {
         // can't skip visited tiles here because previous caves can be affected
         // by the removal of later ones
-        forEachInnerPos(pos => {
+        forEachInnerPos((pos) => {
             fillDeadEnd(pos);
             const cave = new Set();
             floodfillSet(pos, isCave, cave);
@@ -571,8 +556,8 @@ function create$1(seed$$1, playerPos) {
     /** Find the number of tiles visible from each tile */
     function generateVisibility() {
         const visibility = {};
-        forEachInnerPos(pos => {
-            let fov = new Set();
+        forEachInnerPos((pos) => {
+            const fov = new Set();
             const transparent = (pos) => tiles[pos] === 'floor';
             const reveal = (pos) => fov.add(pos);
             if (transparent(pos)) {
@@ -600,8 +585,8 @@ function create$1(seed$$1, playerPos) {
         });
     }
     return {
-        tiles,
         playerPos,
+        tiles,
     };
 }
 /** return the minimum x coordinate for a given [y], inclusive */
@@ -640,8 +625,9 @@ function forEachInnerPos(fun) {
 
 const VERSION = '0.1.3';
 const SAVE_NAME = 'hex adventure';
+
 function get() {
-    const game = load() || create$2(Date.now());
+    const game = load() || create$$1(Date.now());
     if (game.version !== VERSION) {
         console.warn('Save game is out of date');
     }
@@ -652,35 +638,35 @@ function save(game) {
     localStorage[SAVE_NAME] = JSON.stringify(game);
 }
 /** create a new game */
-function create$2(seed$$1) {
+function create$$1(seed$$1) {
     const center = xy2pos(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2));
     const level = create$1(seed$$1, center);
     return {
-        version: VERSION,
-        seed: seed$$1,
-        schedule: [1, 2],
-        prop: {
-            pos: {
-                '1': level.playerPos,
-            },
-            behavior: {
-                '1': 'player',
-                '2': 'environment',
-            },
-            velocity: {},
-        },
-        nextEntity: 3,
-        player: 1,
+        alea: seed(seed$$1),
         fov: {},
-        memory: {},
         level: {
-            tiles: level.tiles,
+            grassDelay: {},
             mobs: {
                 [level.playerPos]: 1,
             },
-            grassDelay: {},
+            tiles: level.tiles,
         },
-        alea: seed(seed$$1),
+        memory: {},
+        nextEntity: 3,
+        player: 1,
+        prop: {
+            behavior: {
+                1: 'player',
+                2: 'environment',
+            },
+            pos: {
+                1: level.playerPos,
+            },
+            velocity: {},
+        },
+        schedule: [1, 2],
+        seed: seed$$1,
+        version: VERSION,
     };
 }
 /** load the saved game if it exists */
@@ -689,21 +675,40 @@ function load() {
     return saveFile && JSON.parse(saveFile);
 }
 
+/** @file constants related to visual style */
+/** @file constants related to visual style */ const xu = 18;
+const smallyu = 16;
+const bigyu = 24;
+const spriteNames = ['wall', 'floor', 'shortGrass', 'tallGrass', 'spikes', 'player'];
+const color = {
+    floor: 0xFFFFFF,
+    player: 0xFFFFFF,
+    shortGrass: 0x008800,
+    spikes: 0xEEEEEE,
+    tallGrass: 0x008800,
+    wall: 0xEEEEEE,
+};
+
 /** @file constants for map tiles */
 const transparency = {
-    wall: 0,
     floor: 2,
     shortGrass: 2,
-    tallGrass: 1,
     spikes: 2,
+    tallGrass: 1,
+    wall: 0,
 };
 const canWalk = {
-    wall: false,
     floor: true,
     shortGrass: true,
-    tallGrass: true,
     spikes: false,
+    tallGrass: true,
+    wall: false,
 };
+
+/** @file Handles entity creation */
+function createEntity(game) {
+    return game.nextEntity++;
+}
 
 /** @file manipulates entities that can be represented on the map */
 /** move the entity */
@@ -716,7 +721,7 @@ const onWalk = {
     tallGrass: (game, pos, entity, direction) => {
         game.level.tiles[pos] = 'shortGrass';
         game.level.grassDelay[pos] = randint(3, 5, game.alea);
-    }
+    },
 };
 /** move the entity if possible */
 function walk(game, entity, direction) {
@@ -730,11 +735,6 @@ function walk(game, entity, direction) {
     }
 }
 
-/** @file Handles entity creation */
-function createEntity(game) {
-    return game.nextEntity++;
-}
-
 /** @file manipulates the player character */
 /** move the player */
 function move$$1(game, player, direction) {
@@ -744,8 +744,8 @@ function move$$1(game, player, direction) {
 }
 function look(game, self) {
     game.fov = {};
-    shadowcast(game.prop.pos[self], pos => transparency[game.level.tiles[pos]] > 0, pos => game.memory[pos] = game.level.tiles[pos]);
-    shadowcast(game.prop.pos[self], pos => transparency[game.level.tiles[pos]] === 2, pos => game.fov[pos] = true);
+    shadowcast(game.prop.pos[self], (pos) => transparency[game.level.tiles[pos]] > 0, (pos) => game.memory[pos] = game.level.tiles[pos]);
+    shadowcast(game.prop.pos[self], (pos) => transparency[game.level.tiles[pos]] === 2, (pos) => game.fov[pos] = true);
 }
 function magic(game, player) {
     reschedule(game);
@@ -757,19 +757,8 @@ function magic(game, player) {
 }
 
 const behaviors = {
-    player: (game, self) => {
-        // initialize fov if uninitiazlied
-        if (!game.fov[game.prop.pos[self]]) {
-            look(game, self);
-        }
-        return Infinity;
-    },
-    snake: (game, self) => {
-        reschedule(game);
-        return 0;
-    },
     environment: (game, self) => {
-        forEachPos(pos => {
+        forEachPos((pos) => {
             if (game.level.tiles[pos] === 'shortGrass' && game.level.grassDelay[pos] !== undefined) {
                 game.level.grassDelay[pos] -= 1;
                 if (game.level.grassDelay[pos] === 0) {
@@ -778,6 +767,17 @@ const behaviors = {
                 }
             }
         });
+        reschedule(game);
+        return 0;
+    },
+    player: (game, self) => {
+        // initialize fov if uninitiazlied
+        if (!game.fov[game.prop.pos[self]]) {
+            look(game, self);
+        }
+        return Infinity;
+    },
+    snake: (game, self) => {
         reschedule(game);
         return 0;
     },
@@ -792,7 +792,7 @@ const behaviors = {
             unschedule(game);
         }
         return 6;
-    }
+    },
 };
 /** Add a new entity in the schedule before the current actor */
 function schedule(game, entity) {
@@ -815,12 +815,12 @@ function step(game) {
 
 /** @file handles input */
 const movement = {
-    KeyE: dir1,
+    KeyA: dir9,
     KeyD: dir3,
+    KeyE: dir1,
+    KeyW: dir11,
     KeyX: dir5,
     KeyZ: dir7,
-    KeyA: dir9,
-    KeyW: dir11,
     Numpad1: dir7,
     Numpad3: dir5,
     Numpad4: dir9,
@@ -843,17 +843,17 @@ function keydown(display, e) {
 
 ///<reference path="../lib/pixi.js.d.ts"/>
 // export function init(root: HTMLElement) {}
-function create$$1(game, root) {
+function create$2(game, root) {
     const width = (WIDTH - HEIGHT / 2 + 1) * xu;
     const height = (HEIGHT - 1) * smallyu + bigyu;
     const app = new PIXI.Application({ width, height });
     const display = {
-        game,
-        app,
-        tiles: createTiles(app.stage),
-        textures: createTextures(),
-        skipAnimation: false,
         animationId: 0,
+        app,
+        game,
+        skipAnimation: false,
+        textures: createTextures(),
+        tiles: createTiles(app.stage),
     };
     loop(display);
     root.appendChild(display.app.view);
@@ -936,8 +936,9 @@ function loop(display) {
     }
 }
 function skip(display) {
-    if (display.animationId == undefined)
+    if (display.animationId === undefined) {
         return;
+    }
     display.skipAnimation = true;
     cancelAnimationFrame(display.animationId);
     display.animationId = undefined;
@@ -945,6 +946,6 @@ function skip(display) {
 }
 
 /** @file entry point */
-create$$1(get(), document.body);
+create$2(get(), document.body);
 
 }());
