@@ -367,7 +367,7 @@ impl<T> Grid<T> {
     /// Whether a position is within the bounds of this grid.
     pub fn contains(&self, pos: Pos) -> bool {
         let Index2d { row, col } = pos_to_index(pos);
-        (0..self.width).contains(col) && (0..self.height).contains(row)
+        col < self.width && row < self.height
     }
 
     pub fn positions(&self) -> Vec<Pos> {
@@ -459,6 +459,7 @@ fn index_to_pos(i: Index2d) -> Pos {
         y: row_first_y(i.row) - i.col as i32,
     }
 }
+
 /// Turn a position into a 2d index.
 fn pos_to_index(pos: Pos) -> Index2d {
     let Pos { x, y } = pos;
