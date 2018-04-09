@@ -1,1 +1,1 @@
-# Hex Adventure [![Build Status](https://travis-ci.org/as-f/hex-adventure-new.svg?branch=rewrite-it-in-rust)](https://travis-ci.org/as-f/hex-adventure-new)
+# Hex Adventure [![Build Status](https://travis-ci.org/as-f/hex-adventure.svg?branch=master)](https://travis-ci.org/as-f/hex-adventure)
