@@ -1,6 +1,6 @@
+
+/resources/oryx/
 *.xcf
-tileset.png
-ignore/
-node_modules/
-npm-debug.log
-temp/
+
+/target/
+**/*.rs.bk
