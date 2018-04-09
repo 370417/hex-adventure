@@ -14,5 +14,4 @@ before_script:
  - rustup component add rustfmt-preview
 script:
  - cargo fmt --all -- --write-mode=diff
- - cargo build --lib --verbose
  - cargo test --lib --verbose
