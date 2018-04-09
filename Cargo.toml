@@ -1,7 +1,6 @@
-[package]
-name = "hexadventure"
-version = "0.1.0"
-authors = ["as-f <as-f@users.noreply.github.com>"]
+[workspace]
 
-[dependencies]
-rand = "0.4"
+members = [
+    "hexadventure",
+    "hexadventure_gui",
+]

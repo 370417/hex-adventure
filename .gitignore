@@ -1,6 +1,6 @@
 
-/resources/oryx/
+**/oryx/
 *.xcf
 
-**/target/
+/target/
 **/*.rs.bk
