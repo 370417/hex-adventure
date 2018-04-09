@@ -1,21 +1,21 @@
 /** @file constants for map tiles */
 
-export type TileName = 'wall' | 'floor' | 'shortGrass' | 'tallGrass' | 'spikes'
+export type TileName = 'wall' | 'floor' | 'shortGrass' | 'tallGrass' | 'spikes';
 
-type TileData<T> = Record<TileName, T>
+type TileData<T> = Record<TileName, T>;
 
 export const transparency: TileData< 0 | 1 | 2> = {
-    wall: 0,
     floor: 2,
     shortGrass: 2,
-    tallGrass: 1,
     spikes: 2,
-}
+    tallGrass: 1,
+    wall: 0,
+};
 
 export const canWalk: TileData<boolean> = {
-    wall: false,
     floor: true,
     shortGrass: true,
-    tallGrass: true,
     spikes: false,
-}
+    tallGrass: true,
+    wall: false,
+};

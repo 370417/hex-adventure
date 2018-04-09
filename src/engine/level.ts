@@ -1,143 +1,140 @@
-import { WIDTH, HEIGHT } from '../data/constants'
-import { TileName } from '../data/tile'
-
-import { floodfill, floodfillSet, countGroups, surrounded, forEachNeighbor, xy2pos, pos2xy } from './position'
-import { shuffle } from './random'
-import { shadowcast } from './fov'
-
-import * as Alea from '../lib/alea'
-import * as Noise from '../lib/noise'
+import { HEIGHT, WIDTH } from '../data/constants';
+import { TileName } from '../data/tile';
+import * as Alea from '../lib/alea';
+import * as Noise from '../lib/noise';
+import { shadowcast } from './fov';
+import { countGroups, floodfill, floodfillSet } from './position';
+import { shuffle } from './random';
+import { createGrid, inBounds, forEachPos, forEachInnerPos, surrounded } from './grid'
+import { Grid } from '../types/game'
 
 /** @file handles level generation and iteration */
 
 export interface Level {
-    tiles: {[pos: number]: TileName}
-    playerPos: number
-}
-
-export function createPlaceholder() {
-    
+    tiles: Grid<TileName>;
+    playerX: number;
+    playerY: number;
 }
 
 /** create a new level */
-export function create(seed: number, playerPos: number): Level {
-    const alea = Alea.seed(seed)
-    Noise.seed(Alea.random(alea))
+export function create(seed: number, playerX: number, playerY: number): Level {
+    const alea = Alea.seed(seed);
+    const randSeed = Alea.random(alea);
+    Noise.seed(randSeed);
 
-    const tiles = createTiles()
+    const tiles = createTiles();
 
-    carveCaves()
-    removeSmallWalls()
-    const size = removeOtherCaves()
+    carveCaves();
+    removeSmallWalls();
+    const size = removeOtherCaves();
     if (size < WIDTH * HEIGHT / 4) {
-        return create(seed, playerPos)
+        return create(randSeed, playerX, playerY);
     }
-    fillSmallCaves()
-    const visibility = generateVisibility()
-    placeGrass()
+    fillSmallCaves();
+    const visibility = generateVisibility();
+    placeGrass();
 
     /**
      * return a dict of positions to tile types
      * all tiles are initially walls except for the player's position, which is a floor
      */
-    function createTiles() {
-        const types: {[pos: number]: TileName} = {}
-        forEachPos(pos => {
-            types[pos] = 'wall'
-        })
-        types[playerPos] = 'floor'
-        return types
+    function createTiles(): Grid<TileName> {
+        return createGrid(WIDTH, HEIGHT, (x, y) => {
+            if (x === playerX && y == playerY) {
+                return 'floor'
+            } else {
+                return 'wall'
+            }
+        });
     }
 
     /** whether the tile at [pos] is a floor tile */
-    function isFloor(pos: number) {
-        return tiles[pos] === 'floor'
+    function isFloor(x: number, y: number) {
+        return tiles[y][x] === 'floor';
     }
 
     /** whether the tile at [pos] is passable */
-    function passable(pos: number) {
-        return tiles[pos] === 'floor'// || tiles[pos] === '.'SHALLOW_WATER
+    function passable(x: number, y: number) {
+        return tiles[y][x] === 'floor';// || tiles[pos] === '.'SHALLOW_WATER
     }
 
     /** whether the tile at [pos] is a wall tile */
-    function isWall(pos: number) {
-        return inBounds(pos) && tiles[pos] === 'wall'
+    function isWall(x: number, y: number) {
+        return inBounds(WIDTH, HEIGHT, x, y) && tiles[y][y] === 'wall';
     }
 
     /** use an (almost) cellular automaton to generate caves */
     function carveCaves() {
-        const innerPositions: number[] = [];
-        forEachInnerPos(pos => innerPositions.push(pos))
-        shuffle(Array.from(innerPositions), alea).forEach(pos => {
-            if (isWall(pos) && countGroups(pos, passable) !== 1) {
-                tiles[pos] = 'floor'
+        const innerPositions: Array<{x: number, y: number}> = [];
+        forEachInnerPos(WIDTH, HEIGHT, (x, y) => innerPositions.push({x, y}));
+        shuffle(Array.from(innerPositions), alea).forEach(({x, y}) => {
+            if (isWall(x, y) && countGroups(pos, passable) !== 1) {
+                tiles[y][x] = 'floor';
             }
-        })
+        });
     }
 
     /** remove groups of 5 or fewer walls */
-    // TODO: investigate potential infinite loop here
-    // test seeds slightly before timestamp 4:41:19
     function removeSmallWalls() {
-        const visited = new Set()
-        forEachInnerPos(pos => {
-            const wallGroup = new Set()
-            const floodable = (pos: number) => isWall(pos) && !wallGroup.has(pos) && !visited.has(pos)
+        const visited = new Set();
+        forEachInnerPos(WIDTH, HEIGHT, (x, y) => {
+            const wallGroup = new Set();
+            const floodable = (pos: number) => isWall(x, y) && !wallGroup.has(pos) && !visited.has(pos);
             const flood = (pos: number) => {
-                visited.add(pos)
-                wallGroup.add(pos)
-            }
-            floodfill(pos, floodable, flood)
+                visited.add(pos);
+                wallGroup.add(pos);
+            };
+            floodfill(pos, floodable, flood);
 
             if (wallGroup.size < 6) {
                 for (const pos of wallGroup) {
-                    tiles[pos] = 'floor'
+                    tiles[y][x] = 'floor';
                 }
             }
-        })
+        });
     }
 
     /** remove disconnected caves */
     function removeOtherCaves() {
-        const mainCave = new Set()
-        floodfillSet(playerPos, passable, mainCave)
+        const mainCave = new Set();
+        floodfillSet(playerPos, passable, mainCave);
 
-        forEachInnerPos(pos => {
-            if (tiles[pos] === 'floor' && !mainCave.has(pos)) {
-                tiles[pos] = 'wall'
+        forEachInnerPos(WIDTH, HEIGHT, (x, y) => {
+            if (tiles[y][x] === 'floor' && !mainCave.has(pos)) {
+                tiles[y][x] = 'wall';
             }
-        })
+        });
 
-        return mainCave.size
+        return mainCave.size;
     }
 
     /** whether the tile at [pos] is part of a cave */
-    function isCave(pos: number) {
-        return isFloor(pos) && countGroups(pos, passable) === 1
+    function isCave(x: number, y: number) {
+        return isFloor(x, y) && countGroups(pos, passable) === 1;
     }
 
     /** whether the tile at [pos] is not part of a cave */
-    function isNotCave(pos: number) {
-        return isWall(pos) || countGroups(pos, passable) !== 1
+    function isNotCave(x: number, y: number) {
+        return isWall(x, y) || countGroups(pos, passable) !== 1;
     }
 
     /** whether the tile at [pos] is a dead end */
-    function isDeadEnd(pos: number) {
-        return isFloor(pos)
-        && countGroups(pos, passable) === 1
-        && surrounded(pos, isNotCave)
+    function isDeadEnd(x: number, y: number) {
+        return isFloor(x, y)
+            && countGroups(pos, passable) === 1
+            && surrounded(x, y, isNotCave);
     }
 
     /** recursively fill a dead end */
-    function fillDeadEnd(pos: number) {
-        if (isDeadEnd(pos)) {
-            tiles[pos] = 'wall'
-            forEachNeighbor(pos, neighbor => {
+    function fillDeadEnd(x: number, y: number) {
+        if (isDeadEnd(x, y)) {
+            tiles[y][x] = 'wall';
+            forEachNeighbor(pos, (neighbor) => {
                 if (pos === playerPos && passable(neighbor)) {
-                    playerPos = neighbor
+                    playerPos = neighbor;
                 }
-                fillDeadEnd(neighbor)
-            })
+                fillDeadEnd(neighbor);
+            });
         }
     }
 
@@ -145,98 +142,55 @@ export function create(seed: number, playerPos: number): Level {
     function fillSmallCaves() {
         // can't skip visited tiles here because previous caves can be affected
         // by the removal of later ones
-        forEachInnerPos(pos => {
-            fillDeadEnd(pos)
-            const cave = new Set()
-            floodfillSet(pos, isCave, cave)
+        forEachInnerPos(WIDTH, HEIGHT, (x, y) => {
+            fillDeadEnd(x, y);
+            const cave = new Set();
+            floodfillSet(pos, isCave, cave);
 
             if (cave.size === 2 || cave.size === 3) {
-                tiles[pos] = 'wall'
+                tiles[y][x] = 'wall';
                 for (const pos of cave) {
-                    fillDeadEnd(pos)
+                    fillDeadEnd(x, y);
                 }
             }
-        })
+        });
     }
 
     /** Find the number of tiles visible from each tile */
     function generateVisibility() {
-        const visibility: {[pos: number]: number} = {}
-        forEachInnerPos(pos => {
-            let fov = new Set()
-            const transparent = (pos: number) => tiles[pos] === 'floor'
-            const reveal = (pos: number) => fov.add(pos)
-            if (transparent(pos)) {
-                shadowcast(pos, transparent, reveal)
+        const visibility: {[pos: number]: number} = {};
+        forEachInnerPos(WIDTH, HEIGHT, (x, y) => {
+            const fov = new Set();
+            const transparent = (x: number, y: number) => tiles[y][x] === 'floor';
+            const reveal = (pos: number) => fov.add(pos);
+            if (transparent(x, y)) {
+                shadowcast(pos, transparent, reveal);
             }
-            visibility[pos] = fov.size
-        })
-        return visibility
+            visibility[pos] = fov.size;
+        });
+        return visibility;
     }
 
     function placeGrass() {
-        forEachInnerPos((pos, x, y) => {
-            if (tiles[pos] === 'wall') {
-                return
+        forEachInnerPos(WIDTH, HEIGHT, (x, y) => {
+            if (tiles[y][x] === 'wall') {
+                return;
             }
-            const z = 0 - x - y
-            const zoom = 10
+            const z = 0 - x - y;
+            const zoom = 10;
             // random simplex number between 0 and 2
-            const noise = Noise.simplex3(x / zoom, y / zoom, z / zoom) + 1
+            const noise = Noise.simplex3(x / zoom, y / zoom, z / zoom) + 1;
             if (visibility[pos] < 40 * noise) {
-                tiles[pos] = 'tallGrass'
+                tiles[y][x] = 'tallGrass';
             } else if (visibility[pos] < 60 * noise) {
-                tiles[pos] = 'shortGrass'
+                tiles[y][x] = 'shortGrass';
             }
-        })
+        });
     }
 
     return {
+        playerX,
+        playerY,
         tiles,
-        playerPos,
-    }
-}
-
-/** return the minimum x coordinate for a given [y], inclusive */
-function xmin(y: number) {
-    return Math.floor((HEIGHT - y) / 2)
-}
-
-/** return the maximum x coordinate for a given [y], exclusive */
-function xmax(y: number) {
-    return WIDTH - Math.floor(y / 2)
-}
-
-/** whether [pos] is inside the level */
-function inBounds(pos: number) {
-    const {x, y} = pos2xy(pos)
-    return y >= 0 && y < HEIGHT && x >= xmin(y) && x < xmax(y)
-}
-
-/** whether [pos] is inside the level and not on the outer edge */
-function inInnerBounds(pos: number) {
-    const {x, y} = pos2xy(pos)
-    return y > 0 && y < HEIGHT - 1 && x > xmin(y) && x < xmax(y) - 1
-}
-
-/** call [fun] for each position in the level */
-export function forEachPos(fun: (pos: number, x: number, y: number) => void) {
-    for (let y = 0; y < HEIGHT; y++) {
-        const min = xmin(y)
-        const max = xmax(y)
-        for (let x = min; x < max; x++) {
-            fun(xy2pos(x, y), x, y)
-        }
-    }
-}
-
-/** call [fun] for each position in the level except the outer edge */
-function forEachInnerPos(fun: (pos: number, x: number, y: number) => void) {
-    for (let y = 1; y < HEIGHT - 1; y++) {
-        const min = xmin(y) + 1
-        const max = xmax(y) - 1
-        for (let x = min; x < max; x++) {
-            fun(xy2pos(x, y), x, y)
-        }
-    }
+    };
 }

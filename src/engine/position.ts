@@ -1,49 +1,10 @@
-import { WIDTH, directions, dir1 } from '../data/constants'
+import { dir1, dir11, dir3, dir5, dir7, dir9, directions, WIDTH } from '../data/constants';
 
 /** @file helper functions for working with positions */
 
-/** convert the coordinate pair [x], [y] into an integer position */
-export function xy2pos(x: number, y: number) {
-    return x + y * WIDTH
-}
-
-/** convert an integer [pos] into the coordinate pair x, y */
-export function pos2xy(pos: number) {
-    return {
-        x: pos % WIDTH,
-        y: Math.floor(pos / WIDTH),
-    }
-}
-
 /** return the distance between (x1, y1) and (x2, y2) */
 export function calcDistance(x1: number, y1: number, x2: number, y2: number) {
-    return Math.abs(x2 - x1) + Math.abs(y2 - y1)
-}
-
-/** return the distance between pos1 and pos2 */
-export function calcDistancePos(pos1: number, pos2: number) {
-    const {x: x1, y: y1} = pos2xy(pos1)
-    const {x: x2, y: y2} = pos2xy(pos2)
-    return calcDistance(x1, y1, x2, y2)
-}
-
-/** return the number of contiguous groups of tiles around a [pos] that satisfy [ingroup] */
-export function countGroups(pos: number, ingroup: (pos: number) => boolean) {
-    // use var instead of let because
-    // chrome can't optimize compound let assignment
-    var groupcount = 0
-    for (let i = 0; i < 6; i++) {
-        const curr = directions[i]
-        const next = directions[(i+1)%6]
-        if (!ingroup(pos + curr) && ingroup(pos + next)) {
-            groupcount += 1
-        }
-    }
-    if (groupcount) {
-        return groupcount
-    } else {
-        return Number(ingroup(pos + dir1))
-    }
+    return Math.abs(x2 - x1) + Math.abs(y2 - y1);
 }
 
 /**
@@ -52,9 +13,9 @@ export function countGroups(pos: number, ingroup: (pos: number) => boolean) {
  */
 export function floodfill(pos: number, floodable: (pos: number) => boolean, flood: (pos: number) => void) {
     if (floodable(pos)) {
-        flood(pos)
+        flood(pos);
         for (let i = 0; i < 6; i++) {
-            floodfill(pos + directions[i], floodable, flood)
+            floodfill(pos + directions[i], floodable, flood);
         }
     }
 }
@@ -65,26 +26,32 @@ export function floodfill(pos: number, floodable: (pos: number) => boolean, floo
  */
 export function floodfillSet(pos: number, passable: (pos: number) => boolean, visited: Set<number>) {
     if (passable(pos) && !visited.has(pos)) {
-        visited.add(pos)
-        forEachNeighbor(pos, neighbor => {
-            floodfillSet(neighbor, passable, visited)
-        })
+        visited.add(pos);
+        forEachNeighbor(pos, (neighbor) => {
+            floodfillSet(neighbor, passable, visited);
+        });
     }
 }
 
-/** whether [istype] is true for all positions surrounding [pos] */
-export function surrounded(pos: number, istype: (pos: number) => boolean) {
-    for (let i = 0; i < 6; i++) {
-        if (!istype(pos + directions[i])) {
-            return false
-        }
-    }
-    return true
+export function approximateDirection(pos1: number, pos2: number): number {
+    const {x: x1, y: y1} = pos2xy(pos1);
+    const {x: x2, y: y2} = pos2xy(pos2);
+    const z1 = -x1 - y1;
+    const z2 = -x2 - y2;
+    const dx = Math.abs(x2 - x1);
+    const dy = Math.abs(y2 - y1);
+    const dz = Math.abs(z2 - z1);
+    if (dx >= dy && dx >= dz) {
+        return xy2pos(sign(x2 - x1), 0);
+    } else if ()
 }
 
-/** calls [callback] for each position neighboring [pos] */
-export function forEachNeighbor(pos: number, callback: (pos: number) => void) {
-    for (let i = 0; i < 6; i++) {
-        callback(pos + directions[i])
+function sign(n: number): number {
+    if (n > 0) {
+        return 1;
+    } else if (n < 0) {
+        return -1;
+    } else {
+        return 0;
     }
 }

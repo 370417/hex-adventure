@@ -27,4 +27,10 @@ To build:
 npm run build
 ```
 
-To run, open `docs/index.html` in a browser.
+To run, you need http-server installed (usually globally):
+
+```bash
+http-server .
+```
+
+Then go to [http://localhost:8080/].
