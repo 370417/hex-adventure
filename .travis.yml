@@ -1,3 +1,4 @@
+sudo: enabled
 language: rust
 cache: cargo
 
@@ -11,7 +12,7 @@ matrix:
     - rust: nightly
 
 before_install:
- - apt install libasound2-dev libsdl2-dev pkg-config
+ - sudo apt install libasound2-dev libsdl2-dev pkg-config
 
 before_script:
  - rustup component add rustfmt-preview
