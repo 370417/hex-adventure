@@ -1,7 +1,9 @@
 [package]
-name = "hexadventure"
+name = "hexadventure_gui"
 version = "0.1.0"
 authors = ["as-f <as-f@users.noreply.github.com>"]
 
 [dependencies]
+hexadventure = { version = "0.1", path = "../" }
 rand = "0.4"
+ggez = "0.4"
