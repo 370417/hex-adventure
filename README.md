@@ -1,1 +1,1 @@
-# Hex Adventure [![Build Status](https://travis-ci.org/as-f/hex-adventure.svg?branch=master)](https://travis-ci.org/as-f/hex-adventure)
+# Hex Adventure [![Build Status](https://travis-ci.org/as-f/hex-adventure.svg?branch=master)](https://travis-ci.org/as-f/hex-adventure) [![Build status](https://ci.appveyor.com/api/projects/status/agee2283p0fui3x9/branch/master?svg=true)](https://ci.appveyor.com/project/as-f/hex-adventure/branch/master)
