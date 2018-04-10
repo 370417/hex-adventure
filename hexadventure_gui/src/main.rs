@@ -1,17 +1,20 @@
 extern crate ggez;
-use ggez::conf::Conf;
+use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
 use ggez::event::EventHandler;
 use ggez::graphics;
 use ggez::graphics::Image;
 use ggez::{Context, GameResult};
-use std::fs::File;
+
+extern crate image;
+use image::GenericImage;
 
 extern crate hexadventure;
 use hexadventure::level::basic::{self, Tile};
 use hexadventure::util::grid::{Grid, Location};
 
-const CONFIG_PATH: &str = "resources/conf.toml";
+static WALL: &[u8] = include_bytes!("../resources/oryx/wall.png");
+static FLOOR: &[u8] = include_bytes!("../resources/oryx/floor.png");
 
 struct MainState {
     grid: Grid<Tile>,
@@ -19,12 +22,24 @@ struct MainState {
     floor: Image,
 }
 
+fn image_from_memory(ctx: &mut Context, bytes: &[u8]) -> Image {
+    let dynamic_image = image::load_from_memory_with_format(bytes, image::ImageFormat::PNG)
+        .expect("Failed to load image.");
+    let (width, height) = dynamic_image.dimensions();
+    Image::from_rgba8(
+        ctx,
+        width as u16,
+        height as u16,
+        &dynamic_image.raw_pixels(),
+    ).expect("Failed to convert image from raw pixels.")
+}
+
 impl MainState {
     fn new(ctx: &mut Context) -> Self {
         MainState {
             grid: basic::generate(40, 30, [0, 0, 0, 1]),
-            wall: Image::new(ctx, "/oryx/wall.png").unwrap(),
-            floor: Image::new(ctx, "/oryx/floor.png").unwrap(),
+            wall: image_from_memory(ctx, &WALL),
+            floor: image_from_memory(ctx, &FLOOR),
         }
     }
 }
@@ -51,7 +66,7 @@ impl EventHandler for MainState {
 }
 
 fn main() {
-    let config = load_config();
+    let config = generate_config();
     let mut ctx = Context::load_from_conf("hex-adventure", "as-f", config)
         .expect("Failed to load context from configuration.");
     graphics::set_default_filter(&mut ctx, graphics::FilterMode::Nearest);
@@ -62,9 +77,17 @@ fn main() {
     }
 }
 
-fn load_config() -> Conf {
-    match File::open(CONFIG_PATH).map(|mut file| Conf::from_toml_file(&mut file)) {
-        Ok(Ok(conf)) => conf,
-        _ => Conf::new(),
+fn generate_config() -> Conf {
+    Conf {
+        window_mode: WindowMode {
+            width: 1000,
+            height: 600,
+            ..Default::default()
+        },
+        window_setup: WindowSetup {
+            title: "Hex Adventure".to_owned(),
+            ..Default::default()
+        },
+        ..Default::default()
     }
 }

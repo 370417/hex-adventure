@@ -5,8 +5,5 @@ authors = ["as-f <as-f@users.noreply.github.com>"]
 
 [dependencies]
 hexadventure = { version = "0.1", path = "../hexadventure" }
-rand = "0.4"
 ggez = "0.4"
-
-[build-dependencies]
-fs_extra = "1.1"
+image = "0.18"
