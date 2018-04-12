@@ -170,3 +170,47 @@ where
     }
     segments
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use rand::{thread_rng, Rng};
+    use util::grid::Grid;
+
+    fn basic_flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>
+    where
+        F: Fn(Pos) -> bool,
+    {
+        let mut flooded = HashSet::new();
+        basic_flood_helper(origin, &mut flooded, &floodable);
+        flooded
+    }
+
+    fn basic_flood_helper<F>(pos: Pos, flooded: &mut HashSet<Pos>, floodable: &F)
+    where
+        F: Fn(Pos) -> bool,
+    {
+        if floodable(pos) && !flooded.contains(&pos) {
+            flooded.insert(pos);
+            for neighbor in pos.neighbors() {
+                basic_flood_helper(neighbor, flooded, floodable);
+            }
+        }
+    }
+
+    fn set_equiv(a: &HashSet<Pos>, b: &HashSet<Pos>) -> bool {
+        a.len() == b.len() && a.iter().all(|item| b.contains(item))
+    }
+
+    #[test]
+    fn flood_equiv_basic_flood() {
+        let mut rng = thread_rng();
+        for _i in 0..100 {
+            let grid: Grid<bool> = Grid::new(20, 20, |_pos| rng.gen_weighted_bool(3));
+            let normal_set = flood(grid.center(), |pos| grid.contains(pos) && grid[pos]);
+            let basic_set = basic_flood(grid.center(), |pos| grid.contains(pos) && grid[pos]);
+            assert!(set_equiv(&normal_set, &basic_set));
+        }
+    }
+}
