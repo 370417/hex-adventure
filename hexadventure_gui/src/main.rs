@@ -3,43 +3,35 @@ use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
 use ggez::event::EventHandler;
 use ggez::graphics;
-use ggez::graphics::Image;
+use ggez::graphics::{DrawParam, Point2};
+use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::{Context, GameResult};
 
 extern crate image;
-use image::GenericImage;
 
 extern crate hexadventure;
 use hexadventure::level::basic::{self, Tile};
-use hexadventure::util::grid::{Grid, Location};
+use hexadventure::util::grid::{Grid, Location, Pos};
 
-static WALL: &[u8] = include_bytes!("../resources/oryx/wall.png");
-static FLOOR: &[u8] = include_bytes!("../resources/oryx/floor.png");
+mod sprite;
 
 struct MainState {
     grid: Grid<Tile>,
-    wall: Image,
-    floor: Image,
+    spritebatch: SpriteBatch,
 }
 
-fn image_from_memory(ctx: &mut Context, bytes: &[u8]) -> Image {
-    let dynamic_image = image::load_from_memory_with_format(bytes, image::ImageFormat::PNG)
-        .expect("Failed to load image.");
-    let (width, height) = dynamic_image.dimensions();
-    Image::from_rgba8(
-        ctx,
-        width as u16,
-        height as u16,
-        &dynamic_image.raw_pixels(),
-    ).expect("Failed to convert image from raw pixels.")
+fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
+    let Location { x, y } = grid.pos_to_location(pos);
+    Point2::new((x * 9) as f32, (y * 16) as f32)
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> Self {
+        let width = 40;
+        let height = 30;
         MainState {
-            grid: basic::generate(40, 30, [0, 0, 0, 1]),
-            wall: image_from_memory(ctx, &WALL),
-            floor: image_from_memory(ctx, &FLOOR),
+            grid: basic::generate(width, height, [0, 0, 0, 1]),
+            spritebatch: sprite::load_spritebatch(ctx),
         }
     }
 }
@@ -51,15 +43,18 @@ impl EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx);
+        self.spritebatch.clear();
         for pos in self.grid.positions() {
-            let Location { x, y } = self.grid.pos_to_location(pos);
-            let dest = graphics::Point2::new(9.0 * x as f32, 16.0 * y as f32);
-            let img = match self.grid[pos] {
-                Tile::Floor => &self.floor,
-                Tile::Wall => &self.wall,
-            };
-            graphics::draw(ctx, img, dest, 0f32)?;
+            self.spritebatch.add(DrawParam {
+                src: sprite::sprite_src(match self.grid[pos] {
+                    Tile::Wall => sprite::Sprite::Wall,
+                    Tile::Floor => sprite::Sprite::Floor,
+                }),
+                dest: pos_to_point2(pos, &self.grid),
+                ..Default::default()
+            });
         }
+        graphics::draw(ctx, &self.spritebatch, Point2::new(0.0, 0.0), 0.0)?;
         graphics::present(ctx);
         Ok(())
     }

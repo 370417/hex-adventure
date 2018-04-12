@@ -1,6 +1,6 @@
 
-**/oryx/
-*.xcf
+oryx/
+sprites.png
 
 /target/
 **/*.rs.bk

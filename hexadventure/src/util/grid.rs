@@ -337,9 +337,9 @@ impl<T> Grid<T> {
     ///
     /// The `init` closure takes a `usize` which is the index of the position,
     /// and a `Pos` which is the position itself.
-    pub fn new<F>(width: usize, height: usize, init: F) -> Self
+    pub fn new<F>(width: usize, height: usize, mut init: F) -> Self
     where
-        F: Fn(Pos) -> T,
+        F: FnMut(Pos) -> T,
     {
         let mut grid = Vec::with_capacity(width * height);
         for row in 0..height {
