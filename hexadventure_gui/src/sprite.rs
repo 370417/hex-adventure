@@ -1,6 +1,6 @@
 use ggez::Context;
-use ggez::graphics::{Image, Rect};
 use ggez::graphics::spritebatch::SpriteBatch;
+use ggez::graphics::{Image, Rect};
 
 use image;
 use image::GenericImage;

@@ -3,8 +3,8 @@ use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
 use ggez::event::EventHandler;
 use ggez::graphics;
-use ggez::graphics::{DrawParam, Point2};
 use ggez::graphics::spritebatch::SpriteBatch;
+use ggez::graphics::{DrawParam, Point2};
 use ggez::{Context, GameResult};
 
 extern crate image;

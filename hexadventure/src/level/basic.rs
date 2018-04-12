@@ -1,10 +1,12 @@
-//! Generate a level of only wall and floor tiles.
+//! Generate a connected level of only wall and floor tiles.
 
 use rand::{Rng, SeedableRng, XorShiftRng};
 
 use util;
 use util::floodfill;
 use util::grid::{Grid, Pos};
+
+use std::collections::HashSet;
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Tile {
@@ -18,6 +20,7 @@ pub fn generate(width: usize, height: usize, seed: [u32; 4]) -> Grid<Tile> {
     let positions = calc_shuffled_positions(&grid, &mut rng);
     carve_caves(&positions, &mut grid);
     remove_isolated_walls(&mut grid);
+    // remove_isolated_floors(&mut grid);
     remove_small_caves(&mut grid);
     grid
 }
@@ -64,6 +67,26 @@ fn remove_isolated_walls(grid: &mut Grid<Tile>) {
                 grid[pos] = Tile::Floor;
             }
         }
+    }
+}
+
+/// Remove all but the largest group of floor tiles.
+fn remove_isolated_floors(grid: &mut Grid<Tile>) {
+    let mut largest_floor_set = HashSet::new();
+    for pos in grid.positions() {
+        if grid[pos] == Tile::Floor {
+            let floor_set =
+                floodfill::flood(pos, |pos| grid.contains(pos) && grid[pos] == Tile::Floor);
+            for &pos in floor_set.iter() {
+                grid[pos] = Tile::Wall;
+            }
+            if floor_set.len() > largest_floor_set.len() {
+                largest_floor_set = floor_set;
+            }
+        }
+    }
+    for pos in largest_floor_set {
+        grid[pos] = Tile::Floor;
     }
 }
 
