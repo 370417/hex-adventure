@@ -20,7 +20,7 @@ pub fn generate(width: usize, height: usize, seed: [u32; 4]) -> Grid<Tile> {
     let positions = calc_shuffled_positions(&grid, &mut rng);
     carve_caves(&positions, &mut grid);
     remove_isolated_walls(&mut grid);
-    // remove_isolated_floors(&mut grid);
+    remove_isolated_floors(&mut grid);
     remove_small_caves(&mut grid);
     grid
 }

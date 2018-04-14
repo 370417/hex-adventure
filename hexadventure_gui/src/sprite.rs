@@ -9,6 +9,7 @@ use image::ImageFormat;
 pub enum Sprite {
     Wall,
     Floor,
+    TallGrass,
 }
 
 pub fn load_spritebatch(ctx: &mut Context) -> SpriteBatch {
@@ -31,6 +32,7 @@ pub fn sprite_src(sprite: Sprite) -> Rect {
     let (x, y) = match sprite {
         Sprite::Wall => (0, 0),
         Sprite::Floor => (1, 0),
+        Sprite::TallGrass => (2, 0),
     };
     let w = 18;
     let h = 24;
