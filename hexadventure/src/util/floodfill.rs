@@ -2,6 +2,9 @@ use std::collections::HashSet;
 use std::iter::{IntoIterator, Iterator};
 use util::grid::{Direction, Pos};
 
+/// Perform a floodfill starting at origin.
+///
+/// Positions are flooded if they are connected to the origin and floodable(pos) returns true.
 pub fn flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>
 where
     F: Fn(Pos) -> bool,
@@ -20,9 +23,22 @@ where
     flooded
 }
 
-/// Flood to the east or west of origin, excluding origin.
-///
-/// Returns the outermost flooded position.
+/// A horizontal segment of positions from start to end inclusive.
+/// 
+/// For iteration, start is assumed to be to the east and end to the west (like the sun).
+#[derive(Copy, Clone)]
+struct Segment {
+    start: Pos,
+    end: Pos,
+}
+
+/// Describes whether the current flood_vert call
+#[derive(Copy, Clone)]
+enum FloodDirection {
+    North,
+    South,
+}
+
 fn flood_horiz<F>(
     origin: Pos,
     direction: Direction,
@@ -75,10 +91,34 @@ fn flood_vert<F>(
     }
 }
 
-#[derive(Copy, Clone)]
-enum FloodDirection {
-    North,
-    South,
+/// Flood from a segment of positions. Returns a vector of subsegments
+fn flood_segment<F>(segment: Segment, flooded: &mut HashSet<Pos>, floodable: &F) -> Vec<Segment>
+where
+    F: Fn(Pos) -> bool,
+{
+    let mut start = None;
+    let mut segments = Vec::new();
+    for pos in segment {
+        if floodable(pos) && !flooded.contains(&pos) {
+            flooded.insert(pos);
+            if start.is_none() {
+                start = Some(pos);
+            }
+        } else if let Some(start_pos) = start {
+            segments.push(Segment {
+                start: start_pos,
+                end: pos - Direction::West,
+            });
+            start = None;
+        }
+    }
+    if let Some(start_pos) = start {
+        segments.push(Segment {
+            start: start_pos,
+            end: segment.end,
+        });
+    }
+    segments
 }
 
 impl FloodDirection {
@@ -88,13 +128,6 @@ impl FloodDirection {
             FloodDirection::South => FloodDirection::North,
         }
     }
-}
-
-/// A horizontal segment of positions from start to end inclusive.
-#[derive(Copy, Clone)]
-struct Segment {
-    start: Pos,
-    end: Pos,
 }
 
 struct SegmentIterator {
@@ -139,36 +172,6 @@ impl Iterator for SegmentIterator {
             Some(old_pos)
         }
     }
-}
-
-/// Flood from a segment of positions. Returns a vector of subsegments
-fn flood_segment<F>(segment: Segment, flooded: &mut HashSet<Pos>, floodable: &F) -> Vec<Segment>
-where
-    F: Fn(Pos) -> bool,
-{
-    let mut start = None;
-    let mut segments = Vec::new();
-    for pos in segment {
-        if floodable(pos) && !flooded.contains(&pos) {
-            flooded.insert(pos);
-            if start.is_none() {
-                start = Some(pos);
-            }
-        } else if let Some(start_pos) = start {
-            segments.push(Segment {
-                start: start_pos,
-                end: pos - Direction::West,
-            });
-            start = None;
-        }
-    }
-    if let Some(start_pos) = start {
-        segments.push(Segment {
-            start: start_pos,
-            end: segment.end,
-        });
-    }
-    segments
 }
 
 #[cfg(test)]

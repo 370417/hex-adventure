@@ -76,7 +76,7 @@ fn remove_isolated_floors(grid: &mut Grid<Tile>) {
     for pos in grid.positions() {
         if grid[pos] == Tile::Floor {
             let floor_set =
-                floodfill::flood(pos, |pos| grid.contains(pos) && grid[pos] == Tile::Floor);
+                floodfill::flood(pos, |pos| grid[pos] == Tile::Floor);
             for &pos in floor_set.iter() {
                 grid[pos] = Tile::Wall;
             }
