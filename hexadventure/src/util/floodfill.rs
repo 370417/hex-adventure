@@ -49,23 +49,23 @@ fn flood_vert<F>(
     F: Fn(Pos) -> bool,
 {
     let segment = origin.expand(direction);
-    let subsegments = flood_segment(segment, flooded, floodable);
-    if let Some(first) = subsegments.first() {
+    let mut subsegments = flood_segment(segment, flooded, floodable);
+    if let Some(ref mut first) = subsegments.first_mut() {
         if first.start == segment.start {
-            let east_edge = flood_horiz(segment.start, Direction::East, flooded, floodable);
+            first.start = flood_horiz(segment.start, Direction::East, flooded, floodable);
             let overhang = Segment {
-                start: east_edge,
+                start: first.start,
                 end: segment.start + Direction::East,
             };
             flood_vert(overhang, direction.opposite(), flooded, floodable);
         }
     }
-    if let Some(last) = subsegments.last() {
+    if let Some(ref mut last) = subsegments.last_mut() {
         if last.end == segment.end {
-            let west_edge = flood_horiz(segment.end, Direction::West, flooded, floodable);
+            last.end = flood_horiz(segment.end, Direction::West, flooded, floodable);
             let overhang = Segment {
                 start: segment.end + Direction::West,
-                end: west_edge,
+                end: last.end,
             };
             flood_vert(overhang, direction.opposite(), flooded, floodable);
         }
@@ -157,7 +157,7 @@ where
         } else if let Some(start_pos) = start {
             segments.push(Segment {
                 start: start_pos,
-                end: pos,
+                end: pos - Direction::West,
             });
             start = None;
         }
