@@ -15,36 +15,80 @@ where
     }
     flooded.insert(origin);
     let segment = Segment {
-        start: flood_horiz(origin, Direction::East, &mut flooded, &floodable),
-        end: flood_horiz(origin, Direction::West, &mut flooded, &floodable),
+        start: flood_ray(origin, Direction::East, &mut flooded, &floodable),
+        end: flood_ray(origin, Direction::West, &mut flooded, &floodable),
     };
-    flood_vert(segment, FloodDirection::North, &mut flooded, &floodable);
-    flood_vert(segment, FloodDirection::South, &mut flooded, &floodable);
+    flood_vert(
+        segment.clone(),
+        FloodDirection::North,
+        &mut flooded,
+        &floodable,
+    );
+    flood_vert(
+        segment,
+        FloodDirection::South,
+        &mut flooded,
+        &floodable,
+    );
     flooded
 }
 
 /// A horizontal segment of positions from start to end inclusive.
 ///
 /// For iteration, start is assumed to be to the east and end to the west (like the sun).
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 struct Segment {
     start: Pos,
     end: Pos,
 }
 
-/// Describes whether the current flood_vert call
+/// Describes whether the current flood_vert call is headed north or south.
 #[derive(Copy, Clone)]
 enum FloodDirection {
     North,
     South,
 }
 
-fn flood_horiz<F>(
-    origin: Pos,
-    direction: Direction,
+/// Flood to the north or south of an origin segment.
+fn flood_vert<F>(
+    origin: Segment,
+    direction: FloodDirection,
     flooded: &mut HashSet<Pos>,
     floodable: &F,
-) -> Pos
+) where
+    F: Fn(Pos) -> bool,
+{
+    let segment = origin.expand(direction);
+    let Segment { start, end } = segment;
+    let mut subsegments = segment.flood(flooded, floodable);
+    if let Some(ref mut first) = subsegments.first_mut() {
+        if first.start == start {
+            first.start = flood_ray(start, Direction::East, flooded, floodable);
+            let overhang = Segment {
+                start: first.start,
+                end: start + Direction::East,
+            };
+            flood_vert(overhang, direction.opposite(), flooded, floodable);
+        }
+    }
+    if let Some(ref mut last) = subsegments.last_mut() {
+        if last.end == end {
+            last.end = flood_ray(end, Direction::West, flooded, floodable);
+            let overhang = Segment {
+                start: end + Direction::West,
+                end: last.end,
+            };
+            flood_vert(overhang, direction.opposite(), flooded, floodable);
+        }
+    }
+    for subsegment in subsegments {
+        flood_vert(subsegment, direction, flooded, floodable);
+    }
+}
+
+/// Flood a ray of positions, beginning at origin (not inclusive)
+/// and continuing in a certain direction until a non-floodable position is reached.
+fn flood_ray<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>, floodable: &F) -> Pos
 where
     F: Fn(Pos) -> bool,
 {
@@ -56,69 +100,52 @@ where
     pos - direction
 }
 
-fn flood_vert<F>(
-    origin: Segment,
-    direction: FloodDirection,
-    flooded: &mut HashSet<Pos>,
-    floodable: &F,
-) where
-    F: Fn(Pos) -> bool,
-{
-    let segment = origin.expand(direction);
-    let mut subsegments = flood_segment(segment, flooded, floodable);
-    if let Some(ref mut first) = subsegments.first_mut() {
-        if first.start == segment.start {
-            first.start = flood_horiz(segment.start, Direction::East, flooded, floodable);
-            let overhang = Segment {
-                start: first.start,
-                end: segment.start + Direction::East,
-            };
-            flood_vert(overhang, direction.opposite(), flooded, floodable);
+impl Segment {
+    /// Expand a segment north or south.
+    /// The resulting segment is longer than the original by 1.
+    fn expand(&self, direction: FloodDirection) -> Self {
+        let (start_dir, end_dir) = match direction {
+            FloodDirection::North => (Direction::Northeast, Direction::Northwest),
+            FloodDirection::South => (Direction::Southeast, Direction::Southwest),
+        };
+        Segment {
+            start: self.start + start_dir,
+            end: self.end + end_dir,
         }
     }
-    if let Some(ref mut last) = subsegments.last_mut() {
-        if last.end == segment.end {
-            last.end = flood_horiz(segment.end, Direction::West, flooded, floodable);
-            let overhang = Segment {
-                start: segment.end + Direction::West,
-                end: last.end,
-            };
-            flood_vert(overhang, direction.opposite(), flooded, floodable);
-        }
-    }
-    for subsegment in subsegments {
-        flood_vert(subsegment, direction, flooded, floodable);
-    }
-}
 
-/// Flood from a segment of positions. Returns a vector of subsegments
-fn flood_segment<F>(segment: Segment, flooded: &mut HashSet<Pos>, floodable: &F) -> Vec<Segment>
-where
-    F: Fn(Pos) -> bool,
-{
-    let mut start = None;
-    let mut segments = Vec::new();
-    for pos in segment {
-        if floodable(pos) && !flooded.contains(&pos) {
-            flooded.insert(pos);
-            if start.is_none() {
-                start = Some(pos);
+    /// Flood an entire segment.
+    /// This skips over non-floodable positions instead of stopping at them.
+    /// Returns a vector of floodable subsegments.
+    fn flood<F>(self, flooded: &mut HashSet<Pos>, floodable: &F) -> Vec<Segment>
+    where
+        F: Fn(Pos) -> bool,
+    {
+        let mut start = None;
+        let mut segments = Vec::new();
+        let end = self.end;
+        for pos in self {
+            if floodable(pos) && !flooded.contains(&pos) {
+                flooded.insert(pos);
+                if start.is_none() {
+                    start = Some(pos);
+                }
+            } else if let Some(start_pos) = start {
+                segments.push(Segment {
+                    start: start_pos,
+                    end: pos - Direction::West,
+                });
+                start = None;
             }
-        } else if let Some(start_pos) = start {
+        }
+        if let Some(start_pos) = start {
             segments.push(Segment {
                 start: start_pos,
-                end: pos - Direction::West,
+                end,
             });
-            start = None;
         }
+        segments
     }
-    if let Some(start_pos) = start {
-        segments.push(Segment {
-            start: start_pos,
-            end: segment.end,
-        });
-    }
-    segments
 }
 
 impl FloodDirection {
@@ -133,19 +160,6 @@ impl FloodDirection {
 struct SegmentIterator {
     pos: Pos,
     stop: Pos,
-}
-
-impl Segment {
-    fn expand(&self, direction: FloodDirection) -> Self {
-        let (start_dir, end_dir) = match direction {
-            FloodDirection::North => (Direction::Northeast, Direction::Northwest),
-            FloodDirection::South => (Direction::Southeast, Direction::Southwest),
-        };
-        Segment {
-            start: self.start + start_dir,
-            end: self.end + end_dir,
-        }
-    }
 }
 
 impl IntoIterator for Segment {
