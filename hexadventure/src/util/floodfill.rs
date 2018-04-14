@@ -24,7 +24,7 @@ where
 }
 
 /// A horizontal segment of positions from start to end inclusive.
-/// 
+///
 /// For iteration, start is assumed to be to the east and end to the west (like the sun).
 #[derive(Copy, Clone)]
 struct Segment {
