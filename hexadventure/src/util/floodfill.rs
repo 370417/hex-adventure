@@ -24,12 +24,7 @@ where
         &mut flooded,
         &floodable,
     );
-    flood_vert(
-        segment,
-        FloodDirection::South,
-        &mut flooded,
-        &floodable,
-    );
+    flood_vert(segment, FloodDirection::South, &mut flooded, &floodable);
     flooded
 }
 

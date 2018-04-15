@@ -22,13 +22,11 @@ struct MainState {
 
 fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
     let Location { x, y } = grid.pos_to_location(pos);
-    Point2::new((x * 9) as f32, (y * 16) as f32)
+    Point2::new((x * 9) as f32, (y * 16 - 7) as f32)
 }
 
 impl MainState {
-    fn new(ctx: &mut Context) -> Self {
-        let width = 40;
-        let height = 30;
+    fn new(ctx: &mut Context, width: usize, height: usize) -> Self {
         MainState {
             grid: basic::generate(width, height, [0, 0, 0, 1]),
             spritebatch: sprite::load_spritebatch(ctx),
@@ -61,22 +59,25 @@ impl EventHandler for MainState {
 }
 
 fn main() {
-    let config = generate_config();
+    let width = 40;
+    let height = 26;
+    let config = generate_config(width, height);
     let mut ctx = Context::load_from_conf("hex-adventure", "as-f", config)
         .expect("Failed to load context from configuration.");
     graphics::set_default_filter(&mut ctx, graphics::FilterMode::Nearest);
-    let mut state = MainState::new(&mut ctx);
+    graphics::set_background_color(&mut ctx, graphics::BLACK);
+    let mut state = MainState::new(&mut ctx, width, height);
     match event::run(&mut ctx, &mut state) {
         Err(e) => println!("Error encountered: {}", e),
         _ => println!("Game exited cleanly"),
     }
 }
 
-fn generate_config() -> Conf {
+fn generate_config(width: usize, height: usize) -> Conf {
     Conf {
         window_mode: WindowMode {
-            width: 1000,
-            height: 600,
+            width: width as u32 * 18 + 9,
+            height: height as u32 * 16 + 2,
             ..Default::default()
         },
         window_setup: WindowSetup {
