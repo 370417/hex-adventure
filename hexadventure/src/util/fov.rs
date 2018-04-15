@@ -38,30 +38,41 @@ where
     F: Fn(u32, u32) -> bool,
     G: FnMut(u32, u32),
 {
-    let mut fov_exists = false;
+    let mut was_transparent = None;
     let x_min = round_high(y as f32 * start);
     let x_max = round_low(y as f32 * end);
     for x in x_min..1 + x_max {
         if transparent(x, y) {
             if x as f32 >= y as f32 * start && x as f32 <= y as f32 * end {
                 reveal(x, y);
-                fov_exists = true;
+                was_transparent = Some(true);
             }
         } else {
             let end = (x as f32 - 0.5) / y as f32;
-            if fov_exists && start < end {
-                scan(y + 1, start, end, transparent, reveal);
+            if start < end {
+                if let Some(true) = was_transparent {
+                    scan(y + 1, start, end, transparent, reveal);
+                }
             }
             reveal(x, y);
-            fov_exists = false;
+            was_transparent = Some(false);
             start = (x as f32 + 0.5) / y as f32;
             if start >= end {
                 return;
             }
         }
     }
-    if fov_exists && start < end {
-        scan(y + 1, start, end, transparent, reveal);
+    if start < end {
+        match was_transparent {
+            Some(true) => scan(y + 1, start, end, transparent, reveal),
+            Some(false) => (),
+            None => {
+                let x = y as f32 * (start + end) / 2.0;
+                let x = x.round() as u32;
+                reveal(x, y);
+                scan(y + 1, start, end, transparent, reveal);
+            }
+        }
     }
 }
 
