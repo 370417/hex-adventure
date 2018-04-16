@@ -1,7 +1,7 @@
 extern crate ggez;
 use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
-use ggez::event::EventHandler;
+use ggez::event::{EventHandler, Keycode, Mod};
 use ggez::graphics;
 use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::graphics::{DrawParam, Point2};
@@ -12,7 +12,7 @@ extern crate image;
 extern crate hexadventure;
 use hexadventure::game::Game;
 use hexadventure::level::tile::Tile;
-use hexadventure::util::grid::{Grid, Location, Pos};
+use hexadventure::util::grid::{Direction, Grid, Location, Pos};
 
 mod sprite;
 
@@ -50,7 +50,7 @@ impl EventHandler for MainState {
                     Tile::Floor => sprite::Sprite::Floor,
                 }),
                 dest: pos_to_point2(pos, &self.game.level),
-                color: Some(if self.game.level_memory[pos].turn == 1 {
+                color: Some(if self.game.level_memory[pos].turn == self.game.turn {
                     graphics::Color::new(1.0, 1.0, 1.0, 1.0)
                 } else {
                     graphics::Color::new(0.5, 0.5, 0.5, 1.0)
@@ -61,6 +61,18 @@ impl EventHandler for MainState {
         graphics::draw(ctx, &self.spritebatch, Point2::new(0.0, 0.0), 0.0)?;
         graphics::present(ctx);
         Ok(())
+    }
+
+    fn key_down_event(&mut self, _ctx: &mut Context, keycode: Keycode, keymod: Mod, repeat: bool) {
+        match keycode {
+            Keycode::W => self.game.move_player(Direction::Northwest),
+            Keycode::E => self.game.move_player(Direction::Northeast),
+            Keycode::A => self.game.move_player(Direction::West),
+            Keycode::D => self.game.move_player(Direction::East),
+            Keycode::Z => self.game.move_player(Direction::Southwest),
+            Keycode::X => self.game.move_player(Direction::Southeast),
+            _ => (),
+        }
     }
 }
 
