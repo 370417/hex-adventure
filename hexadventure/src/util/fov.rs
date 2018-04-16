@@ -22,14 +22,12 @@ where
     reveal(center);
     for i in 0..6 {
         let transform = |x, y| center + TANGENTS[i] * x as i32 + NORMALS[i] * y as i32;
-        let transformed_transparent = |x, y| transparent(transform(x, y));
-        let mut transformed_reveal = |x, y| reveal(transform(x, y));
         scan(
             1,
             0.0,
             1.0,
-            &transformed_transparent,
-            &mut transformed_reveal,
+            &|x, y| transparent(transform(x, y)),
+            &mut |x, y| reveal(transform(x, y)),
         );
     }
 }

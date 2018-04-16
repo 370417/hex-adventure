@@ -1,6 +1,6 @@
 //! Generate a connected level of only wall and floor tiles.
 
-use rand::{IsaacRng, Rng, SeedableRng};
+use rand::{IsaacRng, Rng};
 
 use util;
 use util::floodfill;

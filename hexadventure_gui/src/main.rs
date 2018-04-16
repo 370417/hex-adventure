@@ -20,6 +20,7 @@ struct MainState {
     game: Game,
     spritebatch: SpriteBatch,
     sprite_ids: Grid<SpriteIdx>,
+    redraw: bool,
 }
 
 fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
@@ -35,6 +36,7 @@ impl MainState {
             game: Game::new(width, height),
             spritebatch,
             sprite_ids,
+            redraw: true,
         }
     }
 }
@@ -45,6 +47,10 @@ impl EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        if !self.redraw {
+            return Ok(());
+        }
+        self.redraw = false;
         graphics::clear(ctx);
         for pos in self.game.level.positions() {
             let sprite_id = self.sprite_ids[pos];
@@ -82,7 +88,13 @@ impl EventHandler for MainState {
         Ok(())
     }
 
-    fn key_down_event(&mut self, _ctx: &mut Context, keycode: Keycode, keymod: Mod, repeat: bool) {
+    fn key_down_event(
+        &mut self,
+        _ctx: &mut Context,
+        keycode: Keycode,
+        _keymod: Mod,
+        _repeat: bool,
+    ) {
         match keycode {
             Keycode::W => self.game.move_player(Direction::Northwest),
             Keycode::E => self.game.move_player(Direction::Northeast),
@@ -92,6 +104,7 @@ impl EventHandler for MainState {
             Keycode::X => self.game.move_player(Direction::Southeast),
             _ => (),
         }
+        self.redraw = true;
     }
 }
 
