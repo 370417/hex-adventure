@@ -14,11 +14,12 @@ const TANGENTS: [Direction; 6] = [
 ];
 
 /// Calculate field of view.
-pub fn fov<F, G>(center: Pos, transparent: &F, reveal: &mut G)
+pub fn fov<F, G>(center: Pos, transparent: F, mut reveal: G)
 where
     F: Fn(Pos) -> bool,
     G: FnMut(Pos),
 {
+    reveal(center);
     for i in 0..6 {
         let transform = |x, y| center + TANGENTS[i] * x as i32 + NORMALS[i] * y as i32;
         let transformed_transparent = |x, y| transparent(transform(x, y));
@@ -48,10 +49,10 @@ where
                 was_transparent = Some(true);
             }
         } else {
-            let end = (x as f32 - 0.5) / y as f32;
-            if start < end {
+            let new_end = (x as f32 - 0.5) / y as f32;
+            if start < new_end {
                 if let Some(true) = was_transparent {
-                    scan(y + 1, start, end, transparent, reveal);
+                    scan(y + 1, start, new_end, transparent, reveal);
                 }
             }
             reveal(x, y);
@@ -112,6 +113,6 @@ mod tests {
     fn no_infinite_loop() {
         let mut g = grid::Grid::new(10, 10, |_pos| false);
         let center = g.center();
-        fov(center, &|_pos| false, &mut |pos| g[pos] = true);
+        fov(center, |_pos| false, |pos| g[pos] = true);
     }
 }

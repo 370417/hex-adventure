@@ -10,13 +10,14 @@ use ggez::{Context, GameResult};
 extern crate image;
 
 extern crate hexadventure;
-use hexadventure::level::basic::{self, Tile};
+use hexadventure::game::Game;
+use hexadventure::level::tile::Tile;
 use hexadventure::util::grid::{Grid, Location, Pos};
 
 mod sprite;
 
 struct MainState {
-    grid: Grid<Tile>,
+    game: Game,
     spritebatch: SpriteBatch,
 }
 
@@ -28,7 +29,7 @@ fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
 impl MainState {
     fn new(ctx: &mut Context, width: usize, height: usize) -> Self {
         MainState {
-            grid: basic::generate(width, height, [0, 0, 0, 1]),
+            game: Game::new(width, height),
             spritebatch: sprite::load_spritebatch(ctx),
         }
     }
@@ -42,13 +43,18 @@ impl EventHandler for MainState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx);
         self.spritebatch.clear();
-        for pos in self.grid.positions() {
+        for pos in self.game.level.positions() {
             self.spritebatch.add(DrawParam {
-                src: sprite::sprite_src(match self.grid[pos] {
+                src: sprite::sprite_src(match self.game.level[pos] {
                     Tile::Wall => sprite::Sprite::Wall,
                     Tile::Floor => sprite::Sprite::Floor,
                 }),
-                dest: pos_to_point2(pos, &self.grid),
+                dest: pos_to_point2(pos, &self.game.level),
+                color: Some(if self.game.level_memory[pos].turn == 1 {
+                    graphics::Color::new(1.0, 1.0, 1.0, 1.0)
+                } else {
+                    graphics::Color::new(0.5, 0.5, 0.5, 1.0)
+                }),
                 ..Default::default()
             });
         }

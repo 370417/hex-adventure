@@ -6,13 +6,9 @@ use util;
 use util::floodfill;
 use util::grid::{Grid, Pos};
 
-use std::collections::HashSet;
+use level::tile::Tile;
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
-pub enum Tile {
-    Wall,
-    Floor,
-}
+use std::collections::HashSet;
 
 pub fn generate(width: usize, height: usize, seed: [u32; 4]) -> Grid<Tile> {
     let mut grid = Grid::new(width, height, |_pos| Tile::Wall);
@@ -137,5 +133,20 @@ mod tests {
         for pos in grid.positions() {
             assert!(!is_dead_end(pos, &grid));
         }
+    }
+
+    #[test]
+    fn test_connected() {
+        let grid = generate(40, 40, [1, 2, 3, 4]);
+        let floor_pos = *grid.positions()
+            .iter()
+            .find(|&&pos| grid[pos] == Tile::Floor)
+            .unwrap();
+        let cave = floodfill::flood(floor_pos, |pos| grid[pos] == Tile::Floor);
+        assert!(
+            grid.positions()
+                .iter()
+                .all(|&pos| grid[pos] == Tile::Wall || cave.contains(&pos))
+        );
     }
 }
