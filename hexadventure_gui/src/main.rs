@@ -3,7 +3,7 @@ use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
 use ggez::event::{EventHandler, Keycode, Mod};
 use ggez::graphics;
-use ggez::graphics::spritebatch::SpriteBatch;
+use ggez::graphics::spritebatch::{SpriteBatch, SpriteIdx};
 use ggez::graphics::{DrawParam, Point2};
 use ggez::{Context, GameResult};
 
@@ -19,6 +19,7 @@ mod sprite;
 struct MainState {
     game: Game,
     spritebatch: SpriteBatch,
+    sprite_ids: Grid<SpriteIdx>,
 }
 
 fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
@@ -28,9 +29,12 @@ fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
 
 impl MainState {
     fn new(ctx: &mut Context, width: usize, height: usize) -> Self {
+        let mut spritebatch = sprite::load_spritebatch(ctx);
+        let sprite_ids = Grid::new(width, height, |_pos| spritebatch.add(Default::default()));
         MainState {
             game: Game::new(width, height),
-            spritebatch: sprite::load_spritebatch(ctx),
+            spritebatch,
+            sprite_ids,
         }
     }
 }
@@ -42,22 +46,37 @@ impl EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx);
-        self.spritebatch.clear();
         for pos in self.game.level.positions() {
-            self.spritebatch.add(DrawParam {
-                src: sprite::sprite_src(match self.game.level[pos] {
-                    Tile::Wall => sprite::Sprite::Wall,
-                    Tile::Floor => sprite::Sprite::Floor,
-                }),
-                dest: pos_to_point2(pos, &self.game.level),
-                color: Some(if self.game.level_memory[pos].turn == self.game.turn {
-                    graphics::Color::new(1.0, 1.0, 1.0, 1.0)
-                } else {
-                    graphics::Color::new(0.5, 0.5, 0.5, 1.0)
-                }),
-                ..Default::default()
-            });
+            let sprite_id = self.sprite_ids[pos];
+            self.spritebatch.set(
+                sprite_id,
+                DrawParam {
+                    src: sprite::sprite_src(match self.game.level[pos] {
+                        Tile::Wall => sprite::Sprite::Wall,
+                        Tile::Floor => sprite::Sprite::Floor,
+                    }),
+                    dest: pos_to_point2(pos, &self.game.level),
+                    color: Some(if self.game.level_memory[pos].turn == self.game.turn {
+                        graphics::Color::new(1.0, 1.0, 1.0, 1.0)
+                    } else if self.game.level_memory[pos].turn >= self.game.first_turn {
+                        graphics::Color::new(0.5, 0.5, 0.5, 1.0)
+                    } else {
+                        graphics::BLACK
+                    }),
+                    ..Default::default()
+                },
+            )?;
         }
+        let player_pos = self.game.player.pos;
+        let player_sprite = self.sprite_ids[player_pos];
+        self.spritebatch.set(
+            player_sprite,
+            DrawParam {
+                src: sprite::sprite_src(sprite::Sprite::Player),
+                dest: pos_to_point2(player_pos, &self.game.level),
+                ..Default::default()
+            },
+        )?;
         graphics::draw(ctx, &self.spritebatch, Point2::new(0.0, 0.0), 0.0)?;
         graphics::present(ctx);
         Ok(())

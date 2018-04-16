@@ -6,6 +6,7 @@ use util::grid::{Direction, Grid, Pos};
 
 pub struct Game {
     pub turn: u32,
+    pub first_turn: u32,
     pub level: Grid<Tile>,
     pub player: Player,
     pub level_memory: Grid<TileMemory>,
@@ -13,11 +14,12 @@ pub struct Game {
 
 impl Game {
     pub fn new(width: usize, height: usize) -> Self {
-        let level = basic::generate(width, height, [1, 2, 3, 4]);
+        let level = basic::generate(width, height, [1, 1, 3, 4]);
         let player_pos = place_player(&level);
         let level_memory = Grid::new(width, height, |_pos| TileMemory::new(Tile::Wall, 0));
         let mut game = Game {
             turn: 0,
+            first_turn: 1,
             level,
             player: Player::new(player_pos),
             level_memory,
