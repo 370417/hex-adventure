@@ -1,4 +1,3 @@
-use level::tile::Tile;
 use util::grid::{Direction, Pos};
 
 pub struct Player {

@@ -1,6 +1,6 @@
 //! Generate a connected level of only wall and floor tiles.
 
-use rand::{Rng, SeedableRng, XorShiftRng};
+use rand::{IsaacRng, Rng, SeedableRng};
 
 use util;
 use util::floodfill;
@@ -10,9 +10,9 @@ use level::tile::Tile;
 
 use std::collections::HashSet;
 
-pub fn generate(width: usize, height: usize, seed: [u32; 4]) -> Grid<Tile> {
+pub fn generate(width: usize, height: usize, seed: u64) -> Grid<Tile> {
     let mut grid = Grid::new(width, height, |_pos| Tile::Wall);
-    let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
+    let mut rng = IsaacRng::new_from_u64(seed);
     let positions = calc_shuffled_positions(&grid, &mut rng);
     carve_caves(&positions, &mut grid);
     remove_isolated_walls(&mut grid);

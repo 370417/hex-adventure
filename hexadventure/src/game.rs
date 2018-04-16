@@ -1,6 +1,7 @@
 use level::basic;
 use level::tile::{Tile, TileMemory};
 use player::Player;
+use rand::{thread_rng, Rng};
 use util::fov::fov;
 use util::grid::{Direction, Grid, Pos};
 
@@ -14,7 +15,9 @@ pub struct Game {
 
 impl Game {
     pub fn new(width: usize, height: usize) -> Self {
-        let level = basic::generate(width, height, [1, 1, 3, 4]);
+        let seed = thread_rng().gen();
+        println!("SEED: {}", seed);
+        let level = basic::generate(width, height, seed);
         let player_pos = place_player(&level);
         let level_memory = Grid::new(width, height, |_pos| TileMemory::new(Tile::Wall, 0));
         let mut game = Game {
