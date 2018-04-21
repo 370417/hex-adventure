@@ -1,4 +1,4 @@
-use level::basic;
+use level::{basic, exit};
 use level::tile::{Tile, TileMemory};
 use player::Player;
 use rand::{thread_rng, Rng};
@@ -17,7 +17,8 @@ impl Game {
     pub fn new(width: usize, height: usize) -> Self {
         let seed = thread_rng().gen();
         println!("SEED: {}", seed);
-        let level = basic::generate(width, height, seed);
+        let mut level = basic::generate(width, height, seed);
+        let next_level = exit::add_exit(&mut level, &mut thread_rng());
         let player_pos = place_player(&level);
         let level_memory = Grid::new(width, height, |_pos| TileMemory::new(Tile::Wall, 0));
         let mut game = Game {

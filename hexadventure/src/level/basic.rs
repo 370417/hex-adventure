@@ -35,7 +35,7 @@ fn carve_caves(positions: &[Pos], grid: &mut Grid<Tile>) {
     }
 }
 
-fn count_floor_groups(pos: Pos, grid: &Grid<Tile>) -> i32 {
+pub fn count_floor_groups(pos: Pos, grid: &Grid<Tile>) -> i32 {
     let mut group_count = 0;
     let neighbors = pos.neighbors();
     let neighbor_pairs = util::self_zip(&neighbors);

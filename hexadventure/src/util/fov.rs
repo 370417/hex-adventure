@@ -47,10 +47,12 @@ where
                 was_transparent = Some(true);
             }
         } else {
-            let new_end = (x as f32 - 0.5) / y as f32;
-            if start < new_end {
-                if let Some(true) = was_transparent {
-                    scan(y + 1, start, new_end, transparent, reveal);
+            {
+                let end = (x as f32 - 0.5) / y as f32;
+                if start < end {
+                    if let Some(true) = was_transparent {
+                        scan(y + 1, start, end, transparent, reveal);
+                    }
                 }
             }
             reveal(x, y);

@@ -2,6 +2,9 @@
 pub enum Tile {
     Wall,
     Floor,
+    ShortGrass,
+    Exit,
+    Entrance,
 }
 
 pub struct TileMemory {
@@ -14,6 +17,9 @@ impl Tile {
         match *self {
             Tile::Wall => false,
             Tile::Floor => true,
+            Tile::ShortGrass => true,
+            Tile::Exit => false,
+            Tile::Entrance => false,
         }
     }
 
@@ -21,6 +27,9 @@ impl Tile {
         match *self {
             Tile::Wall => false,
             Tile::Floor => true,
+            Tile::ShortGrass => true,
+            Tile::Exit => true,
+            Tile::Entrance => true,
         }
     }
 }

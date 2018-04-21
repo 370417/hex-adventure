@@ -219,7 +219,7 @@ mod tests {
     fn flood_equiv_basic_flood() {
         let mut rng = thread_rng();
         for _i in 0..100 {
-            let grid: Grid<bool> = Grid::new(20, 20, |_pos| rng.gen_weighted_bool(3));
+            let grid: Grid<bool> = Grid::new(20, 20, |_pos| rng.gen_bool(0.75));
             let normal_set = flood(grid.center(), |pos| grid.contains(pos) && grid[pos]);
             let basic_set = basic_flood(grid.center(), |pos| grid.contains(pos) && grid[pos]);
             assert!(set_equiv(&normal_set, &basic_set));

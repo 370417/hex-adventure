@@ -10,6 +10,8 @@ pub enum Sprite {
     Wall,
     Floor,
     Player,
+    ShortGrass,
+    Stairs,
 }
 
 pub fn load_spritebatch(ctx: &mut Context) -> SpriteBatch {
@@ -32,6 +34,8 @@ pub fn sprite_src(sprite: Sprite) -> Rect {
     let (x, y) = match sprite {
         Sprite::Wall => (0, 0),
         Sprite::Floor => (1, 0),
+        Sprite::ShortGrass => (3, 0),
+        Sprite::Stairs => (5, 0),
         Sprite::Player => (0, 1),
     };
     let w = 18;

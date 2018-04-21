@@ -60,6 +60,9 @@ impl EventHandler for MainState {
                     src: sprite::sprite_src(match self.game.level[pos] {
                         Tile::Wall => sprite::Sprite::Wall,
                         Tile::Floor => sprite::Sprite::Floor,
+                        Tile::ShortGrass => sprite::Sprite::ShortGrass,
+                        Tile::Exit => sprite::Sprite::Stairs,
+                        Tile::Entrance => sprite::Sprite::Stairs,
                     }),
                     dest: pos_to_point2(pos, &self.game.level),
                     color: Some(if self.game.level_memory[pos].turn == self.game.turn {
