@@ -1,10 +1,12 @@
 use ggez::Context;
 use ggez::graphics::spritebatch::SpriteBatch;
-use ggez::graphics::{Image, Rect};
+use ggez::graphics::{self, Color, Image, Rect};
 
 use image;
 use image::GenericImage;
 use image::ImageFormat;
+
+use hexadventure::level::tile::Tile;
 
 pub enum Sprite {
     Wall,
@@ -12,6 +14,37 @@ pub enum Sprite {
     Player,
     ShortGrass,
     Stairs,
+}
+
+impl From<Tile> for Sprite {
+    fn from(tile: Tile) -> Self {
+        match tile {
+            Tile::Wall => Sprite::Wall,
+            Tile::Floor => Sprite::Floor,
+            Tile::ShortGrass => Sprite::ShortGrass,
+            Tile::Exit => Sprite::Stairs,
+            Tile::Entrance => Sprite::Stairs,
+        }
+    }
+}
+
+pub fn color_from_tile(tile: Tile) -> Color {
+    match tile {
+        Tile::Wall => graphics::WHITE,
+        Tile::Floor => Color::new(0.75, 0.75, 0.75, 1.0),
+        Tile::ShortGrass => graphics::WHITE,
+        Tile::Exit => graphics::WHITE,
+        Tile::Entrance => graphics::WHITE,
+    }
+}
+
+pub fn darken(color: Color) -> Color {
+    Color {
+        r: color.r / 2.0,
+        g: color.g / 2.0,
+        b: color.b / 2.0,
+        a: color.a,
+    }
 }
 
 pub fn load_spritebatch(ctx: &mut Context) -> SpriteBatch {

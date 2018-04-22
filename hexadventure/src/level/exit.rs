@@ -1,8 +1,8 @@
-use util::grid::{Grid, Pos};
 use level::basic;
 use level::tile::Tile;
+use util::grid::{Grid, Pos};
 
-use rand::{IsaacRng, Rng};
+use rand::Rng;
 
 pub fn add_exit<R: Rng>(level: &mut Grid<Tile>, rng: &mut R) -> Grid<Tile> {
     loop {
@@ -19,7 +19,7 @@ pub fn add_exit<R: Rng>(level: &mut Grid<Tile>, rng: &mut R) -> Grid<Tile> {
 fn find_exit(level: &Grid<Tile>, next_level: &Grid<Tile>) -> Option<Pos> {
     for pos in level.inner_positions() {
         if is_valid_exit(pos, level) && is_valid_exit(pos, next_level) {
-            return Some(pos)
+            return Some(pos);
         }
     }
     None

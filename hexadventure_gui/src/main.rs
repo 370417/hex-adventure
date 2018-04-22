@@ -11,10 +11,10 @@ extern crate image;
 
 extern crate hexadventure;
 use hexadventure::game::Game;
-use hexadventure::level::tile::Tile;
 use hexadventure::util::grid::{Direction, Grid, Location, Pos};
 
 mod sprite;
+use sprite::{color_from_tile, darken, Sprite};
 
 struct MainState {
     game: Game,
@@ -57,20 +57,14 @@ impl EventHandler for MainState {
             self.spritebatch.set(
                 sprite_id,
                 DrawParam {
-                    src: sprite::sprite_src(match self.game.level[pos] {
-                        Tile::Wall => sprite::Sprite::Wall,
-                        Tile::Floor => sprite::Sprite::Floor,
-                        Tile::ShortGrass => sprite::Sprite::ShortGrass,
-                        Tile::Exit => sprite::Sprite::Stairs,
-                        Tile::Entrance => sprite::Sprite::Stairs,
-                    }),
+                    src: sprite::sprite_src(Sprite::from(self.game.level[pos])),
                     dest: pos_to_point2(pos, &self.game.level),
                     color: Some(if self.game.level_memory[pos].turn == self.game.turn {
-                        graphics::Color::new(1.0, 1.0, 1.0, 1.0)
+                        color_from_tile(self.game.level[pos])
                     } else if self.game.level_memory[pos].turn >= self.game.first_turn {
-                        graphics::Color::new(0.5, 0.5, 0.5, 1.0)
+                        darken(color_from_tile(self.game.level[pos]))
                     } else {
-                        graphics::BLACK
+                        graphics::Color::new(0.0, 0.0, 0.0, 0.0)
                     }),
                     ..Default::default()
                 },
@@ -83,6 +77,22 @@ impl EventHandler for MainState {
             DrawParam {
                 src: sprite::sprite_src(sprite::Sprite::Player),
                 dest: pos_to_point2(player_pos, &self.game.level),
+                offset: match self.game.player.facing {
+                    Direction::West | Direction::Northwest | Direction::Southwest => {
+                        Point2::new(0.0, 0.0)
+                    }
+                    Direction::East | Direction::Northeast | Direction::Southeast => {
+                        Point2::new(1.0, 0.0)
+                    }
+                },
+                scale: match self.game.player.facing {
+                    Direction::West | Direction::Northwest | Direction::Southwest => {
+                        Point2::new(1.0, 1.0)
+                    }
+                    Direction::East | Direction::Northeast | Direction::Southeast => {
+                        Point2::new(-1.0, 1.0)
+                    }
+                },
                 ..Default::default()
             },
         )?;

@@ -1,5 +1,5 @@
-use level::{basic, exit};
 use level::tile::{Tile, TileMemory};
+use level::{basic, exit};
 use player::Player;
 use rand::{thread_rng, Rng};
 use util::fov::fov;
@@ -31,6 +31,12 @@ impl Game {
         game.next_turn();
         game
     }
+
+    // fn execute(action: &Action) {}
+
+    // fn move_mob(&mut self, mob: &mut Mob, direction: Direction) {
+
+    // }
 
     pub fn move_player(&mut self, direction: Direction) {
         let target_pos = self.player.pos + direction;
