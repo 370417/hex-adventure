@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn test_no_dead_ends() {
-        let grid = generate(40, 40, [1, 2, 3, 4]);
+        let grid = generate(40, 40, 1);
         for pos in grid.positions() {
             assert!(!is_dead_end(pos, &grid));
         }
@@ -137,7 +137,7 @@ mod tests {
 
     #[test]
     fn test_connected() {
-        let grid = generate(40, 40, [1, 2, 3, 4]);
+        let grid = generate(40, 40, 1);
         let floor_pos = *grid.positions()
             .iter()
             .find(|&&pos| grid[pos] == Tile::Floor)
