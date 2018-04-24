@@ -1,5 +1,6 @@
 use util::grid::{Direction, Pos};
 
+#[derive(Serialize, Deserialize)]
 pub struct Player {
     pub pos: Pos,
     pub facing: Direction,

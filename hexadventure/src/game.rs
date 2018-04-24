@@ -5,6 +5,7 @@ use rand::{thread_rng, Rng};
 use util::fov::fov;
 use util::grid::{Direction, Grid, Pos};
 
+#[derive(Serialize, Deserialize)]
 pub struct Game {
     pub turn: u32,
     pub first_turn: u32,

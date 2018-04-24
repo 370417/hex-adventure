@@ -22,6 +22,7 @@ pub const DIRECTIONS: [Direction; 6] = [
 pub const WIDTH: usize = 40;
 pub const HEIGHT: usize = 30;
 
+#[derive(Serialize, Deserialize)]
 pub struct Grid<T> {
     pub width: usize,
     pub height: usize,
@@ -31,20 +32,20 @@ pub struct Grid<T> {
 /// A 2d index of a hexagonal grid.
 ///
 /// Ranges from (0, 0) to (width-1, height-1).
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
 struct Index2d {
     row: usize,
     col: usize,
 }
 
 /// A position on a hexagonal grid in axial coordinates.
-#[derive(PartialEq, Eq, Debug, Copy, Clone, Hash)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Hash, Serialize, Deserialize)]
 pub struct Pos {
     x: i32,
     y: i32,
 }
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Displacement {
     x: i32,
     y: i32,
@@ -56,7 +57,7 @@ pub struct Location {
     pub y: i32,
 }
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Direction {
     Southeast,
     East,

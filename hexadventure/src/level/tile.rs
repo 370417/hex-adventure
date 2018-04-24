@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Tile {
     Wall,
     Floor,
@@ -7,6 +7,7 @@ pub enum Tile {
     Entrance,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TileMemory {
     pub tile: Tile,
     pub turn: u32,

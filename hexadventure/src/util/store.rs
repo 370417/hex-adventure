@@ -5,17 +5,19 @@
 const INVALID_VERSION: u32 = 0;
 const FIRST_VALID_VERSION: u32 = 1;
 
+#[derive(Serialize, Deserialize)]
 pub struct Store<T> {
     values: Vec<Versioned<T>>,
     reusable_ids: Vec<Id>,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct Id {
     index: usize,
     version: u32,
 }
 
+#[derive(Serialize, Deserialize)]
 struct Versioned<T> {
     value: T,
     version: u32,
