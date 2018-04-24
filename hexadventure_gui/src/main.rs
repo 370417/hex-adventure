@@ -1,3 +1,6 @@
+extern crate bincode;
+use bincode::{deserialize_from, serialize_into};
+
 extern crate ggez;
 use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
@@ -16,6 +19,11 @@ use hexadventure::util::grid::{Direction, Grid, Location, Pos};
 mod sprite;
 use sprite::{color_from_tile, darken, Sprite};
 
+use std::error::Error;
+use std::fs::File;
+
+const SAVE_PATH: &str = "save.bincode";
+
 struct MainState {
     game: Game,
     spritebatch: SpriteBatch,
@@ -28,17 +36,34 @@ fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
     Point2::new((x * 9) as f32, (y * 16 - 7) as f32)
 }
 
+// TODO: read from save file to load game here
 impl MainState {
     fn new(ctx: &mut Context, width: usize, height: usize) -> Self {
         let mut spritebatch = sprite::load_spritebatch(ctx);
         let sprite_ids = Grid::new(width, height, |_pos| spritebatch.add(Default::default()));
+        let game = match load_game() {
+            Ok(game) => game,
+            _ => Game::new(width, height),
+        };
         MainState {
-            game: Game::new(width, height),
+            game,
             spritebatch,
             sprite_ids,
             redraw: true,
         }
     }
+}
+
+fn load_game() -> Result<Game, Box<Error>> {
+    let file = File::open(SAVE_PATH)?;
+    let game = deserialize_from(file)?;
+    Ok(game)
+}
+
+fn save_game(game: &Game) -> Result<(), Box<Error>> {
+    let file = File::create(SAVE_PATH)?;
+    serialize_into(file, game)?;
+    Ok(())
 }
 
 impl EventHandler for MainState {
@@ -133,6 +158,9 @@ fn main() {
     match event::run(&mut ctx, &mut state) {
         Err(e) => println!("Error encountered: {}", e),
         _ => println!("Game exited cleanly"),
+    }
+    if let Err(e) = save_game(&state.game) {
+        println!("Error in saving game: {}", e);
     }
 }
 

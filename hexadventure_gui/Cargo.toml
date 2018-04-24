@@ -7,3 +7,4 @@ authors = ["as-f <as-f@users.noreply.github.com>"]
 hexadventure = { version = "0.1", path = "../hexadventure" }
 ggez = "0.4"
 image = "0.18"
+bincode = "1.0"

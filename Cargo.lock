@@ -358,7 +358,6 @@ dependencies = [
 name = "hexadventure"
 version = "0.1.0"
 dependencies = [
- "bincode 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.5.0-pre.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -368,6 +367,7 @@ dependencies = [
 name = "hexadventure_gui"
 version = "0.1.0"
 dependencies = [
+ "bincode 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ggez 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hexadventure 0.1.0",
  "image 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)",
