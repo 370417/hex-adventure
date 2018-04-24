@@ -2,6 +2,7 @@ pub mod floodfill;
 pub mod fov;
 pub mod grid;
 mod line;
+pub mod store;
 
 /// Zip a slice with itself but rotated forward by one.
 ///
