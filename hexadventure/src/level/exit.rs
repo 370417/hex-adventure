@@ -6,8 +6,7 @@ use rand::Rng;
 
 pub fn add_exit<R: Rng>(level: &mut Grid<Tile>, rng: &mut R) -> Grid<Tile> {
     loop {
-        let next_seed = rng.gen();
-        let mut next_level = basic::generate(level.width, level.height, next_seed);
+        let mut next_level = basic::generate(level.width, level.height, rng);
         if let Some(pos) = find_exit(level, &next_level) {
             level[pos] = Tile::Exit;
             next_level[pos] = Tile::Entrance;
