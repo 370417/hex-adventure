@@ -1,18 +1,16 @@
 use fov::fov;
 use grid::{Direction, Grid, Pos, DIRECTIONS};
 use level::Architect;
-use level::tile::{Tile, TileMemory};
+use level::tile::{Tile, TileView};
 use player::Player;
 use rand::{thread_rng, Rng};
 
 #[derive(Serialize, Deserialize)]
 pub struct Game {
-    pub turn: u32,
-    pub first_turn: u32,
     architect: Architect,
     pub level: Grid<Tile>,
     pub player: Player,
-    pub level_memory: Grid<TileMemory>,
+    pub level_memory: Grid<TileView>,
 }
 
 impl Game {
@@ -22,10 +20,8 @@ impl Game {
         let mut architect = Architect::new(seed, width, height);
         let level = architect.generate();
         let player_pos = place_player(&level);
-        let level_memory = Grid::new(width, height, |_pos| TileMemory::new(Tile::Wall, 0));
+        let level_memory = Grid::new(width, height, |_pos| TileView::None);
         let mut game = Game {
-            turn: 0,
-            first_turn: 1,
             architect,
             level,
             player: Player::new(player_pos),
@@ -60,21 +56,25 @@ impl Game {
                     }
                 }
             }
-            self.first_turn = self.turn;
-            self.turn += 1;
+            for tile_view in self.level_memory.iter_mut() {
+                *tile_view = TileView::None;
+            }
             self.next_turn();
         }
     }
 
     fn next_turn(&mut self) {
-        self.turn += 1;
         let level = &self.level;
         let memory = &mut self.level_memory;
-        let turn = self.turn;
+        for tile_view in memory.iter_mut() {
+            if let TileView::Seen(tile) = *tile_view {
+                *tile_view = TileView::Remembered(tile);
+            }
+        }
         fov(
             self.player.pos,
             |pos| level[pos].transparent(),
-            |pos| memory[pos] = TileMemory::new(level[pos], turn),
+            |pos| memory[pos] = TileView::Seen(level[pos]),
         );
     }
 }

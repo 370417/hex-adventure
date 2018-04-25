@@ -15,6 +15,7 @@ extern crate image;
 extern crate hexadventure;
 use hexadventure::game::Game;
 use hexadventure::grid::{Direction, Grid, Location, Pos};
+use hexadventure::level::tile::TileView;
 
 mod sprite;
 use sprite::{color_from_tile, darken, Sprite};
@@ -82,14 +83,17 @@ impl EventHandler for MainState {
             self.spritebatch.set(
                 sprite_id,
                 DrawParam {
-                    src: sprite::sprite_src(Sprite::from(self.game.level_memory[pos].tile)),
+                    src: match self.game.level_memory[pos] {
+                        TileView::Seen(tile) | TileView::Remembered(tile) => {
+                            sprite::sprite_src(Sprite::from(tile))
+                        }
+                        TileView::None => sprite::sprite_src(Sprite::Wall),
+                    },
                     dest: pos_to_point2(pos, &self.game.level),
-                    color: Some(if self.game.level_memory[pos].turn == self.game.turn {
-                        color_from_tile(self.game.level[pos])
-                    } else if self.game.level_memory[pos].turn >= self.game.first_turn && self.game.level_memory[pos].turn > self.game.first_turn {
-                        darken(color_from_tile(self.game.level[pos]))
-                    } else {
-                        graphics::Color::new(0.0, 0.0, 0.0, 0.0)
+                    color: Some(match self.game.level_memory[pos] {
+                        TileView::Seen(tile) => color_from_tile(tile),
+                        TileView::Remembered(tile) => darken(color_from_tile(tile)),
+                        TileView::None => graphics::Color::new(0.0, 0.0, 0.0, 0.0),
                     }),
                     ..Default::default()
                 },
