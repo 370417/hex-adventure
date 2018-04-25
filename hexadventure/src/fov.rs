@@ -1,9 +1,15 @@
 //! Field of view calculation.
 
-use util::grid;
-use util::grid::{Direction, Pos};
+use grid::{Direction, Pos};
 
-const NORMALS: [Direction; 6] = grid::DIRECTIONS;
+const NORMALS: [Direction; 6] = [
+    Direction::Northeast,
+    Direction::East,
+    Direction::Southeast,
+    Direction::Southwest,
+    Direction::West,
+    Direction::Northwest,
+];
 const TANGENTS: [Direction; 6] = [
     Direction::Southeast,
     Direction::Southwest,
@@ -92,6 +98,7 @@ fn round_low(n: f32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use util::grid::Grid;
 
     #[test]
     fn test_round_high() {

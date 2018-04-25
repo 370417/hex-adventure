@@ -1,6 +1,6 @@
+use grid::{Grid, Pos};
 use level::basic;
 use level::tile::Tile;
-use util::grid::{Grid, Pos};
 
 use rand::Rng;
 

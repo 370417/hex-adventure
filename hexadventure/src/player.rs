@@ -1,4 +1,4 @@
-use util::grid::{Direction, Pos};
+use grid::{Direction, Pos};
 
 #[derive(Serialize, Deserialize)]
 pub struct Player {

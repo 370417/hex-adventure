@@ -1,4 +1,4 @@
-use util::grid::Direction;
+use grid::Direction;
 
 pub trait Mob {
     fn facing(&self) -> Direction;

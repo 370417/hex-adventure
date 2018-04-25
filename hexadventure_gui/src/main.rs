@@ -14,7 +14,7 @@ extern crate image;
 
 extern crate hexadventure;
 use hexadventure::game::Game;
-use hexadventure::util::grid::{Direction, Grid, Location, Pos};
+use hexadventure::grid::{Direction, Grid, Location, Pos};
 
 mod sprite;
 use sprite::{color_from_tile, darken, Sprite};

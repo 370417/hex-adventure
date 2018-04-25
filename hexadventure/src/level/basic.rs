@@ -2,11 +2,12 @@
 
 use rand::{IsaacRng, Rng};
 
-use util;
-use util::floodfill;
-use util::grid::{Grid, Pos};
+use floodfill;
+use grid::{Grid, Pos};
 
 use level::tile::Tile;
+
+use util;
 
 use std::collections::HashSet;
 

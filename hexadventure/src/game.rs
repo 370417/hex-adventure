@@ -1,9 +1,9 @@
+use fov::fov;
+use grid::{Direction, Grid, Pos};
 use level::tile::{Tile, TileMemory};
 use level::{basic, exit};
 use player::Player;
 use rand::{thread_rng, Rng};
-use util::fov::fov;
-use util::grid::{Direction, Grid, Pos};
 
 #[derive(Serialize, Deserialize)]
 pub struct Game {

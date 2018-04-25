@@ -1,6 +1,6 @@
+use grid::{Direction, Pos};
 use std::collections::HashSet;
 use std::iter::{IntoIterator, Iterator};
-use util::grid::{Direction, Pos};
 
 /// Perform a floodfill starting at origin.
 ///

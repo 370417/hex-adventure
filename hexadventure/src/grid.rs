@@ -8,7 +8,7 @@
 
 use std::ops;
 
-use util::line::Line;
+use line::Line;
 
 pub const DIRECTIONS: [Direction; 6] = [
     Direction::Northeast,
