@@ -1,5 +1,5 @@
 use fov::fov;
-use grid::{Direction, Grid, Pos};
+use grid::{Direction, Grid, Pos, DIRECTIONS};
 use level::Architect;
 use level::tile::{Tile, TileMemory};
 use player::Player;
@@ -9,6 +9,7 @@ use rand::{thread_rng, Rng};
 pub struct Game {
     pub turn: u32,
     pub first_turn: u32,
+    architect: Architect,
     pub level: Grid<Tile>,
     pub player: Player,
     pub level_memory: Grid<TileMemory>,
@@ -25,6 +26,7 @@ impl Game {
         let mut game = Game {
             turn: 0,
             first_turn: 1,
+            architect,
             level,
             player: Player::new(player_pos),
             level_memory,
@@ -44,6 +46,22 @@ impl Game {
         if self.level[target_pos].passable() {
             self.player.pos = target_pos;
             self.player.facing = direction;
+            self.next_turn();
+        } else if self.level[target_pos] == Tile::Exit {
+            self.level = self.architect.generate();
+            if self.level[self.player.pos].passable() {
+                self.player.facing = direction.rotate(3);
+            } else {
+                for &direction in DIRECTIONS.iter() {
+                    if self.level[target_pos + direction].passable() {
+                        self.player.pos = target_pos + direction;
+                        self.player.facing = direction;
+                        break;
+                    }
+                }
+            }
+            self.first_turn = self.turn;
+            self.turn += 1;
             self.next_turn();
         }
     }

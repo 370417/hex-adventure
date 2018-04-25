@@ -82,11 +82,11 @@ impl EventHandler for MainState {
             self.spritebatch.set(
                 sprite_id,
                 DrawParam {
-                    src: sprite::sprite_src(Sprite::from(self.game.level[pos])),
+                    src: sprite::sprite_src(Sprite::from(self.game.level_memory[pos].tile)),
                     dest: pos_to_point2(pos, &self.game.level),
                     color: Some(if self.game.level_memory[pos].turn == self.game.turn {
                         color_from_tile(self.game.level[pos])
-                    } else if self.game.level_memory[pos].turn >= self.game.first_turn {
+                    } else if self.game.level_memory[pos].turn >= self.game.first_turn && self.game.level_memory[pos].turn > self.game.first_turn {
                         darken(color_from_tile(self.game.level[pos]))
                     } else {
                         graphics::Color::new(0.0, 0.0, 0.0, 0.0)
