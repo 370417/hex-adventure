@@ -1,10 +1,13 @@
 //! Level generation.
 
-pub mod basic;
-pub mod exit;
+mod basic;
+mod exit;
+mod populate;
 pub mod tile;
 
-use self::tile::Tile;
+use self::populate::populate;
+
+use self::tile::{Terrain, Tile};
 use grid::Grid;
 
 use rand::IsaacRng;
@@ -13,7 +16,7 @@ use std::mem::replace;
 #[derive(Serialize, Deserialize)]
 pub struct Architect {
     rng: IsaacRng,
-    next_level: Option<Grid<Tile>>,
+    next_level: Option<Grid<Terrain>>,
     width: usize,
     height: usize,
 }
@@ -32,12 +35,12 @@ impl Architect {
         match self.next_level {
             Some(ref mut next_level) => {
                 let new_next_level = exit::add_exit(next_level, &mut self.rng);
-                replace(next_level, new_next_level)
+                populate(replace(next_level, new_next_level))
             }
             None => {
                 let mut level = basic::generate(self.width, self.height, &mut self.rng);
                 self.next_level = Some(exit::add_exit(&mut level, &mut self.rng));
-                level
+                populate(level)
             }
         }
     }

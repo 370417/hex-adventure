@@ -11,7 +11,7 @@ pub struct Store<T> {
     reusable_ids: Vec<Id>,
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Debug)]
 pub struct Id {
     index: usize,
     version: u32,
@@ -45,10 +45,10 @@ impl<T> Store<T> {
                 index: self.values.len(),
                 version: FIRST_VALID_VERSION,
             };
-            self.values[id.index] = Versioned {
+            self.values.push(Versioned {
                 value,
                 version: id.version,
-            };
+            });
             id
         }
     }

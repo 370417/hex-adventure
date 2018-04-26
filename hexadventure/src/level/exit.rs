@@ -1,21 +1,21 @@
 use grid::{Grid, Pos};
 use level::basic;
-use level::tile::Tile;
+use level::tile::Terrain;
 
 use rand::Rng;
 
-pub fn add_exit<R: Rng>(level: &mut Grid<Tile>, rng: &mut R) -> Grid<Tile> {
+pub fn add_exit<R: Rng>(level: &mut Grid<Terrain>, rng: &mut R) -> Grid<Terrain> {
     loop {
         let mut next_level = basic::generate(level.width, level.height, rng);
         if let Some(pos) = find_exit(level, &next_level) {
-            level[pos] = Tile::Exit;
-            next_level[pos] = Tile::Entrance;
+            level[pos] = Terrain::Exit;
+            next_level[pos] = Terrain::Entrance;
             break next_level;
         }
     }
 }
 
-fn find_exit(level: &Grid<Tile>, next_level: &Grid<Tile>) -> Option<Pos> {
+fn find_exit(level: &Grid<Terrain>, next_level: &Grid<Terrain>) -> Option<Pos> {
     for pos in level.inner_positions() {
         if is_valid_exit(pos, level) && is_valid_exit(pos, next_level) {
             return Some(pos);
@@ -24,6 +24,6 @@ fn find_exit(level: &Grid<Tile>, next_level: &Grid<Tile>) -> Option<Pos> {
     None
 }
 
-fn is_valid_exit(pos: Pos, level: &Grid<Tile>) -> bool {
-    level[pos] == Tile::Wall && basic::count_floor_groups(pos, level) == 1
+fn is_valid_exit(pos: Pos, level: &Grid<Terrain>) -> bool {
+    level[pos] == Terrain::Wall && basic::count_floor_groups(pos, level) == 1
 }

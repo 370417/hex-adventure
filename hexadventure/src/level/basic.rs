@@ -5,14 +5,14 @@ use rand::Rng;
 use floodfill;
 use grid::{Grid, Pos};
 
-use level::tile::Tile;
+use level::tile::Terrain;
 
 use util;
 
 use std::collections::HashSet;
 
-pub fn generate<R: Rng>(width: usize, height: usize, rng: &mut R) -> Grid<Tile> {
-    let mut grid = Grid::new(width, height, |_pos| Tile::Wall);
+pub fn generate<R: Rng>(width: usize, height: usize, rng: &mut R) -> Grid<Terrain> {
+    let mut grid = Grid::new(width, height, |_pos| Terrain::Wall);
     let positions = calc_shuffled_positions(&grid, rng);
     carve_caves(&positions, &mut grid);
     remove_isolated_walls(&mut grid);
@@ -27,26 +27,26 @@ fn calc_shuffled_positions<T, R: Rng>(grid: &Grid<T>, rng: &mut R) -> Vec<Pos> {
     positions
 }
 
-fn carve_caves(positions: &[Pos], grid: &mut Grid<Tile>) {
+fn carve_caves(positions: &[Pos], grid: &mut Grid<Terrain>) {
     for &pos in positions {
         if count_floor_groups(pos, grid) != 1 {
-            grid[pos] = Tile::Floor;
+            grid[pos] = Terrain::Floor;
         }
     }
 }
 
-pub fn count_floor_groups(pos: Pos, grid: &Grid<Tile>) -> i32 {
+pub fn count_floor_groups(pos: Pos, grid: &Grid<Terrain>) -> i32 {
     let mut group_count = 0;
     let neighbors = pos.neighbors();
     let neighbor_pairs = util::self_zip(&neighbors);
     for &(curr_pos, next_pos) in &neighbor_pairs {
-        if grid[curr_pos] == Tile::Wall && grid[next_pos] == Tile::Floor {
+        if grid[curr_pos] == Terrain::Wall && grid[next_pos] == Terrain::Floor {
             group_count += 1;
         }
     }
     if group_count > 0 {
         group_count
-    } else if grid[neighbors[0]] == Tile::Floor {
+    } else if grid[neighbors[0]] == Terrain::Floor {
         1
     } else {
         0
@@ -54,26 +54,26 @@ pub fn count_floor_groups(pos: Pos, grid: &Grid<Tile>) -> i32 {
 }
 
 /// Remove groups of 5 walls or less.
-fn remove_isolated_walls(grid: &mut Grid<Tile>) {
+fn remove_isolated_walls(grid: &mut Grid<Terrain>) {
     for pos in grid.positions() {
         let wall_positions =
-            floodfill::flood(pos, |pos| grid.contains(pos) && grid[pos] == Tile::Wall);
+            floodfill::flood(pos, |pos| grid.contains(pos) && grid[pos] == Terrain::Wall);
         if wall_positions.len() <= 5 {
             for pos in wall_positions {
-                grid[pos] = Tile::Floor;
+                grid[pos] = Terrain::Floor;
             }
         }
     }
 }
 
 /// Remove all but the largest group of floor tiles.
-fn remove_isolated_floors(grid: &mut Grid<Tile>) {
+fn remove_isolated_floors(grid: &mut Grid<Terrain>) {
     let mut largest_floor_set = HashSet::new();
     for pos in grid.positions() {
-        if grid[pos] == Tile::Floor {
-            let floor_set = floodfill::flood(pos, |pos| grid[pos] == Tile::Floor);
+        if grid[pos] == Terrain::Floor {
+            let floor_set = floodfill::flood(pos, |pos| grid[pos] == Terrain::Floor);
             for &pos in floor_set.iter() {
-                grid[pos] = Tile::Wall;
+                grid[pos] = Terrain::Wall;
             }
             if floor_set.len() > largest_floor_set.len() {
                 largest_floor_set = floor_set;
@@ -81,12 +81,12 @@ fn remove_isolated_floors(grid: &mut Grid<Tile>) {
         }
     }
     for pos in largest_floor_set {
-        grid[pos] = Tile::Floor;
+        grid[pos] = Terrain::Floor;
     }
 }
 
 /// Remove caves of less than 4 tiles in size.
-fn remove_small_caves(grid: &mut Grid<Tile>) {
+fn remove_small_caves(grid: &mut Grid<Terrain>) {
     let mut visited = Grid::new(grid.width, grid.height, |_pos| false);
     for pos in grid.positions() {
         fill_dead_end(pos, grid);
@@ -98,7 +98,7 @@ fn remove_small_caves(grid: &mut Grid<Tile>) {
                 visited[pos] = true;
             }
         } else if flooded.len() == 3 || flooded.len() == 2 {
-            grid[pos] = Tile::Wall;
+            grid[pos] = Terrain::Wall;
             for pos in flooded {
                 fill_dead_end(pos, grid);
             }
@@ -106,21 +106,21 @@ fn remove_small_caves(grid: &mut Grid<Tile>) {
     }
 }
 
-fn fill_dead_end(pos: Pos, grid: &mut Grid<Tile>) {
+fn fill_dead_end(pos: Pos, grid: &mut Grid<Terrain>) {
     if is_dead_end(pos, grid) {
-        grid[pos] = Tile::Wall;
+        grid[pos] = Terrain::Wall;
         for neighbor in pos.neighbors() {
             fill_dead_end(neighbor, grid);
         }
     }
 }
 
-fn is_dead_end(pos: Pos, grid: &Grid<Tile>) -> bool {
+fn is_dead_end(pos: Pos, grid: &Grid<Terrain>) -> bool {
     is_cave(pos, grid) && pos.neighbors().iter().all(|&pos| !is_cave(pos, grid))
 }
 
-fn is_cave(pos: Pos, grid: &Grid<Tile>) -> bool {
-    grid[pos] == Tile::Floor && count_floor_groups(pos, grid) == 1
+fn is_cave(pos: Pos, grid: &Grid<Terrain>) -> bool {
+    grid[pos] == Terrain::Floor && count_floor_groups(pos, grid) == 1
 }
 
 #[cfg(test)]
@@ -140,13 +140,13 @@ mod tests {
         let grid = generate(40, 40, 1);
         let floor_pos = *grid.positions()
             .iter()
-            .find(|&&pos| grid[pos] == Tile::Floor)
+            .find(|&&pos| grid[pos] == Terrain::Floor)
             .unwrap();
-        let cave = floodfill::flood(floor_pos, |pos| grid[pos] == Tile::Floor);
+        let cave = floodfill::flood(floor_pos, |pos| grid[pos] == Terrain::Floor);
         assert!(
             grid.positions()
                 .iter()
-                .all(|&pos| grid[pos] == Tile::Wall || cave.contains(&pos))
+                .all(|&pos| grid[pos] == Terrain::Wall || cave.contains(&pos))
         );
     }
 }

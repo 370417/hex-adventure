@@ -6,7 +6,8 @@ use image;
 use image::GenericImage;
 use image::ImageFormat;
 
-use hexadventure::level::tile::Tile;
+use hexadventure::level::tile::Terrain;
+use hexadventure::mob::Mob;
 
 pub enum Sprite {
     Wall,
@@ -16,25 +17,29 @@ pub enum Sprite {
     Stairs,
 }
 
-impl From<Tile> for Sprite {
-    fn from(tile: Tile) -> Self {
-        match tile {
-            Tile::Wall => Sprite::Wall,
-            Tile::Floor => Sprite::Floor,
-            Tile::ShortGrass => Sprite::ShortGrass,
-            Tile::Exit => Sprite::Stairs,
-            Tile::Entrance => Sprite::Stairs,
+impl From<Terrain> for Sprite {
+    fn from(terrain: Terrain) -> Self {
+        match terrain {
+            Terrain::Wall => Sprite::Wall,
+            Terrain::Floor => Sprite::Floor,
+            Terrain::ShortGrass => Sprite::ShortGrass,
+            Terrain::Exit => Sprite::Stairs,
+            Terrain::Entrance => Sprite::Stairs,
         }
     }
 }
 
-pub fn color_from_tile(tile: Tile) -> Color {
-    match tile {
-        Tile::Wall => graphics::WHITE,
-        Tile::Floor => Color::new(0.75, 0.75, 0.75, 1.0),
-        Tile::ShortGrass => graphics::WHITE,
-        Tile::Exit => graphics::WHITE,
-        Tile::Entrance => graphics::WHITE,
+pub fn sprite_from_mob(mob: &Mob) -> Sprite {
+    Sprite::Player
+}
+
+pub fn color_from_tile(terrain: Terrain) -> Color {
+    match terrain {
+        Terrain::Wall => graphics::WHITE,
+        Terrain::Floor => Color::new(0.75, 0.75, 0.75, 1.0),
+        Terrain::ShortGrass => graphics::WHITE,
+        Terrain::Exit => graphics::WHITE,
+        Terrain::Entrance => graphics::WHITE,
     }
 }
 

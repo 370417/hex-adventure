@@ -6,7 +6,7 @@ use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
 use ggez::event::{EventHandler, Keycode, Mod};
 use ggez::graphics;
-use ggez::graphics::spritebatch::{SpriteBatch, SpriteIdx};
+use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::graphics::{DrawParam, Point2};
 use ggez::{Context, GameResult};
 
@@ -15,10 +15,10 @@ extern crate image;
 extern crate hexadventure;
 use hexadventure::game::Game;
 use hexadventure::grid::{Direction, Grid, Location, Pos};
-use hexadventure::level::tile::TileView;
+use hexadventure::level::tile::FullTileView;
 
 mod sprite;
-use sprite::{color_from_tile, darken, Sprite};
+use sprite::{color_from_tile, darken, sprite_from_mob, Sprite};
 
 use std::error::Error;
 use std::fs::File;
@@ -28,8 +28,8 @@ const SAVE_PATH: &str = "save.bincode";
 struct MainState {
     game: Game,
     spritebatch: SpriteBatch,
-    sprite_ids: Grid<SpriteIdx>,
     redraw: bool,
+    dests: Grid<Point2>,
 }
 
 fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
@@ -37,11 +37,13 @@ fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
     Point2::new((x * 9) as f32, (y * 16 - 7) as f32)
 }
 
-// TODO: read from save file to load game here
 impl MainState {
     fn new(ctx: &mut Context, width: usize, height: usize) -> Self {
         let mut spritebatch = sprite::load_spritebatch(ctx);
-        let sprite_ids = Grid::new(width, height, |_pos| spritebatch.add(Default::default()));
+        let mut dests = Grid::new(width, height, |_pos| Point2::new(0.0, 0.0));
+        for pos in dests.positions() {
+            dests[pos] = pos_to_point2(pos, &dests);
+        }
         let game = match load_game() {
             Ok(game) => game,
             _ => Game::new(width, height),
@@ -49,8 +51,8 @@ impl MainState {
         MainState {
             game,
             spritebatch,
-            sprite_ids,
             redraw: true,
+            dests,
         }
     }
 }
@@ -78,53 +80,51 @@ impl EventHandler for MainState {
         }
         self.redraw = false;
         graphics::clear(ctx);
-        for pos in self.game.level.positions() {
-            let sprite_id = self.sprite_ids[pos];
-            self.spritebatch.set(
-                sprite_id,
-                DrawParam {
-                    src: match self.game.level_memory[pos] {
-                        TileView::Seen(tile) | TileView::Remembered(tile) => {
-                            sprite::sprite_src(Sprite::from(tile))
-                        }
-                        TileView::None => sprite::sprite_src(Sprite::Wall),
-                    },
-                    dest: pos_to_point2(pos, &self.game.level),
-                    color: Some(match self.game.level_memory[pos] {
-                        TileView::Seen(tile) => color_from_tile(tile),
-                        TileView::Remembered(tile) => darken(color_from_tile(tile)),
-                        TileView::None => graphics::Color::new(0.0, 0.0, 0.0, 0.0),
-                    }),
-                    ..Default::default()
-                },
-            )?;
+        self.spritebatch.clear();
+        for pos in self.game.positions() {
+            match self.game.tile(pos) {
+                FullTileView::Seen { terrain, mob: None } => {
+                    self.spritebatch.add(DrawParam {
+                        src: sprite::sprite_src(Sprite::from(terrain)),
+                        dest: self.dests[pos],
+                        color: Some(color_from_tile(terrain)),
+                        ..Default::default()
+                    });
+                }
+                FullTileView::Seen { mob: Some(mob), .. } => {
+                    self.spritebatch.add(DrawParam {
+                        src: sprite::sprite_src(sprite_from_mob(mob)),
+                        dest: self.dests[pos],
+                        offset: match mob.facing() {
+                            Direction::West | Direction::Northwest | Direction::Southwest => {
+                                Point2::new(0.0, 0.0)
+                            }
+                            Direction::East | Direction::Northeast | Direction::Southeast => {
+                                Point2::new(1.0, 0.0)
+                            }
+                        },
+                        scale: match mob.facing() {
+                            Direction::West | Direction::Northwest | Direction::Southwest => {
+                                Point2::new(1.0, 1.0)
+                            }
+                            Direction::East | Direction::Northeast | Direction::Southeast => {
+                                Point2::new(-1.0, 1.0)
+                            }
+                        },
+                        ..Default::default()
+                    });
+                }
+                FullTileView::Remembered(terrain) => {
+                    self.spritebatch.add(DrawParam {
+                        src: sprite::sprite_src(Sprite::from(terrain)),
+                        dest: self.dests[pos],
+                        color: Some(darken(color_from_tile(terrain))),
+                        ..Default::default()
+                    });
+                }
+                FullTileView::None => (),
+            }
         }
-        let player_pos = self.game.player.pos;
-        let player_sprite = self.sprite_ids[player_pos];
-        self.spritebatch.set(
-            player_sprite,
-            DrawParam {
-                src: sprite::sprite_src(sprite::Sprite::Player),
-                dest: pos_to_point2(player_pos, &self.game.level),
-                offset: match self.game.player.facing {
-                    Direction::West | Direction::Northwest | Direction::Southwest => {
-                        Point2::new(0.0, 0.0)
-                    }
-                    Direction::East | Direction::Northeast | Direction::Southeast => {
-                        Point2::new(1.0, 0.0)
-                    }
-                },
-                scale: match self.game.player.facing {
-                    Direction::West | Direction::Northwest | Direction::Southwest => {
-                        Point2::new(1.0, 1.0)
-                    }
-                    Direction::East | Direction::Northeast | Direction::Southeast => {
-                        Point2::new(-1.0, 1.0)
-                    }
-                },
-                ..Default::default()
-            },
-        )?;
         graphics::draw(ctx, &self.spritebatch, Point2::new(0.0, 0.0), 0.0)?;
         graphics::present(ctx);
         Ok(())

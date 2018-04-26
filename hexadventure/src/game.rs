@@ -1,16 +1,18 @@
 use fov::fov;
 use grid::{Direction, Grid, Pos, DIRECTIONS};
 use level::Architect;
-use level::tile::{Tile, TileView};
-use player::Player;
+use level::tile::{FullTileView, Terrain, Tile, TileView};
+use mob::Mob;
 use rand::{thread_rng, Rng};
+use store::{Id, Store};
 
 #[derive(Serialize, Deserialize)]
 pub struct Game {
     architect: Architect,
-    pub level: Grid<Tile>,
-    pub player: Player,
-    pub level_memory: Grid<TileView>,
+    level: Grid<Tile>,
+    player_id: Id,
+    level_memory: Grid<TileView>,
+    mobs: Store<Mob>,
 }
 
 impl Game {
@@ -18,17 +20,43 @@ impl Game {
         let seed = thread_rng().gen();
         println!("SEED: {}", seed);
         let mut architect = Architect::new(seed, width, height);
-        let level = architect.generate();
+        let mut level = architect.generate();
         let player_pos = place_player(&level);
+        let player = Mob::Hero {
+            pos: player_pos,
+            facing: Direction::East,
+        };
+        let mut mobs = Store::new();
+        let player_id = mobs.insert(player);
+        level[player_pos].mob = Some(player_id);
         let level_memory = Grid::new(width, height, |_pos| TileView::None);
         let mut game = Game {
             architect,
             level,
-            player: Player::new(player_pos),
+            player_id,
             level_memory,
+            mobs,
         };
         game.next_turn();
         game
+    }
+
+    pub fn positions(&self) -> Vec<Pos> {
+        self.level.positions()
+    }
+
+    pub fn tile(&self, pos: Pos) -> FullTileView {
+        match self.level_memory[pos] {
+            TileView::Seen => FullTileView::Seen {
+                terrain: self.level[pos].terrain,
+                mob: match self.level[pos].mob {
+                    Some(mob_id) => self.mobs.get(mob_id),
+                    None => None,
+                },
+            },
+            TileView::Remembered(terrain) => FullTileView::Remembered(terrain),
+            TileView::None => FullTileView::None,
+        }
     }
 
     // fn execute(action: &Action) {}
@@ -38,43 +66,47 @@ impl Game {
     // }
 
     pub fn move_player(&mut self, direction: Direction) {
-        let target_pos = self.player.pos + direction;
-        if self.level[target_pos].passable() {
-            self.player.pos = target_pos;
-            self.player.facing = direction;
-            self.next_turn();
-        } else if self.level[target_pos] == Tile::Exit {
-            self.level = self.architect.generate();
-            if self.level[self.player.pos].passable() {
-                self.player.facing = direction.rotate(3);
-            } else {
-                for &direction in DIRECTIONS.iter() {
-                    if self.level[target_pos + direction].passable() {
-                        self.player.pos = target_pos + direction;
-                        self.player.facing = direction;
+        {
+            let player = self.mobs.get_mut(self.player_id).unwrap();
+            self.level[player.pos()].mob = None;
+            let target_pos = player.pos() + direction;
+            if self.level[target_pos].terrain.passable() {
+                player.move_by(direction);
+            } else if self.level[target_pos].terrain == Terrain::Exit {
+                self.level = self.architect.generate();
+                player.move_by(direction);
+                for i in 3..9 {
+                    let pos = target_pos + direction.rotate(i);
+                    if self.level[pos].terrain.passable() {
+                        player.move_by(direction.rotate(i));
                         break;
                     }
                 }
+                for tile_view in self.level_memory.iter_mut() {
+                    *tile_view = TileView::None;
+                }
+            } else {
+                self.level[player.pos()].mob = Some(self.player_id);
+                return;
             }
-            for tile_view in self.level_memory.iter_mut() {
-                *tile_view = TileView::None;
-            }
-            self.next_turn();
+            self.level[player.pos()].mob = Some(self.player_id);
         }
+        self.next_turn();
     }
 
     fn next_turn(&mut self) {
         let level = &self.level;
         let memory = &mut self.level_memory;
-        for tile_view in memory.iter_mut() {
-            if let TileView::Seen(tile) = *tile_view {
-                *tile_view = TileView::Remembered(tile);
+        for pos in memory.positions() {
+            if memory[pos] == TileView::Seen {
+                memory[pos] = TileView::Remembered(level[pos].terrain);
             }
         }
+        let player = self.mobs.get_mut(self.player_id).unwrap();
         fov(
-            self.player.pos,
-            |pos| level[pos].transparent(),
-            |pos| memory[pos] = TileView::Seen(level[pos]),
+            player.pos(),
+            |pos| level[pos].terrain.transparent(),
+            |pos| memory[pos] = TileView::Seen,
         );
     }
 }
@@ -84,7 +116,7 @@ fn place_player(level: &Grid<Tile>) -> Pos {
     *level
         .positions()
         .iter()
-        .filter(|&&pos| level[pos].passable())
+        .filter(|&&pos| level[pos].terrain.passable())
         .min_by_key(|&pos| pos.distance(center))
         .unwrap()
 }

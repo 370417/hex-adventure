@@ -1,5 +1,14 @@
+use mob::Mob;
+use store::Id;
+
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
-pub enum Tile {
+pub struct Tile {
+    pub terrain: Terrain,
+    pub mob: Option<Id>,
+}
+
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
+pub enum Terrain {
     Wall,
     Floor,
     ShortGrass,
@@ -7,31 +16,40 @@ pub enum Tile {
     Entrance,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq)]
 pub enum TileView {
-    Seen(Tile),
-    Remembered(Tile),
+    Seen,
+    Remembered(Terrain),
     None,
 }
 
-impl Tile {
+pub enum FullTileView<'a> {
+    Seen {
+        terrain: Terrain,
+        mob: Option<&'a Mob>,
+    },
+    Remembered(Terrain),
+    None,
+}
+
+impl Terrain {
     pub fn passable(&self) -> bool {
         match *self {
-            Tile::Wall => false,
-            Tile::Floor => true,
-            Tile::ShortGrass => true,
-            Tile::Exit => false,
-            Tile::Entrance => false,
+            Terrain::Wall => false,
+            Terrain::Floor => true,
+            Terrain::ShortGrass => true,
+            Terrain::Exit => false,
+            Terrain::Entrance => false,
         }
     }
 
     pub fn transparent(&self) -> bool {
         match *self {
-            Tile::Wall => false,
-            Tile::Floor => true,
-            Tile::ShortGrass => true,
-            Tile::Exit => true,
-            Tile::Entrance => true,
+            Terrain::Wall => false,
+            Terrain::Floor => true,
+            Terrain::ShortGrass => true,
+            Terrain::Exit => true,
+            Terrain::Entrance => true,
         }
     }
 }

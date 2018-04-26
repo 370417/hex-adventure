@@ -9,5 +9,6 @@ pub mod game;
 pub mod grid;
 pub mod level;
 pub mod line;
-pub mod player;
+pub mod mob;
+mod store;
 mod util;
