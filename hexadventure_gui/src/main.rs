@@ -39,7 +39,7 @@ fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
 
 impl MainState {
     fn new(ctx: &mut Context, width: usize, height: usize) -> Self {
-        let mut spritebatch = sprite::load_spritebatch(ctx);
+        let spritebatch = sprite::load_spritebatch(ctx);
         let mut dests = Grid::new(width, height, |_pos| Point2::new(0.0, 0.0));
         for pos in dests.positions() {
             dests[pos] = pos_to_point2(pos, &dests);

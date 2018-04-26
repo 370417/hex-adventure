@@ -1,5 +1,5 @@
 use fov::fov;
-use grid::{Direction, Grid, Pos, DIRECTIONS};
+use grid::{Direction, Grid, Pos};
 use level::Architect;
 use level::tile::{FullTileView, Terrain, Tile, TileView};
 use mob::Mob;

@@ -5,9 +5,11 @@ use level::tile::Terrain;
 use rand::Rng;
 
 pub fn add_exit<R: Rng>(level: &mut Grid<Terrain>, rng: &mut R) -> Grid<Terrain> {
+    let mut positions = level.inner_positions();
+    rng.shuffle(&mut positions);
     loop {
         let mut next_level = basic::generate(level.width, level.height, rng);
-        if let Some(pos) = find_exit(level, &next_level) {
+        if let Some(pos) = find_exit(level, &next_level, &positions) {
             level[pos] = Terrain::Exit;
             next_level[pos] = Terrain::Entrance;
             break next_level;
@@ -15,8 +17,12 @@ pub fn add_exit<R: Rng>(level: &mut Grid<Terrain>, rng: &mut R) -> Grid<Terrain>
     }
 }
 
-fn find_exit(level: &Grid<Terrain>, next_level: &Grid<Terrain>) -> Option<Pos> {
-    for pos in level.inner_positions() {
+fn find_exit(
+    level: &Grid<Terrain>,
+    next_level: &Grid<Terrain>,
+    positions: &Vec<Pos>,
+) -> Option<Pos> {
+    for &pos in positions {
         if is_valid_exit(pos, level) && is_valid_exit(pos, next_level) {
             return Some(pos);
         }
