@@ -19,7 +19,7 @@ const TANGENTS: [Direction; 6] = [
     Direction::East,
 ];
 
-/// Calculate field of view.
+/// Calculates field of view.
 pub fn fov<F, G>(center: Pos, transparent: F, mut reveal: G)
 where
     F: Fn(Pos) -> bool,
@@ -38,6 +38,9 @@ where
     }
 }
 
+/// Recursively scans one sector.
+///
+/// One sector corresponds to one sixth of a hexagon, like a pie slice.
 fn scan<F, G>(y: u32, mut start: f32, end: f32, transparent: &F, reveal: &mut G)
 where
     F: Fn(u32, u32) -> bool,
@@ -74,7 +77,7 @@ where
             Some(true) => scan(y + 1, start, end, transparent, reveal),
             Some(false) => (),
             None => {
-                let x = y as f32 * (start + end) / 2.0;
+                let x = y as f32 / 2.0 * (start + end);
                 let x = x.round() as u32;
                 reveal(x, y);
                 scan(y + 1, start, end, transparent, reveal);
@@ -83,10 +86,12 @@ where
     }
 }
 
+/// Rounds a float. Ties are rounded up.
 fn round_high(n: f32) -> u32 {
     n.round() as u32
 }
 
+/// Rounds a float. Ties are rounded down.
 fn round_low(n: f32) -> u32 {
     if n % 1.0 == 0.5 {
         n.round() as u32 - 1
@@ -114,12 +119,5 @@ mod tests {
         assert_eq!(round_low(15.49), 15);
         assert_eq!(round_low(15.5), 15);
         assert_eq!(round_low(15.51), 16);
-    }
-
-    #[test]
-    fn no_infinite_loop() {
-        let mut g = grid::Grid::new(10, 10, |_pos| false);
-        let center = g.center();
-        fov(center, |_pos| false, |pos| g[pos] = true);
     }
 }

@@ -1,6 +1,7 @@
 use grid::Pos;
 use std::iter::{IntoIterator, Iterator};
 
+/// A segment of positions from start to end inclusive.
 pub struct Line {
     pub start: Pos,
     pub end: Pos,

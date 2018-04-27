@@ -1,8 +1,10 @@
+//! Function for performing an efficient floodfill.
+
 use grid::{Direction, Pos};
 use std::collections::HashSet;
 use std::iter::{IntoIterator, Iterator};
 
-/// Perform a floodfill starting at origin.
+/// Performs a floodfill starting at origin.
 ///
 /// Positions are flooded if they are connected to the origin and floodable(pos) returns true.
 pub fn flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>
@@ -190,6 +192,7 @@ mod tests {
     use rand::{thread_rng, Rng};
     use util::grid::Grid;
 
+    /// Naive recursive floodfill used to compare against the scanline floodfill.
     fn basic_flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>
     where
         F: Fn(Pos) -> bool,
@@ -199,6 +202,7 @@ mod tests {
         flooded
     }
 
+    /// Recursive helper for the naive floodfill.
     fn basic_flood_helper<F>(pos: Pos, flooded: &mut HashSet<Pos>, floodable: &F)
     where
         F: Fn(Pos) -> bool,
@@ -211,10 +215,12 @@ mod tests {
         }
     }
 
+    /// Test whether two hashsets contain the same items.
     fn set_equiv(a: &HashSet<Pos>, b: &HashSet<Pos>) -> bool {
         a.len() == b.len() && a.iter().all(|item| b.contains(item))
     }
 
+    /// Make sure naive floodfill and scanline floodfill behave the same.
     #[test]
     fn flood_equiv_basic_flood() {
         let mut rng = thread_rng();

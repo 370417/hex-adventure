@@ -13,6 +13,7 @@ use grid::Grid;
 use rand::IsaacRng;
 use std::mem::replace;
 
+/// Responsible for generating levels.
 #[derive(Serialize, Deserialize)]
 pub struct Architect {
     rng: IsaacRng,

@@ -1,3 +1,5 @@
+//! Miscellaneous functions. 
+
 /// Zip a slice with itself but rotated forward by one.
 ///
 /// # Example
