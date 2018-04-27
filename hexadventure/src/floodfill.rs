@@ -189,8 +189,8 @@ impl Iterator for SegmentIterator {
 mod tests {
     use super::*;
 
+    use grid::Grid;
     use rand::{thread_rng, Rng};
-    use util::grid::Grid;
 
     /// Naive recursive floodfill used to compare against the scanline floodfill.
     fn basic_flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>

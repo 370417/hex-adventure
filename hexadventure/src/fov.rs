@@ -103,7 +103,6 @@ fn round_low(n: f32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use util::grid::Grid;
 
     #[test]
     fn test_round_high() {

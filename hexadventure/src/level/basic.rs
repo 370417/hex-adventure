@@ -127,9 +127,11 @@ fn is_cave(pos: Pos, grid: &Grid<Terrain>) -> bool {
 mod tests {
     use super::*;
 
+    use rand::{thread_rng, Rng};
+
     #[test]
     fn test_no_dead_ends() {
-        let grid = generate(40, 40, 1);
+        let grid = generate(40, 40, &mut thread_rng());
         for pos in grid.positions() {
             assert!(!is_dead_end(pos, &grid));
         }
@@ -137,7 +139,7 @@ mod tests {
 
     #[test]
     fn test_connected() {
-        let grid = generate(40, 40, 1);
+        let grid = generate(40, 40, &mut thread_rng());
         let floor_pos = *grid.positions()
             .iter()
             .find(|&&pos| grid[pos] == Terrain::Floor)
