@@ -10,7 +10,7 @@ use store::{Id, Store};
 pub struct Game {
     architect: Architect,
     level: Grid<Tile>,
-    player_id: Id,
+    player_id: Id<Mob>,
     level_memory: Grid<TileView>,
     mobs: Store<Mob>,
 }

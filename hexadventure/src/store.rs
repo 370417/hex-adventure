@@ -2,25 +2,38 @@
 //!
 //! This is intended to avoid cycles in structs so that they can be serialized.
 
+use std::marker::PhantomData;
+
 const INVALID_VERSION: u32 = 0;
 const FIRST_VALID_VERSION: u32 = 1;
 
 #[derive(Serialize, Deserialize)]
 pub struct Store<T> {
     values: Vec<Versioned<T>>,
-    reusable_ids: Vec<Id>,
+    reusable_ids: Vec<Id<T>>,
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Debug)]
-pub struct Id {
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+pub struct Id<T> {
     index: usize,
     version: u32,
+    _marker: PhantomData<T>,
 }
 
 #[derive(Serialize, Deserialize)]
 struct Versioned<T> {
     value: T,
     version: u32,
+}
+
+impl<T> Id<T> {
+    fn new(index: usize, version: u32) -> Self {
+        Id {
+            index,
+            version,
+            _marker: PhantomData,
+        }
+    }
 }
 
 impl<T> Store<T> {
@@ -33,7 +46,7 @@ impl<T> Store<T> {
     }
 
     /// Adds a value to the store.
-    pub fn insert(&mut self, value: T) -> Id {
+    pub fn insert(&mut self, value: T) -> Id<T> {
         if let Some(id) = self.reusable_ids.pop() {
             self.values[id.index] = Versioned {
                 value,
@@ -41,10 +54,7 @@ impl<T> Store<T> {
             };
             id
         } else {
-            let id = Id {
-                index: self.values.len(),
-                version: FIRST_VALID_VERSION,
-            };
+            let id = Id::new(self.values.len(), FIRST_VALID_VERSION);
             self.values.push(Versioned {
                 value,
                 version: id.version,
@@ -54,7 +64,7 @@ impl<T> Store<T> {
     }
 
     /// Returns a reference to the value corresponding to the id.
-    pub fn get(&self, id: Id) -> Option<&T> {
+    pub fn get(&self, id: Id<T>) -> Option<&T> {
         match self.values.get(id.index) {
             Some(&Versioned { ref value, version }) if version == id.version => Some(value),
             _ => None,
@@ -62,7 +72,7 @@ impl<T> Store<T> {
     }
 
     /// Returns a mutable reference to the value corresponding to the id.
-    pub fn get_mut(&mut self, id: Id) -> Option<&mut T> {
+    pub fn get_mut(&mut self, id: Id<T>) -> Option<&mut T> {
         match self.values.get_mut(id.index) {
             Some(&mut Versioned {
                 ref mut value,
@@ -78,7 +88,7 @@ impl<T> Store<T> {
     /// Removes a value from the store. Returns `true` if the value was present in the set.
     ///
     /// The values do not actually go out of scope right away.
-    pub fn remove(&mut self, id: Id) -> bool {
+    pub fn remove(&mut self, id: Id<T>) -> bool {
         match self.values.get_mut(id.index) {
             Some(&mut Versioned {
                 ref mut version, ..
@@ -123,11 +133,18 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 }
 
-impl Id {
+impl<T> Id<T> {
     fn reuse(self) -> Self {
-        Id {
-            index: self.index,
-            version: self.version + 1,
-        }
+        Id::new(self.index, self.version + 1)
+    }
+}
+
+// copy and clone are implemented manually to avoid
+// restricting T to be copy or clone as well
+impl<T> Copy for Id<T> {}
+
+impl<T> Clone for Id<T> {
+    fn clone(&self) -> Self {
+        *self
     }
 }

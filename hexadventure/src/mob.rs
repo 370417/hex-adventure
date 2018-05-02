@@ -41,3 +41,7 @@ impl Mob {
         }
     }
 }
+
+// impl Clone for Mob {
+
+// }
