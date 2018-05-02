@@ -15,7 +15,7 @@ use std::mem::replace;
 
 /// Responsible for generating levels.
 #[derive(Serialize, Deserialize)]
-pub struct Architect {
+pub(super) struct Architect {
     rng: IsaacRng,
     next_level: Option<Grid<Terrain>>,
     width: usize,

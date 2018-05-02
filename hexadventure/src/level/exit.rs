@@ -1,10 +1,10 @@
 use grid::{Grid, Pos};
-use level::basic;
-use level::tile::Terrain;
+use super::basic;
+use super::tile::Terrain;
 
 use rand::Rng;
 
-pub fn add_exit<R: Rng>(level: &mut Grid<Terrain>, rng: &mut R) -> Grid<Terrain> {
+pub(super) fn add_exit<R: Rng>(level: &mut Grid<Terrain>, rng: &mut R) -> Grid<Terrain> {
     let mut positions = level.inner_positions();
     rng.shuffle(&mut positions);
     loop {

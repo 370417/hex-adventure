@@ -5,13 +5,13 @@ use rand::Rng;
 use floodfill;
 use grid::{Grid, Pos};
 
-use level::tile::Terrain;
+use super::tile::Terrain;
 
 use util;
 
 use std::collections::HashSet;
 
-pub fn generate<R: Rng>(width: usize, height: usize, rng: &mut R) -> Grid<Terrain> {
+pub(super) fn generate<R: Rng>(width: usize, height: usize, rng: &mut R) -> Grid<Terrain> {
     let mut grid = Grid::new(width, height, |_pos| Terrain::Wall);
     let positions = calc_shuffled_positions(&grid, rng);
     carve_caves(&positions, &mut grid);

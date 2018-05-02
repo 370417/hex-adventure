@@ -4,7 +4,7 @@ use store::Id;
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Tile {
     pub terrain: Terrain,
-    pub mob: Option<Id>,
+    pub mob_id: Option<Id>,
 }
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]

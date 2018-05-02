@@ -1,3 +1,5 @@
+pub enum Actor {}
+
 pub trait Actor {
     fn act(game: &Game) -> Action;
 }

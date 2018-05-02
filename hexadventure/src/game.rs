@@ -28,7 +28,7 @@ impl Game {
         };
         let mut mobs = Store::new();
         let player_id = mobs.insert(player);
-        level[player_pos].mob = Some(player_id);
+        level[player_pos].mob_id = Some(player_id);
         let level_memory = Grid::new(width, height, |_pos| TileView::None);
         let mut game = Game {
             architect,
@@ -49,7 +49,7 @@ impl Game {
         match self.level_memory[pos] {
             TileView::Seen => FullTileView::Seen {
                 terrain: self.level[pos].terrain,
-                mob: match self.level[pos].mob {
+                mob: match self.level[pos].mob_id {
                     Some(mob_id) => self.mobs.get(mob_id),
                     None => None,
                 },
@@ -68,7 +68,7 @@ impl Game {
     pub fn move_player(&mut self, direction: Direction) {
         {
             let player = self.mobs.get_mut(self.player_id).unwrap();
-            self.level[player.pos()].mob = None;
+            self.level[player.pos()].mob_id = None;
             let target_pos = player.pos() + direction;
             if self.level[target_pos].terrain.passable() {
                 player.move_by(direction);
@@ -86,10 +86,10 @@ impl Game {
                     *tile_view = TileView::None;
                 }
             } else {
-                self.level[player.pos()].mob = Some(self.player_id);
+                self.level[player.pos()].mob_id = Some(self.player_id);
                 return;
             }
-            self.level[player.pos()].mob = Some(self.player_id);
+            self.level[player.pos()].mob_id = Some(self.player_id);
         }
         self.next_turn();
     }
