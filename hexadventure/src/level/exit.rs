@@ -1,6 +1,6 @@
-use grid::{Grid, Pos};
 use super::basic;
 use super::tile::Terrain;
+use grid::{Grid, Pos};
 
 use rand::Rng;
 
@@ -32,4 +32,12 @@ fn find_exit(
 
 fn is_valid_exit(pos: Pos, level: &Grid<Terrain>) -> bool {
     level[pos] == Terrain::Wall && basic::count_floor_groups(pos, level) == 1
+        && count_wall_neighbors(pos, level) == 4
+}
+
+fn count_wall_neighbors(pos: Pos, level: &Grid<Terrain>) -> usize {
+    pos.neighbors()
+        .iter()
+        .filter(|&&pos| level[pos] == Terrain::Wall)
+        .count()
 }

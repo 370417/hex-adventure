@@ -46,6 +46,8 @@ impl<T> Store<T> {
     }
 
     /// Adds a value to the store.
+    ///
+    /// Returns a handle to the inserted value.
     pub fn insert(&mut self, value: T) -> Id<T> {
         if let Some(id) = self.reusable_ids.pop() {
             self.values[id.index] = Versioned {
