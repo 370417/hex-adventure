@@ -22,7 +22,7 @@ pub(super) fn generate<R: Rng>(width: usize, height: usize, rng: &mut R) -> Grid
 }
 
 fn calc_shuffled_positions<T, R: Rng>(grid: &Grid<T>, rng: &mut R) -> Vec<Pos> {
-    let mut positions = grid.inner_positions();
+    let mut positions: Vec<Pos> = grid.inner_positions().collect();
     rng.shuffle(&mut positions);
     positions
 }
@@ -127,7 +127,7 @@ fn is_cave(pos: Pos, grid: &Grid<Terrain>) -> bool {
 mod tests {
     use super::*;
 
-    use rand::{thread_rng, Rng};
+    use rand::thread_rng;
 
     #[test]
     fn test_no_dead_ends() {
@@ -140,15 +140,13 @@ mod tests {
     #[test]
     fn test_connected() {
         let grid = generate(40, 40, &mut thread_rng());
-        let floor_pos = *grid.positions()
-            .iter()
-            .find(|&&pos| grid[pos] == Terrain::Floor)
+        let floor_pos = grid.positions()
+            .find(|&pos| grid[pos] == Terrain::Floor)
             .unwrap();
         let cave = floodfill::flood(floor_pos, |pos| grid[pos] == Terrain::Floor);
         assert!(
             grid.positions()
-                .iter()
-                .all(|&pos| grid[pos] == Terrain::Wall || cave.contains(&pos))
+                .all(|pos| grid[pos] == Terrain::Wall || cave.contains(&pos))
         );
     }
 }

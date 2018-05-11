@@ -41,7 +41,7 @@ impl Game {
         game
     }
 
-    pub fn positions(&self) -> Vec<Pos> {
+    pub fn positions(&self) -> impl Iterator<Item = Pos> {
         self.level.positions()
     }
 
@@ -113,10 +113,9 @@ impl Game {
 
 fn place_player(level: &Grid<Tile>) -> Pos {
     let center = level.center();
-    *level
+    level
         .positions()
-        .iter()
-        .filter(|&&pos| level[pos].terrain.passable())
+        .filter(|&pos| level[pos].terrain.passable())
         .min_by_key(|&pos| pos.distance(center))
         .unwrap()
 }

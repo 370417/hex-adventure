@@ -5,7 +5,7 @@ use grid::{Grid, Pos};
 use rand::Rng;
 
 pub(super) fn add_exit<R: Rng>(level: &mut Grid<Terrain>, rng: &mut R) -> Grid<Terrain> {
-    let mut positions = level.inner_positions();
+    let mut positions: Vec<Pos> = level.inner_positions().collect();
     rng.shuffle(&mut positions);
     loop {
         let mut next_level = basic::generate(level.width, level.height, rng);

@@ -371,26 +371,12 @@ impl<T> Grid<T> {
         col < self.width && row < self.height
     }
 
-    pub fn positions(&self) -> Vec<Pos> {
-        let mut positions = Vec::with_capacity(self.width * self.height);
-        for row in 0..self.height {
-            for col in 0..self.width {
-                let pos = index_to_pos(Index2d { row, col });
-                positions.push(pos);
-            }
-        }
-        positions
+    pub fn positions(&self) -> impl Iterator<Item = Pos> {
+        positions(self.width, self.height)
     }
 
-    pub fn inner_positions(&self) -> Vec<Pos> {
-        let mut inner_positions = Vec::with_capacity((self.width - 2) * (self.height - 2));
-        for row in 1..self.height - 1 {
-            for col in 1..self.width - 1 {
-                let pos = index_to_pos(Index2d { row, col });
-                inner_positions.push(pos);
-            }
-        }
-        inner_positions
+    pub fn inner_positions(&self) -> impl Iterator<Item = Pos> {
+        inner_positions(self.width, self.height)
     }
 
     pub fn iter(&self) -> ::std::slice::Iter<T> {
@@ -408,6 +394,23 @@ impl<T> Grid<T> {
             col: self.width / 2,
         })
     }
+}
+
+fn positions(width: usize, height: usize) -> impl Iterator<Item = Pos> {
+    (0..height).flat_map(move |row| (0..width).map(move |col| index_to_pos(Index2d { row, col })))
+}
+
+fn inner_positions(width: usize, height: usize) -> impl Iterator<Item = Pos> {
+    let inner_width = width - 2;
+    let inner_height = height - 2;
+    (0..inner_height).flat_map(move |row| {
+        (0..inner_width).map(move |col| {
+            index_to_pos(Index2d {
+                row: row + 1,
+                col: col + 1,
+            })
+        })
+    })
 }
 
 impl<T> ops::Index<Index2d> for Grid<T> {
@@ -532,7 +535,7 @@ mod tests {
     #[test]
     fn test_inner_positions() {
         let grid = Grid::new(40, 40, |_pos| false);
-        let positions = grid.inner_positions();
-        assert!(positions.iter().all(|&pos| !on_outer_edge(pos, &grid)));
+        let mut positions = grid.inner_positions();
+        assert!(positions.all(|pos| !on_outer_edge(pos, &grid)));
     }
 }
