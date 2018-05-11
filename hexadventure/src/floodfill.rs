@@ -58,7 +58,7 @@ fn flood_vert<F>(
     let segment = origin.expand(direction);
     let Segment { start, end } = segment;
     let mut subsegments = segment.flood(flooded, floodable);
-    if let Some(ref mut first) = subsegments.first_mut() {
+    if let Some(first) = subsegments.first_mut() {
         if first.start == start {
             first.start = flood_ray(start, Direction::East, flooded, floodable);
             let overhang = Segment {
@@ -68,7 +68,7 @@ fn flood_vert<F>(
             flood_vert(overhang, direction.opposite(), flooded, floodable);
         }
     }
-    if let Some(ref mut last) = subsegments.last_mut() {
+    if let Some(last) = subsegments.last_mut() {
         if last.end == end {
             last.end = flood_ray(end, Direction::West, flooded, floodable);
             let overhang = Segment {

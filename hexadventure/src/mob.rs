@@ -13,8 +13,8 @@ impl Mob {
     }
 
     pub fn pos_mut(&mut self) -> &mut Pos {
-        match *self {
-            Mob::Hero { ref mut pos, .. } => pos,
+        match self {
+            Mob::Hero { pos, .. } => pos,
         }
     }
 
@@ -25,8 +25,8 @@ impl Mob {
     }
 
     pub fn facing_mut(&mut self) -> &mut Direction {
-        match *self {
-            Mob::Hero { ref mut facing, .. } => facing,
+        match self {
+            Mob::Hero { facing, .. } => facing,
         }
     }
 

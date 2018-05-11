@@ -37,7 +37,7 @@ fn carve_caves(positions: &[Pos], grid: &mut Grid<Terrain>) {
 
 pub fn count_floor_groups(pos: Pos, grid: &Grid<Terrain>) -> i32 {
     let mut group_count = 0;
-    let neighbors = pos.neighbors();
+    let neighbors: Vec<Pos> = pos.neighbors().collect();
     let neighbor_pairs = util::self_zip(&neighbors);
     for &(curr_pos, next_pos) in &neighbor_pairs {
         if grid[curr_pos] == Terrain::Wall && grid[next_pos] == Terrain::Floor {
@@ -116,7 +116,7 @@ fn fill_dead_end(pos: Pos, grid: &mut Grid<Terrain>) {
 }
 
 fn is_dead_end(pos: Pos, grid: &Grid<Terrain>) -> bool {
-    is_cave(pos, grid) && pos.neighbors().iter().all(|&pos| !is_cave(pos, grid))
+    is_cave(pos, grid) && pos.neighbors().all(|pos| !is_cave(pos, grid))
 }
 
 fn is_cave(pos: Pos, grid: &Grid<Terrain>) -> bool {

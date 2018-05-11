@@ -37,7 +37,6 @@ fn is_valid_exit(pos: Pos, level: &Grid<Terrain>) -> bool {
 
 fn count_wall_neighbors(pos: Pos, level: &Grid<Terrain>) -> usize {
     pos.neighbors()
-        .iter()
-        .filter(|&&pos| level[pos] == Terrain::Wall)
+        .filter(|&pos| level[pos] == Terrain::Wall)
         .count()
 }

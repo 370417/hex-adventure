@@ -68,7 +68,7 @@ impl<T> Store<T> {
     /// Returns a reference to the value corresponding to the id.
     pub fn get(&self, id: Id<T>) -> Option<&T> {
         match self.values.get(id.index) {
-            Some(&Versioned { ref value, version }) if version == id.version => Some(value),
+            Some(Versioned { value, version }) if *version == id.version => Some(value),
             _ => None,
         }
     }
@@ -76,13 +76,7 @@ impl<T> Store<T> {
     /// Returns a mutable reference to the value corresponding to the id.
     pub fn get_mut(&mut self, id: Id<T>) -> Option<&mut T> {
         match self.values.get_mut(id.index) {
-            Some(&mut Versioned {
-                ref mut value,
-                version,
-            }) if version == id.version =>
-            {
-                Some(value)
-            }
+            Some(Versioned { value, version }) if *version == id.version => Some(value),
             _ => None,
         }
     }
@@ -92,10 +86,7 @@ impl<T> Store<T> {
     /// The values do not actually go out of scope right away.
     pub fn remove(&mut self, id: Id<T>) -> bool {
         match self.values.get_mut(id.index) {
-            Some(&mut Versioned {
-                ref mut version, ..
-            }) if *version == id.version =>
-            {
+            Some(Versioned { version, .. }) if *version == id.version => {
                 *version = INVALID_VERSION;
                 self.reusable_ids.push(id.reuse());
                 true

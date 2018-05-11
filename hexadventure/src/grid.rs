@@ -68,11 +68,10 @@ pub enum Direction {
 }
 
 impl Pos {
-    pub fn neighbors(self) -> Vec<Pos> {
+    pub fn neighbors(self) -> impl Iterator<Item = Pos> {
         DIRECTIONS
             .into_iter()
-            .map(|&direction| self + direction)
-            .collect()
+            .map(move |&direction| self + direction)
     }
 
     pub fn distance(self, other: Pos) -> u32 {
@@ -529,7 +528,7 @@ mod tests {
     }
 
     fn on_outer_edge<T>(pos: Pos, grid: &Grid<T>) -> bool {
-        grid.contains(pos) && pos.neighbors().iter().any(|&pos| !grid.contains(pos))
+        grid.contains(pos) && pos.neighbors().any(|pos| !grid.contains(pos))
     }
 
     #[test]
