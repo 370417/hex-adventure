@@ -57,7 +57,7 @@ pub struct Location {
     pub y: i32,
 }
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Direction {
     Southeast,
     East,

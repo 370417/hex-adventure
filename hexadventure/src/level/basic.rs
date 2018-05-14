@@ -69,7 +69,7 @@ fn remove_isolated_walls(grid: &mut Grid<Terrain>) {
 /// Remove all but the largest group of floor tiles.
 fn remove_isolated_floors(grid: &mut Grid<Terrain>) {
     let mut largest_floor_set = HashSet::new();
-    for pos in grid.positions() {
+    for pos in grid.inner_positions() {
         if grid[pos] == Terrain::Floor {
             let floor_set = floodfill::flood(pos, |pos| grid[pos] == Terrain::Floor);
             for &pos in floor_set.iter() {
@@ -88,7 +88,7 @@ fn remove_isolated_floors(grid: &mut Grid<Terrain>) {
 /// Remove caves of less than 4 tiles in size.
 fn remove_small_caves(grid: &mut Grid<Terrain>) {
     let mut visited = Grid::new(grid.width, grid.height, |_pos| false);
-    for pos in grid.positions() {
+    for pos in grid.inner_positions() {
         fill_dead_end(pos, grid);
         let flooded = floodfill::flood(pos, &|pos| {
             grid.contains(pos) && !visited[pos] && is_cave(pos, grid)
@@ -119,7 +119,7 @@ fn is_dead_end(pos: Pos, grid: &Grid<Terrain>) -> bool {
     is_cave(pos, grid) && pos.neighbors().all(|pos| !is_cave(pos, grid))
 }
 
-fn is_cave(pos: Pos, grid: &Grid<Terrain>) -> bool {
+pub(super) fn is_cave(pos: Pos, grid: &Grid<Terrain>) -> bool {
     grid[pos] == Terrain::Floor && count_floor_groups(pos, grid) == 1
 }
 
