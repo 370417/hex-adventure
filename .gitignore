@@ -3,5 +3,7 @@ save.bincode
 oryx/
 sprites.png
 
+rls/
+
 /target/
 **/*.rs.bk
