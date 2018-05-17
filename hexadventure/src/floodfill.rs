@@ -1,8 +1,7 @@
 //! Function for performing an efficient floodfill.
 
-use grid::{Direction, Pos};
+use grid::{Direction, Pos, DIRECTIONS};
 use std::collections::HashSet;
-use std::iter::{IntoIterator, Iterator};
 
 /// Performs a floodfill starting at origin.
 ///
@@ -16,172 +15,122 @@ where
         return flooded;
     }
     flooded.insert(origin);
-    let segment = Segment {
-        start: flood_ray(origin, Direction::East, &mut flooded, &floodable),
-        end: flood_ray(origin, Direction::West, &mut flooded, &floodable),
-    };
-    flood_vert(
-        segment.clone(),
-        FloodDirection::North,
-        &mut flooded,
-        &floodable,
-    );
-    flood_vert(segment, FloodDirection::South, &mut flooded, &floodable);
+    for &direction in DIRECTIONS.iter() {
+        flood_stem(origin + direction, direction, &mut flooded, &floodable);
+    }
+    // flood_stem(origin, Direction::East, &mut flooded, &floodable);
+    // flood_stem(origin + Direction::West, Direction::Northwest, &mut flooded, &floodable);
+    // flood_stem(origin + Direction::Southwest, Direction::Southwest, &mut flooded, &floodable);
     flooded
 }
+// pub fn flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>
+// where
+//     F: Fn(Pos) -> bool,
+// {
+//     let mut flooded = HashSet::new();
+//     if !floodable(origin) {
+//         return flooded;
+//     }
+//     flooded.insert(origin);
+//     for &direction in DIRECTIONS.iter() {
+//         flood_sextant(origin, direction, Chirality::Clockwise, &mut flooded, &floodable);
+//     }
+//     flooded
+// }
 
-/// A horizontal segment of positions from start to end inclusive.
-///
-/// For iteration, start is assumed to be to the east and end to the west (like the sun).
-#[derive(Clone)]
-struct Segment {
-    start: Pos,
-    end: Pos,
-}
-
-/// Describes whether the current flood_vert call is headed north or south.
-#[derive(Copy, Clone)]
-enum FloodDirection {
-    North,
-    South,
-}
-
-/// Flood to the north or south of an origin segment.
-fn flood_vert<F>(
-    origin: Segment,
-    direction: FloodDirection,
-    flooded: &mut HashSet<Pos>,
-    floodable: &F,
-) where
-    F: Fn(Pos) -> bool,
-{
-    let segment = origin.expand(direction);
-    let Segment { start, end } = segment;
-    let mut subsegments = segment.flood(flooded, floodable);
-    if let Some(first) = subsegments.first_mut() {
-        if first.start == start {
-            first.start = flood_ray(start, Direction::East, flooded, floodable);
-            let overhang = Segment {
-                start: first.start,
-                end: start + Direction::East,
-            };
-            flood_vert(overhang, direction.opposite(), flooded, floodable);
-        }
-    }
-    if let Some(last) = subsegments.last_mut() {
-        if last.end == end {
-            last.end = flood_ray(end, Direction::West, flooded, floodable);
-            let overhang = Segment {
-                start: end + Direction::West,
-                end: last.end,
-            };
-            flood_vert(overhang, direction.opposite(), flooded, floodable);
-        }
-    }
-    for subsegment in subsegments {
-        flood_vert(subsegment, direction, flooded, floodable);
-    }
-}
-
-/// Flood a ray of positions, beginning at origin (not inclusive)
-/// and continuing in a certain direction until a non-floodable position is reached.
-fn flood_ray<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>, floodable: &F) -> Pos
+fn flood_stem<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>, floodable: &F)
 where
     F: Fn(Pos) -> bool,
 {
-    let mut pos = origin + direction;
-    while floodable(pos) && !flooded.contains(&pos) {
+    for y in 0.. {
+        let pos = origin + direction * y;
+        if !floodable(pos) || flooded.contains(&pos) {
+            break;
+        }
         flooded.insert(pos);
-        pos += direction;
+        let right = direction.rotate(1);
+        let left = direction.rotate(-1);
+        flood_leaf(pos + right, right, flooded, floodable);
+        flood_leaf(pos + left, left, flooded, floodable);
     }
-    pos - direction
 }
 
-impl Segment {
-    /// Expand a segment north or south.
-    /// The resulting segment is longer than the original by 1.
-    fn expand(&self, direction: FloodDirection) -> Self {
-        let (start_dir, end_dir) = match direction {
-            FloodDirection::North => (Direction::Northeast, Direction::Northwest),
-            FloodDirection::South => (Direction::Southeast, Direction::Southwest),
-        };
-        Segment {
-            start: self.start + start_dir,
-            end: self.end + end_dir,
+fn flood_leaf<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>, floodable: &F)
+where
+    F: Fn(Pos) -> bool,
+{
+    let passable = |pos, flooded: &HashSet<Pos>| floodable(pos) && !flooded.contains(&pos);
+    for x in 0.. {
+        let pos = origin + direction * x;
+        if !passable(pos, flooded) {
+            break;
+        }
+        flooded.insert(pos);
+        if !passable(pos + direction.rotate(2), flooded) && passable(pos + direction.rotate(1), flooded) {
+            flood_stem(pos + direction.rotate(1), direction.rotate(1), flooded, floodable);
+        }
+        if !passable(pos + direction.rotate(-2), flooded) && passable(pos + direction.rotate(-1), flooded) {
+            flood_stem(pos + direction.rotate(-1), direction.rotate(-1), flooded, floodable);
         }
     }
+}
 
-    /// Flood an entire segment.
-    /// This skips over non-floodable positions instead of stopping at them.
-    /// Returns a vector of floodable subsegments.
-    fn flood<F>(self, flooded: &mut HashSet<Pos>, floodable: &F) -> Vec<Segment>
-    where
-        F: Fn(Pos) -> bool,
-    {
-        let mut start = None;
-        let mut segments = Vec::new();
-        let end = self.end;
-        for pos in self {
-            if floodable(pos) && !flooded.contains(&pos) {
-                flooded.insert(pos);
-                if start.is_none() {
-                    start = Some(pos);
-                }
-            } else if let Some(start_pos) = start {
-                segments.push(Segment {
-                    start: start_pos,
-                    end: pos - Direction::West,
-                });
-                start = None;
+fn flood_sextant<F>(origin: Pos, direction: Direction, chirality: Chirality, flooded: &mut HashSet<Pos>, floodable: &F)
+where
+    F: Fn(Pos) -> bool
+{
+    let passable = |pos, flooded: &HashSet<Pos>| floodable(pos) && !flooded.contains(&pos);
+    let leaf_direction = rotate(direction, 1, chirality);
+    for y in 1.. {
+        let stem_pos = origin + direction * y;
+        if !passable(stem_pos, flooded) {
+            break;
+        }
+        flooded.insert(stem_pos);
+        recur(stem_pos, direction, chirality, flooded, floodable);
+        for x in 1.. {
+            let leaf_pos = stem_pos + leaf_direction * x;
+            if !passable(leaf_pos, flooded) {
+                break;
             }
+            flooded.insert(leaf_pos);
+            recur(leaf_pos, leaf_direction, chirality, flooded, floodable);
+            recur(leaf_pos, leaf_direction, chirality.opposite(), flooded, floodable);
         }
-        if let Some(start_pos) = start {
-            segments.push(Segment {
-                start: start_pos,
-                end,
-            });
-        }
-        segments
     }
 }
 
-impl FloodDirection {
+#[derive(Copy, Clone)]
+enum Chirality {
+    Clockwise,
+    Counterclockwise,
+}
+
+impl Chirality {
     fn opposite(&self) -> Self {
-        match *self {
-            FloodDirection::North => FloodDirection::South,
-            FloodDirection::South => FloodDirection::North,
+        match self {
+            Chirality::Clockwise => Chirality::Counterclockwise,
+            Chirality::Counterclockwise => Chirality::Clockwise,
         }
     }
 }
 
-struct SegmentIterator {
-    pos: Pos,
-    stop: Pos,
-}
-
-impl IntoIterator for Segment {
-    type Item = Pos;
-    type IntoIter = SegmentIterator;
-
-    fn into_iter(self) -> Self::IntoIter {
-        SegmentIterator {
-            pos: self.start,
-            stop: self.end + Direction::West,
-        }
+/// Recursively call `flood_sextant` if there is a forced neighbor.
+fn recur<F>(pos: Pos, direction: Direction, chirality: Chirality, flooded: &mut HashSet<Pos>, floodable: &F) where
+    F: Fn(Pos) -> bool
+{
+    let corner = pos + rotate(direction, -2, chirality);
+    let turn = rotate(direction, -1, chirality);
+    let passable = |pos, flooded: &HashSet<Pos>| floodable(pos) && !flooded.contains(&pos);
+    if !passable(corner, flooded) && passable(pos + turn, flooded) {
+        flood_sextant(pos, turn, chirality, flooded, floodable);
     }
 }
 
-impl Iterator for SegmentIterator {
-    type Item = Pos;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.pos == self.stop {
-            None
-        } else {
-            let old_pos = self.pos;
-            self.pos += Direction::West;
-            Some(old_pos)
-        }
+fn rotate(direction: Direction, n: i32, chirality: Chirality) -> Direction {
+    match chirality {
+        Chirality::Clockwise => direction.rotate(n),
+        Chirality::Counterclockwise => direction.rotate(-n),
     }
 }
 
@@ -224,8 +173,8 @@ mod tests {
     #[test]
     fn flood_equiv_basic_flood() {
         let mut rng = thread_rng();
-        for _i in 0..100 {
-            let grid: Grid<bool> = Grid::new(20, 20, |_pos| rng.gen_bool(0.75));
+        for _i in 0..40 {
+            let grid: Grid<bool> = Grid::new(40, 40, |_pos| rng.gen_bool(0.75));
             let normal_set = flood(grid.center(), |pos| grid.contains(pos) && grid[pos]);
             let basic_set = basic_flood(grid.center(), |pos| grid.contains(pos) && grid[pos]);
             assert!(set_equiv(&normal_set, &basic_set));

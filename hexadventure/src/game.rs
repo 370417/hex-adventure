@@ -2,6 +2,7 @@ use fov::fov;
 use grid::{Direction, Grid, Pos};
 use level::Architect;
 use level::tile::{FullTileView, Terrain, Tile, TileView};
+use astar::jps;
 use mob::Mob;
 use rand::{thread_rng, Rng};
 use store::{Id, Store};
@@ -16,6 +17,25 @@ pub struct Game {
 }
 
 impl Game {
+    pub fn foo(&mut self) {
+        let player = self.mobs.get(self.player_id).unwrap();
+        let exit_pos = self.level.inner_positions().find(|&pos| self.level[pos].terrain == Terrain::Exit).unwrap();
+        let path = jps(player.pos(), |pos| pos == exit_pos, |pos| self.level[pos].terrain != Terrain::Wall,
+        |pos| pos.distance(exit_pos));
+        for pos in self.level.inner_positions() {
+            if self.level[pos].terrain == Terrain::ShortGrass {
+                self.level[pos].terrain = Terrain::Floor;
+            }
+        }
+        if let Some(path) = path {
+            for pos in path {
+                if self.level[pos].terrain == Terrain::Floor {
+                    self.level[pos].terrain = Terrain::ShortGrass;
+                }
+            }
+        }
+    }
+
     pub fn new(width: usize, height: usize) -> Self {
         let seed = thread_rng().gen();
         println!("SEED: {}", seed);
