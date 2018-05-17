@@ -19,6 +19,18 @@ pub struct Game {
 impl Game {
     pub fn foo(&mut self) {
         let player = self.mobs.get(self.player_id).unwrap();
+        // let node = JumpPoint {
+        //     pos: player.pos(),
+        //     direction: player.facing(),
+        // };
+        // for pos in self.level.inner_positions() {
+        //     if self.level[pos].terrain == Terrain::ShortGrass {
+        //         self.level[pos].terrain = Terrain::Floor;
+        //     }
+        // }
+        // for node in node.neighbors(&|_| false, &|pos| self.level[pos].terrain == Terrain::Floor) {
+        //     self.level[node.pos].terrain = Terrain::ShortGrass;
+        // }
         let exit_pos = self.level.inner_positions().find(|&pos| self.level[pos].terrain == Terrain::Exit).unwrap();
         let path = jps(player.pos(), |pos| pos == exit_pos, |pos| self.level[pos].terrain != Terrain::Wall,
         |pos| pos.distance(exit_pos));

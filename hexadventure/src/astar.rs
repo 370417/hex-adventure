@@ -1,4 +1,4 @@
-use grid::{Pos, Direction, DIRECTIONS};
+use grid::{Pos, Direction, DIRECTIONS, decompose};
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, VecDeque};
 
@@ -15,58 +15,42 @@ where
     let origin_heuristic = heuristic(origin);
     for &direction in DIRECTIONS.iter() {
         open.push(MinHeapItem {
-            node: JumpPoint {
+            node: Node::JumpPoint(JumpPoint {
                 pos: origin,
                 direction,
                 chirality: Chirality::Clockwise,
-            },
+            }),
             priority: origin_heuristic,
         });
     }
-    let mut parents: HashMap<Pos, Parent> = HashMap::with_capacity(6);
-    parents.insert(origin, Parent {
-        node: None,
-        total_cost: 0,
-        stem_cost: 0,
-        leaf_cost: 0,
-    });
+    let mut cost = HashMap::new();
+    cost.insert(origin, 0);
+    let mut parents = HashMap::new();
     while let Some(MinHeapItem { node, .. }) = open.pop() {
-        match node.neighbors(&is_goal, &passable) {
-            Neighbors::Goal {
-                pos,
-                stem_cost,
-                leaf_cost,
-            } => {
-                let total_cost = parents.get(&node.pos).unwrap().total_cost + stem_cost + leaf_cost;
-                parents.insert(pos, Parent {
-                    node: Some(node),
-                    total_cost,
-                    stem_cost,
-                    leaf_cost,
-                });
-                return Some(construct_path(parents, pos));
+        match node {
+            Node::Goal(pos) => {
+                let total_cost = cost.get(&pos).unwrap();
+                return Some(construct_path(parents, pos, *total_cost))
             }
-            Neighbors::Neighbors(neighbors) => {
-                for neighbor in neighbors {
-                    let new_cost = parents.get(&node.pos).unwrap().total_cost + neighbor.stem_cost + neighbor.leaf_cost;
-                    if let Some(parent) = parents.get(&neighbor.node.pos) {
+            Node::JumpPoint(curr) => {
+                let curr_pos = curr.pos;
+                for neighbor in curr.neighbors(&is_goal, &passable) {
+                    let neighbor_pos = neighbor.pos();
+                    let new_cost = cost.get(&curr_pos).unwrap() + neighbor.pos().distance(curr_pos);
+                    if let Some(&existing_cost) = cost.get(&neighbor_pos) {
                         // normally we would skip a neighbor if its cost was equal to the cost found already
                         // here we don't because in this implementation of jps,
                         // multiple neighbors can be created for a single position
-                        if new_cost > parent.total_cost {
+                        if new_cost > existing_cost {
                             continue;
                         }
                     }
                     open.push(MinHeapItem {
-                        node: neighbor.node,
-                        priority: new_cost + heuristic(neighbor.node.pos),
+                        node: neighbor,
+                        priority: new_cost + heuristic(neighbor_pos)
                     });
-                    parents.insert(neighbor.node.pos, Parent {
-                        node: Some(node),
-                        total_cost: new_cost,
-                        stem_cost: neighbor.stem_cost,
-                        leaf_cost: neighbor.leaf_cost,
-                    });
+                    parents.insert(neighbor_pos, curr.clone());
+                    cost.insert(neighbor_pos, new_cost);
                 }
             }
         }
@@ -74,23 +58,20 @@ where
     None
 }
 
-fn construct_path(parents: HashMap<Pos, Parent>, goal: Pos) -> Vec<Pos> {
-    let mut path = VecDeque::with_capacity(1 + parents.get(&goal).unwrap().total_cost as usize);
+fn construct_path(parents: HashMap<Pos, JumpPoint>, goal: Pos, total_cost: u32) -> Vec<Pos> {
+    let mut path = VecDeque::with_capacity(1 + total_cost as usize);
     path.push_back(goal);
     let mut pos = goal;
-    while let Some(&Parent {
-        node: Some(jump_point),
-        stem_cost,
-        leaf_cost,
-        ..
-    }) = parents.get(&pos) {
+    while let Some(jump_point) = parents.get(&pos) {
+        let stem_direction = jump_point.direction;
         let leaf_direction = rotate(jump_point.direction, 1, jump_point.chirality);
-        for y in 0..stem_cost {
-            path.push_back(jump_point.pos + jump_point.direction * y);
-        }
-        let stem_tip = jump_point.pos + jump_point.direction * stem_cost;
-        for x in 0..leaf_cost {
+        let (stem_cost, leaf_cost) = decompose(pos - jump_point.pos, stem_direction, leaf_direction);
+        let stem_tip = jump_point.pos + stem_direction * stem_cost;
+        for x in (0..leaf_cost).rev() {
             path.push_back(stem_tip + leaf_direction * x);
+        }
+        for y in (0..stem_cost).rev() {
+            path.push_back(jump_point.pos + stem_direction * y);
         }
         pos = jump_point.pos;
     }
@@ -98,16 +79,8 @@ fn construct_path(parents: HashMap<Pos, Parent>, goal: Pos) -> Vec<Pos> {
 }
 
 #[derive(PartialEq, Eq)]
-struct Parent {
-    node: Option<JumpPoint>,
-    total_cost: u32,
-    stem_cost: u32,
-    leaf_cost: u32,
-}
-
-#[derive(PartialEq, Eq)]
 struct MinHeapItem {
-    node: JumpPoint,
+    node: Node,
     priority: u32,
 }
 
@@ -131,88 +104,77 @@ impl Ord for MinHeapItem {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Copy, Clone)]
+#[derive(PartialEq, Eq)]
+enum Node {
+    Goal(Pos),
+    JumpPoint(JumpPoint),
+}
+
+impl Node {
+    fn pos(&self) -> Pos {
+        match self {
+            Node::Goal(pos) => *pos,
+            Node::JumpPoint(jump_point) => jump_point.pos,
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone)]
 struct JumpPoint {
     pos: Pos,
     direction: Direction,
     chirality: Chirality,
 }
 
-enum Neighbors {
-    Goal {
-        pos: Pos,
-        stem_cost: u32,
-        leaf_cost: u32,
-    },
-    Neighbors(Vec<Neighbor>)
-}
-
-impl Neighbors {
-    fn new_goal(pos: Pos, stem_cost: u32, leaf_cost: u32) -> Self {
-        Neighbors::Goal {
-            pos,
-            stem_cost,
-            leaf_cost,
-        }
-    }
-}
-
-struct Neighbor {
-    node: JumpPoint,
-    stem_cost: u32,
-    leaf_cost: u32,
-}
-
-impl Neighbor {
-    fn new(node: JumpPoint, stem_cost: u32, leaf_cost: u32) -> Self {
-        Neighbor {
-            node,
-            stem_cost,
-            leaf_cost,
-        }
-    }
+#[derive(PartialEq, Eq, Hash, Copy, Clone)]
+enum Chirality {
+    Clockwise,
+    Counterclockwise,
 }
 
 impl JumpPoint {
-    fn neighbors<FG, FP>(&self, is_goal: &FG, passable: &FP) -> Neighbors
+    pub fn neighbors<FG, FP>(&self, is_goal: &FG, passable: &FP) -> Vec<Node>
     where
         FG: Fn(Pos) -> bool,
         FP: Fn(Pos) -> bool,
     {
         let mut neighbors = Vec::new();
-        let leaf_direction = rotate(self.direction, 1, self.chirality);
+        let pos = self.pos;
+        let direction = self.direction;
+        let chirality = self.chirality;
+        let leaf_direction = rotate(direction, 1, chirality);
         for y in 1.. {
-            let stem_pos = self.pos + self.direction * y;
-            if !passable(stem_pos) {
+            let pos = pos + direction * y;
+            if !passable(pos) {
                 break;
             }
-            if is_goal(stem_pos) {
-                return Neighbors::new_goal(stem_pos, y, 0);
-            }
-            if let Some(jump_point) = recur(stem_pos, self.direction, self.chirality, passable) {
-                neighbors.push(Neighbor::new(jump_point, y, 0))
+            if is_goal(pos) {
+                neighbors.push(Node::Goal(pos));
+            } else if let Some(jump_point) = forced_neighbor(pos, direction, chirality, passable) {
+                neighbors.push(Node::JumpPoint(jump_point));
             }
             for x in 1.. {
-                let leaf_pos = stem_pos + leaf_direction * x;
-                if !passable(leaf_pos) {
+                let pos = pos + leaf_direction * x;
+                if !passable(pos) {
                     break;
                 }
-                if is_goal(leaf_pos) {
-                    return Neighbors::new_goal(leaf_pos, y, x);
-                }
-                if let Some(jump_point) = recur(leaf_pos, leaf_direction, self.chirality, passable) {
-                    neighbors.push(Neighbor::new(jump_point, y, x));
-                }
-                if let Some(jump_point) = recur(leaf_pos, leaf_direction, self.chirality.opposite(), passable) {
-                    neighbors.push(Neighbor::new(jump_point, y, x));
+                if is_goal(pos) {
+                    neighbors.push(Node::Goal(pos));
+                } else {
+                    if let Some(jump_point) = forced_neighbor(pos, leaf_direction, chirality, passable) {
+                        neighbors.push(Node::JumpPoint(jump_point));
+                    }
+                    if let Some(jump_point) = forced_neighbor(pos, leaf_direction, chirality.opposite(), passable) {
+                        neighbors.push(Node::JumpPoint(jump_point));
+                    }
                 }
             }
         }
-        Neighbors::Neighbors(neighbors)
+        neighbors
     }
 }
 
-fn recur<FP>(pos: Pos, direction: Direction, chirality: Chirality, passable: &FP) -> Option<JumpPoint>
+fn forced_neighbor<FP>(pos: Pos, direction: Direction, chirality: Chirality, passable: &FP) -> Option<JumpPoint>
 where
     FP: Fn(Pos) -> bool,
 {
@@ -227,12 +189,6 @@ where
     } else {
         None
     }
-}
-
-#[derive(PartialEq, Eq, Hash, Copy, Clone)]
-enum Chirality {
-    Clockwise,
-    Counterclockwise,
 }
 
 impl Chirality {

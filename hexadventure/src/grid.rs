@@ -308,6 +308,17 @@ impl Direction {
     }
 }
 
+/// This will give the wrong answer if dir1 + dir2 = 0,
+/// since it doesn't calculate the determinant.
+pub fn decompose(displacement: Displacement, dir1: Direction, dir2: Direction) -> (i32, i32) {
+    let a = dir2.y();
+    let b = -dir2.x();
+    let c = -dir1.y();
+    let d = dir1.x();
+    let det = a * d - b * c;
+    (det * (a * displacement.x + b * displacement.y), det * (c * displacement.x + d * displacement.y))
+}
+
 impl ops::Mul<i32> for Direction {
     type Output = Displacement;
 
