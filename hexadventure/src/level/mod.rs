@@ -2,8 +2,8 @@
 
 mod basic;
 mod exit;
-mod populate;
 mod lake;
+mod populate;
 pub mod tile;
 
 use self::populate::populate;

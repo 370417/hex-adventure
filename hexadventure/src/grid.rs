@@ -316,7 +316,10 @@ pub fn decompose(displacement: Displacement, dir1: Direction, dir2: Direction) -
     let c = -dir1.y();
     let d = dir1.x();
     let det = a * d - b * c;
-    (det * (a * displacement.x + b * displacement.y), det * (c * displacement.x + d * displacement.y))
+    (
+        det * (a * displacement.x + b * displacement.y),
+        det * (c * displacement.x + d * displacement.y),
+    )
 }
 
 impl ops::Mul<i32> for Direction {

@@ -1,8 +1,8 @@
+use astar::jps;
 use fov::fov;
 use grid::{Direction, Grid, Pos};
 use level::Architect;
 use level::tile::{FullTileView, Terrain, Tile, TileView};
-use astar::jps;
 use mob::Mob;
 use rand::{thread_rng, Rng};
 use store::{Id, Store};
@@ -31,9 +31,16 @@ impl Game {
         // for node in node.neighbors(&|_| false, &|pos| self.level[pos].terrain == Terrain::Floor) {
         //     self.level[node.pos].terrain = Terrain::ShortGrass;
         // }
-        let exit_pos = self.level.inner_positions().find(|&pos| self.level[pos].terrain == Terrain::Exit).unwrap();
-        let path = jps(player.pos(), |pos| pos == exit_pos, |pos| self.level[pos].terrain != Terrain::Wall,
-        |pos| pos.distance(exit_pos));
+        let exit_pos = self.level
+            .inner_positions()
+            .find(|&pos| self.level[pos].terrain == Terrain::Exit)
+            .unwrap();
+        let path = jps(
+            player.pos(),
+            |pos| pos == exit_pos,
+            |pos| self.level[pos].terrain != Terrain::Wall,
+            |pos| pos.distance(exit_pos),
+        );
         for pos in self.level.inner_positions() {
             if self.level[pos].terrain == Terrain::ShortGrass {
                 self.level[pos].terrain = Terrain::Floor;
