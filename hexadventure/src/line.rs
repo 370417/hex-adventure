@@ -40,4 +40,9 @@ impl Iterator for LineIterator {
             Some(pos)
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let size = self.length - self.progress;
+        (size as usize, Some(size as usize))
+    }
 }
