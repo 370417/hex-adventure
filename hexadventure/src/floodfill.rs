@@ -16,42 +16,23 @@ where
     }
     flooded.insert(origin);
     for &direction in DIRECTIONS.iter() {
-        flood_stem(origin + direction, direction, &mut flooded, &floodable);
+        flood_stem(origin, direction, &mut flooded, &floodable);
     }
-    // flood_stem(origin, Direction::East, &mut flooded, &floodable);
-    // flood_stem(origin + Direction::West, Direction::Northwest, &mut flooded, &floodable);
-    // flood_stem(origin + Direction::Southwest, Direction::Southwest, &mut flooded, &floodable);
     flooded
 }
-// pub fn flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>
-// where
-//     F: Fn(Pos) -> bool,
-// {
-//     let mut flooded = HashSet::new();
-//     if !floodable(origin) {
-//         return flooded;
-//     }
-//     flooded.insert(origin);
-//     for &direction in DIRECTIONS.iter() {
-//         flood_sextant(origin, direction, Chirality::Clockwise, &mut flooded, &floodable);
-//     }
-//     flooded
-// }
 
 fn flood_stem<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>, floodable: &F)
 where
     F: Fn(Pos) -> bool,
 {
-    for y in 0.. {
+    for y in 1.. {
         let pos = origin + direction * y;
         if !floodable(pos) || flooded.contains(&pos) {
             break;
         }
         flooded.insert(pos);
-        let right = direction.rotate(1);
-        let left = direction.rotate(-1);
-        flood_leaf(pos + right, right, flooded, floodable);
-        flood_leaf(pos + left, left, flooded, floodable);
+        flood_leaf(pos, direction.rotate(1), flooded, floodable);
+        flood_leaf(pos, direction.rotate(-1), flooded, floodable);
     }
 }
 
@@ -59,109 +40,32 @@ fn flood_leaf<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>, 
 where
     F: Fn(Pos) -> bool,
 {
-    let passable = |pos, flooded: &HashSet<Pos>| floodable(pos) && !flooded.contains(&pos);
-    for x in 0.. {
+    for x in 1.. {
         let pos = origin + direction * x;
-        if !passable(pos, flooded) {
+        if !floodable(pos) || flooded.contains(&pos) {
             break;
         }
         flooded.insert(pos);
-        if !passable(pos + direction.rotate(2), flooded)
-            && passable(pos + direction.rotate(1), flooded)
-        {
-            flood_stem(
-                pos + direction.rotate(1),
-                direction.rotate(1),
-                flooded,
-                floodable,
-            );
-        }
-        if !passable(pos + direction.rotate(-2), flooded)
-            && passable(pos + direction.rotate(-1), flooded)
-        {
-            flood_stem(
-                pos + direction.rotate(-1),
-                direction.rotate(-1),
-                flooded,
-                floodable,
-            );
-        }
+        recur(pos, direction, true, flooded, floodable);
+        recur(pos, direction, false, flooded, floodable);
     }
 }
 
-fn flood_sextant<F>(
-    origin: Pos,
-    direction: Direction,
-    chirality: Chirality,
-    flooded: &mut HashSet<Pos>,
-    floodable: &F,
-) where
-    F: Fn(Pos) -> bool,
-{
-    let passable = |pos, flooded: &HashSet<Pos>| floodable(pos) && !flooded.contains(&pos);
-    let leaf_direction = rotate(direction, 1, chirality);
-    for y in 1.. {
-        let stem_pos = origin + direction * y;
-        if !passable(stem_pos, flooded) {
-            break;
-        }
-        flooded.insert(stem_pos);
-        recur(stem_pos, direction, chirality, flooded, floodable);
-        for x in 1.. {
-            let leaf_pos = stem_pos + leaf_direction * x;
-            if !passable(leaf_pos, flooded) {
-                break;
-            }
-            flooded.insert(leaf_pos);
-            recur(leaf_pos, leaf_direction, chirality, flooded, floodable);
-            recur(
-                leaf_pos,
-                leaf_direction,
-                chirality.opposite(),
-                flooded,
-                floodable,
-            );
-        }
-    }
-}
-
-#[derive(Copy, Clone)]
-enum Chirality {
-    Clockwise,
-    Counterclockwise,
-}
-
-impl Chirality {
-    fn opposite(&self) -> Self {
-        match self {
-            Chirality::Clockwise => Chirality::Counterclockwise,
-            Chirality::Counterclockwise => Chirality::Clockwise,
-        }
-    }
-}
-
-/// Recursively call `flood_sextant` if there is a forced neighbor.
 fn recur<F>(
     pos: Pos,
     direction: Direction,
-    chirality: Chirality,
+    reverse: bool,
     flooded: &mut HashSet<Pos>,
     floodable: &F,
 ) where
     F: Fn(Pos) -> bool,
 {
-    let corner = pos + rotate(direction, -2, chirality);
-    let turn = rotate(direction, -1, chirality);
+    let sign = if reverse { -1 } else { 1 };
     let passable = |pos, flooded: &HashSet<Pos>| floodable(pos) && !flooded.contains(&pos);
+    let corner = pos + direction.rotate(sign * -2);
+    let turn = direction.rotate(sign * -1);
     if !passable(corner, flooded) && passable(pos + turn, flooded) {
-        flood_sextant(pos, turn, chirality, flooded, floodable);
-    }
-}
-
-fn rotate(direction: Direction, n: i32, chirality: Chirality) -> Direction {
-    match chirality {
-        Chirality::Clockwise => direction.rotate(n),
-        Chirality::Counterclockwise => direction.rotate(-n),
+        flood_stem(pos, turn, flooded, floodable);
     }
 }
 
@@ -200,7 +104,7 @@ mod tests {
         a.len() == b.len() && a.iter().all(|item| b.contains(item))
     }
 
-    /// Make sure naive floodfill and scanline floodfill behave the same.
+    /// Make sure naive floodfill and the efficient floodfill behave the same.
     #[test]
     fn flood_equiv_basic_flood() {
         let mut rng = thread_rng();

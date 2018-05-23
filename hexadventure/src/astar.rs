@@ -1,6 +1,48 @@
+//! Sextant method & Palm frond method
+
 use grid::{decompose, Direction, Pos, DIRECTIONS};
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, VecDeque};
+use std::iter::FromIterator;
+
+/// Initialize the open and visited sets by finding nodes with the sextant method.
+fn init_open<FG, FP, FH>(
+    origin: Pos,
+    is_goal: &FG,
+    passable: &FP,
+    heuristic: &FH,
+) -> (BinaryHeap<MinHeapItem>, HashMap<Pos, Visited>)
+where
+    FG: Fn(Pos) -> bool,
+    FP: Fn(Pos) -> bool,
+    FH: Fn(Pos) -> u32,
+{
+    let mut open = Vec::new();
+    let mut visited = HashMap::new();
+    for &direction in DIRECTIONS.iter() {
+        let nodes = find_initial_nodes(origin, direction, &is_goal, &passable);
+        open.reserve(nodes.len());
+        visited.reserve(nodes.len());
+        for node in nodes {
+            let pos = node.pos();
+            let cost = pos.distance(origin);
+            open.push(MinHeapItem {
+                node,
+                priority: cost + heuristic(pos),
+            });
+            visited.insert(
+                pos,
+                Visited {
+                    parent: origin,
+                    stem_direction: direction,
+                    leaf_direction: direction.rotate(1),
+                    cost,
+                },
+            );
+        }
+    }
+    (BinaryHeap::from(open), visited)
+}
 
 pub(super) fn jps<FG, FP, FH>(
     origin: Pos,
@@ -16,50 +58,23 @@ where
     if is_goal(origin) {
         return Some(vec![origin]);
     }
-    let mut open = BinaryHeap::new();
-    let mut parents = HashMap::new();
-    // make sure the origin never receives a parent
-    // (that would cause a loop when reconstructing the path)
-    parents.insert(
-        origin,
-        Parent {
-            pos: origin,
-            stem_direction: Direction::East,
-            leaf_direction: Direction::East,
-            cost: 0,
-        },
-    );
-    for &direction in DIRECTIONS.iter() {
-        let nodes = find_initial_nodes(origin, direction, &is_goal, &passable);
-        for node in nodes {
-            let pos = node.pos();
-            let cost = pos.distance(origin);
-            open.push(MinHeapItem {
-                node,
-                priority: cost + heuristic(pos),
-            });
-            parents.insert(
-                pos,
-                Parent {
-                    pos: origin,
-                    stem_direction: direction,
-                    leaf_direction: direction.rotate(1),
-                    cost,
-                },
-            );
-        }
-    }
+    let (mut open, mut visited) = init_open(origin, &is_goal, &passable, &heuristic);
     while let Some(MinHeapItem { node, .. }) = open.pop() {
         match node {
             Node::Goal(pos) => {
-                let total_cost = parents.get(&pos).unwrap().cost;
-                return Some(construct_path(parents, pos, total_cost));
+                let total_cost = visited.get(&pos).unwrap().cost;
+                return Some(construct_path(visited, pos, total_cost));
             }
             Node::JumpPoint { pos, direction } => {
                 for (neighbor, leaf_direction) in neighbors(pos, direction, &is_goal, &passable) {
                     let neighbor_pos = neighbor.pos();
-                    let new_cost = parents.get(&pos).unwrap().cost + neighbor.pos().distance(pos);
-                    if let Some(parent) = parents.get(&neighbor_pos) {
+                    // the start position doesn't start out as visited, so we need to make sure it does
+                    // not get added to the open set. If it did, it would create a cycle in the path.
+                    if neighbor_pos == origin {
+                        continue;
+                    }
+                    let new_cost = visited.get(&pos).unwrap().cost + neighbor.pos().distance(pos);
+                    if let Some(parent) = visited.get(&neighbor_pos) {
                         // normally we would skip a neighbor if its cost was equal to the cost found already
                         // here we don't because in this implementation of jps,
                         // multiple neighbors can be created for a single position
@@ -71,10 +86,10 @@ where
                         node: neighbor,
                         priority: new_cost + heuristic(neighbor_pos),
                     });
-                    parents.insert(
+                    visited.insert(
                         neighbor_pos,
-                        Parent {
-                            pos,
+                        Visited {
+                            parent: pos,
                             stem_direction: direction,
                             leaf_direction,
                             cost: new_cost,
@@ -87,27 +102,29 @@ where
     None
 }
 
-fn construct_path(parents: HashMap<Pos, Parent>, goal: Pos, total_cost: u32) -> Vec<Pos> {
+fn construct_path(visited: HashMap<Pos, Visited>, goal: Pos, total_cost: u32) -> Vec<Pos> {
     let mut path = VecDeque::with_capacity(1 + total_cost as usize);
     path.push_back(goal);
     let mut pos = goal;
-    while let Some(parent) = parents.get(&pos) {
-        if parent.cost == 0 {
+    while let Some(&Visited {
+        parent,
+        stem_direction,
+        leaf_direction,
+        cost,
+    }) = visited.get(&pos)
+    {
+        if cost == 0 {
             break;
         }
-        let (stem_cost, leaf_cost) = decompose(
-            pos - parent.pos,
-            parent.stem_direction,
-            parent.leaf_direction,
-        );
-        let stem_tip = parent.pos + parent.stem_direction * stem_cost;
+        let (stem_cost, leaf_cost) = decompose(pos - parent, stem_direction, leaf_direction);
+        let stem_tip = parent + stem_direction * stem_cost;
         for x in (0..leaf_cost).rev() {
-            path.push_back(stem_tip + parent.leaf_direction * x);
+            path.push_back(stem_tip + leaf_direction * x);
         }
         for y in (0..stem_cost).rev() {
-            path.push_back(parent.pos + parent.stem_direction * y);
+            path.push_back(parent + stem_direction * y);
         }
-        pos = parent.pos;
+        pos = parent;
     }
     Vec::from(path)
 }
@@ -153,17 +170,11 @@ impl Node {
     }
 }
 
-struct Parent {
-    pos: Pos,
+struct Visited {
+    parent: Pos,
     stem_direction: Direction,
     leaf_direction: Direction,
     cost: u32,
-}
-
-#[derive(PartialEq, Eq, Hash, Clone)]
-struct JumpPoint {
-    pos: Pos,
-    direction: Direction,
 }
 
 fn neighbors<FG, FP>(
