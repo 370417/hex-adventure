@@ -17,11 +17,7 @@ pub(super) fn add_exit<R: Rng>(level: &mut Grid<Terrain>, rng: &mut R) -> Grid<T
     }
 }
 
-fn find_exit(
-    level: &Grid<Terrain>,
-    next_level: &Grid<Terrain>,
-    positions: &Vec<Pos>,
-) -> Option<Pos> {
+fn find_exit(level: &Grid<Terrain>, next_level: &Grid<Terrain>, positions: &[Pos]) -> Option<Pos> {
     for &pos in positions {
         if is_valid_exit(pos, level) && is_valid_exit(pos, next_level) {
             return Some(pos);

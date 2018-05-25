@@ -15,7 +15,7 @@ where
         return flooded;
     }
     flooded.insert(origin);
-    for &direction in DIRECTIONS.iter() {
+    for &direction in &DIRECTIONS {
         flood_stem(origin, direction, &mut flooded, &floodable);
     }
     flooded
@@ -62,8 +62,8 @@ fn recur<F>(
 {
     let sign = if reverse { -1 } else { 1 };
     let passable = |pos, flooded: &HashSet<Pos>| floodable(pos) && !flooded.contains(&pos);
-    let corner = pos + direction.rotate(sign * -2);
-    let turn = direction.rotate(sign * -1);
+    let corner = pos + direction.rotate(-sign * 2);
+    let turn = direction.rotate(-sign);
     if !passable(corner, flooded) && passable(pos + turn, flooded) {
         flood_stem(pos, turn, flooded, floodable);
     }

@@ -3,7 +3,6 @@
 use grid::{decompose, Direction, Pos, DIRECTIONS};
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, VecDeque};
-use std::iter::FromIterator;
 
 /// Initialize the open and visited sets by finding nodes with the sextant method.
 fn init_open<FG, FP, FH>(
@@ -19,7 +18,7 @@ where
 {
     let mut open = Vec::new();
     let mut visited = HashMap::new();
-    for &direction in DIRECTIONS.iter() {
+    for &direction in &DIRECTIONS {
         let nodes = find_initial_nodes(origin, direction, &is_goal, &passable);
         open.reserve(nodes.len());
         visited.reserve(nodes.len());
@@ -62,8 +61,8 @@ where
     while let Some(MinHeapItem { node, .. }) = open.pop() {
         match node {
             Node::Goal(pos) => {
-                let total_cost = visited.get(&pos).unwrap().cost;
-                return Some(construct_path(visited, pos, total_cost));
+                let total_cost = visited[&pos].cost;
+                return Some(construct_path(&visited, pos, total_cost));
             }
             Node::JumpPoint { pos, direction } => {
                 for (neighbor, leaf_direction) in neighbors(pos, direction, &is_goal, &passable) {
@@ -73,7 +72,7 @@ where
                     if neighbor_pos == origin {
                         continue;
                     }
-                    let new_cost = visited.get(&pos).unwrap().cost + neighbor.pos().distance(pos);
+                    let new_cost = visited[&pos].cost + neighbor.pos().distance(pos);
                     if let Some(parent) = visited.get(&neighbor_pos) {
                         // normally we would skip a neighbor if its cost was equal to the cost found already
                         // here we don't because in this implementation of jps,
@@ -102,7 +101,7 @@ where
     None
 }
 
-fn construct_path(visited: HashMap<Pos, Visited>, goal: Pos, total_cost: u32) -> Vec<Pos> {
+fn construct_path(visited: &HashMap<Pos, Visited>, goal: Pos, total_cost: u32) -> Vec<Pos> {
     let mut path = VecDeque::with_capacity(1 + total_cost as usize);
     path.push_back(goal);
     let mut pos = goal;
@@ -250,10 +249,8 @@ where
         }
         if is_goal(pos) {
             nodes.push(Node::Goal(pos));
-        } else {
-            if let Some(node) = add_initial_node(pos, direction, false, passable) {
-                nodes.push(node);
-            };
+        } else if let Some(node) = add_initial_node(pos, direction, false, passable) {
+            nodes.push(node);
         }
         for x in 1.. {
             let pos = pos + leaf_direction * x;
@@ -285,8 +282,8 @@ where
     FP: Fn(Pos) -> bool,
 {
     let sign = if reverse { -1 } else { 1 };
-    let corner = pos + direction.rotate(sign * -2);
-    let turn = direction.rotate(sign * -1);
+    let corner = pos + direction.rotate(-sign * 2);
+    let turn = direction.rotate(-sign);
     if !passable(corner) && passable(pos + turn) {
         Some(Node::JumpPoint {
             pos,

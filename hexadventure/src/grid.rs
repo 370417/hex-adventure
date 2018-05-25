@@ -232,6 +232,7 @@ impl ops::Mul<u32> for Displacement {
 impl ops::Div<u32> for Displacement {
     type Output = Displacement;
 
+    #[allow(suspicious_arithmetic_impl)]
     fn div(self, rhs: u32) -> Displacement {
         if rhs == 0 {
             panic!("attempt to divide by zero");

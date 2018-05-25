@@ -92,6 +92,7 @@ fn round_high(n: f32) -> u32 {
 }
 
 /// Rounds a float. Ties are rounded down.
+#[allow(float_cmp)]
 fn round_low(n: f32) -> u32 {
     if n % 1.0 == 0.5 {
         n.round() as u32 - 1

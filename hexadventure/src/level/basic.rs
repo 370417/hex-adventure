@@ -72,7 +72,7 @@ fn remove_isolated_floors(grid: &mut Grid<Terrain>) {
     for pos in grid.inner_positions() {
         if grid[pos] == Terrain::Floor {
             let floor_set = floodfill::flood(pos, |pos| grid[pos] == Terrain::Floor);
-            for &pos in floor_set.iter() {
+            for &pos in &floor_set {
                 grid[pos] = Terrain::Wall;
             }
             if floor_set.len() > largest_floor_set.len() {
