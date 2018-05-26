@@ -10,6 +10,7 @@ pub mod game;
 pub mod grid;
 pub mod level;
 pub mod line;
+mod minheap;
 pub mod mob;
 mod store;
 mod util;
