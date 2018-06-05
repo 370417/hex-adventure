@@ -6,6 +6,9 @@
 //! which is the vector {1, 0, -1} in 3d space.
 //! The y-axis points in `Direction::Southwest`, which is the vector {0, 1, -1}.
 
+// This isn't generic over size yet because associated constants aren't stable
+
+use std::iter::FromIterator;
 use std::ops;
 
 use line::Line;
@@ -20,14 +23,10 @@ pub const DIRECTIONS: [Direction; 6] = [
 ];
 
 pub const WIDTH: usize = 40;
-pub const HEIGHT: usize = 30;
+pub const HEIGHT: usize = 26;
 
 #[derive(Serialize, Deserialize)]
-pub struct Grid<T> {
-    pub width: usize,
-    pub height: usize,
-    grid: Vec<T>,
-}
+pub struct Grid<T>(Box<[T]>);
 
 /// A 2d index of a hexagonal grid.
 ///
@@ -352,71 +351,60 @@ impl<T> Grid<T> {
     ///
     /// The `init` closure takes a `usize` which is the index of the position,
     /// and a `Pos` which is the position itself.
-    pub fn new<F>(width: usize, height: usize, mut init: F) -> Self
+    pub fn new<F>(mut init: F) -> Self
     where
         F: FnMut(Pos) -> T,
     {
-        let mut grid = Vec::with_capacity(width * height);
-        for row in 0..height {
-            for col in 0..width {
+        let mut grid = Vec::with_capacity(WIDTH * HEIGHT);
+        for row in 0..HEIGHT {
+            for col in 0..WIDTH {
                 let pos = index_to_pos(Index2d { row, col });
                 grid.push(init(pos))
             }
         }
-        Grid {
-            width,
-            height,
-            grid,
-        }
-    }
-
-    /// Turn a position in a grid into a location.
-    pub fn pos_to_location(&self, pos: Pos) -> Location {
-        let Index2d { row, col } = pos_to_index(pos);
-        Location {
-            x: ((row % 2) + 2 * col) as i32,
-            y: row as i32,
-        }
-    }
-
-    /// Whether a position is within the bounds of this grid.
-    pub fn contains(&self, pos: Pos) -> bool {
-        let Index2d { row, col } = pos_to_index(pos);
-        col < self.width && row < self.height
-    }
-
-    pub fn positions(&self) -> impl Iterator<Item = Pos> {
-        positions(self.width, self.height)
-    }
-
-    pub fn inner_positions(&self) -> impl Iterator<Item = Pos> {
-        inner_positions(self.width, self.height)
+        Grid(Box::from(grid))
     }
 
     pub fn iter(&self) -> ::std::slice::Iter<T> {
-        self.grid.iter()
+        self.0.iter()
     }
 
     pub fn iter_mut(&mut self) -> ::std::slice::IterMut<T> {
-        self.grid.iter_mut()
-    }
-
-    /// Find the central position of this grid.
-    pub fn center(&self) -> Pos {
-        index_to_pos(Index2d {
-            row: self.height / 2,
-            col: self.width / 2,
-        })
+        self.0.iter_mut()
     }
 }
 
-fn positions(width: usize, height: usize) -> impl Iterator<Item = Pos> {
-    (0..height).flat_map(move |row| (0..width).map(move |col| index_to_pos(Index2d { row, col })))
+/// Find the central position of this grid.
+pub fn center() -> Pos {
+    index_to_pos(Index2d {
+        row: HEIGHT / 2,
+        col: WIDTH / 2,
+    })
 }
 
-fn inner_positions(width: usize, height: usize) -> impl Iterator<Item = Pos> {
-    let inner_width = width - 2;
-    let inner_height = height - 2;
+/// Find a corner position.
+pub fn corner() -> Pos {
+    index_to_pos(Index2d { row: 0, col: 0 })
+}
+
+/// Turn a position in a grid into a location.
+pub fn pos_to_location(pos: Pos) -> Location {
+    let Index2d { row, col } = pos_to_index(pos);
+    Location {
+        x: ((row % 2) + 2 * col) as i32,
+        y: row as i32,
+    }
+}
+
+/// Whether a position is within the bounds of this grid.
+pub fn contains(pos: Pos) -> bool {
+    let Index2d { row, col } = pos_to_index(pos);
+    col < WIDTH && row < HEIGHT
+}
+
+pub fn inner_positions() -> impl Iterator<Item = Pos> {
+    let inner_width = WIDTH - 2;
+    let inner_height = HEIGHT - 2;
     (0..inner_height).flat_map(move |row| {
         (0..inner_width).map(move |col| {
             index_to_pos(Index2d {
@@ -427,19 +415,23 @@ fn inner_positions(width: usize, height: usize) -> impl Iterator<Item = Pos> {
     })
 }
 
+pub fn positions() -> impl Iterator<Item = Pos> {
+    (0..HEIGHT).flat_map(move |row| (0..WIDTH).map(move |col| index_to_pos(Index2d { row, col })))
+}
+
 impl<T> ops::Index<Index2d> for Grid<T> {
     type Output = T;
 
     fn index(&self, Index2d { row, col }: Index2d) -> &T {
-        let i = row * self.width + col;
-        &self.grid[i]
+        let i = row * WIDTH + col;
+        &self.0[i]
     }
 }
 
 impl<T> ops::IndexMut<Index2d> for Grid<T> {
     fn index_mut(&mut self, Index2d { row, col }: Index2d) -> &mut T {
-        let i = row * self.width + col;
-        &mut self.grid[i]
+        let i = row * WIDTH + col;
+        &mut self.0[i]
     }
 }
 
@@ -448,25 +440,29 @@ impl<T> ops::Index<Pos> for Grid<T> {
 
     fn index(&self, pos: Pos) -> &T {
         let Index2d { row, col } = pos_to_index(pos);
-        let i = row * self.width + col;
-        &self.grid[i]
+        let i = row * WIDTH + col;
+        &self.0[i]
     }
 }
 
 impl<T> ops::IndexMut<Pos> for Grid<T> {
     fn index_mut(&mut self, pos: Pos) -> &mut T {
         let Index2d { row, col } = pos_to_index(pos);
-        let i = row * self.width + col;
-        &mut self.grid[i]
+        let i = row * WIDTH + col;
+        &mut self.0[i]
     }
 }
 
-impl<T> IntoIterator for Grid<T> {
-    type Item = T;
-    type IntoIter = ::std::vec::IntoIter<T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.grid.into_iter()
+impl<T> FromIterator<T> for Grid<T> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        let items: Vec<T> = iter.into_iter().collect();
+        if items.len() != WIDTH * HEIGHT {
+            panic!("Iterator is the wrong length");
+        }
+        Grid(Box::from(items))
     }
 }
 
@@ -535,21 +531,21 @@ mod tests {
 
     #[test]
     fn test_index_order() {
-        let g = Grid::new(10, 10, |pos| pos_to_index(pos));
-        for pos in g.positions() {
+        let g = Grid::new(|pos| pos_to_index(pos));
+        for pos in positions() {
             let index = pos_to_index(pos);
             assert_eq!(index, g[pos]);
         }
     }
 
     fn on_outer_edge<T>(pos: Pos, grid: &Grid<T>) -> bool {
-        grid.contains(pos) && pos.neighbors().any(|pos| !grid.contains(pos))
+        contains(pos) && pos.neighbors().any(|pos| !contains(pos))
     }
 
     #[test]
     fn test_inner_positions() {
-        let grid = Grid::new(40, 40, |_pos| false);
-        let mut positions = grid.inner_positions();
+        let grid = Grid::new(|_pos| false);
+        let mut positions = inner_positions();
         assert!(positions.all(|pos| !on_outer_edge(pos, &grid)));
     }
 }

@@ -1,6 +1,6 @@
-use ggez::Context;
 use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::graphics::{self, Color, Image, Rect};
+use ggez::Context;
 
 use image;
 use image::GenericImage;
@@ -15,6 +15,7 @@ pub enum Sprite {
     Player,
     ShortGrass,
     Stairs,
+    Water,
 }
 
 impl From<Terrain> for Sprite {
@@ -25,6 +26,7 @@ impl From<Terrain> for Sprite {
             Terrain::ShortGrass => Sprite::ShortGrass,
             Terrain::Exit => Sprite::Stairs,
             Terrain::Entrance => Sprite::Stairs,
+            Terrain::Water => Sprite::Water,
         }
     }
 }
@@ -40,6 +42,7 @@ pub fn color_from_tile(terrain: Terrain) -> Color {
         Terrain::ShortGrass => graphics::WHITE,
         Terrain::Exit => graphics::WHITE,
         Terrain::Entrance => graphics::WHITE,
+        Terrain::Water => Color::new(0.0, 0.5, 1.0, 1.0),
     }
 }
 
@@ -74,6 +77,7 @@ pub fn sprite_src(sprite: Sprite) -> Rect {
         Sprite::Floor => (1, 0),
         Sprite::ShortGrass => (3, 0),
         Sprite::Stairs => (5, 0),
+        Sprite::Water => (4, 0),
         Sprite::Player => (0, 1),
     };
     let w = 18;

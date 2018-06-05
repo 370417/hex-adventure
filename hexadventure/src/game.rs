@@ -1,8 +1,8 @@
 use astar::jps;
 use fov::fov;
-use grid::{Direction, Grid, Pos};
-use level::Architect;
+use grid::{self, Direction, Grid, Pos};
 use level::tile::{FullTileView, Terrain, Tile, TileView};
+use level::Architect;
 use mob::Mob;
 use rand::{thread_rng, Rng};
 use store::{Id, Store};
@@ -31,8 +31,7 @@ impl Game {
         // for node in node.neighbors(&|_| false, &|pos| self.level[pos].terrain == Terrain::Floor) {
         //     self.level[node.pos].terrain = Terrain::ShortGrass;
         // }
-        let exit_pos = self.level
-            .inner_positions()
+        let exit_pos: Pos = grid::inner_positions()
             .find(|&pos| self.level[pos].terrain == Terrain::Exit)
             .unwrap();
         let path = jps(
@@ -41,7 +40,7 @@ impl Game {
             |pos| self.level[pos].terrain != Terrain::Wall,
             |pos| pos.distance(exit_pos),
         );
-        for pos in self.level.inner_positions() {
+        for pos in grid::inner_positions() {
             if self.level[pos].terrain == Terrain::ShortGrass {
                 self.level[pos].terrain = Terrain::Floor;
             }
@@ -55,10 +54,10 @@ impl Game {
         }
     }
 
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new() -> Self {
         let seed = thread_rng().gen();
         println!("SEED: {}", seed);
-        let mut architect = Architect::new(seed, width, height);
+        let mut architect = Architect::new(seed);
         let mut level = architect.generate();
         let player_pos = place_player(&level);
         let player = Mob::Hero {
@@ -68,7 +67,7 @@ impl Game {
         let mut mobs = Store::new();
         let player_id = mobs.insert(player);
         level[player_pos].mob_id = Some(player_id);
-        let level_memory = Grid::new(width, height, |_pos| TileView::None);
+        let level_memory = Grid::new(|_pos| TileView::None);
         let mut game = Game {
             architect,
             level,
@@ -80,9 +79,9 @@ impl Game {
         game
     }
 
-    pub fn positions(&self) -> impl Iterator<Item = Pos> {
-        self.level.positions()
-    }
+    // pub fn positions(&self) -> impl Iterator<Item = Pos> {
+    //     self.level.positions()
+    // }
 
     pub fn tile(&self, pos: Pos) -> FullTileView {
         match self.level_memory[pos] {
@@ -136,7 +135,7 @@ impl Game {
     fn next_turn(&mut self) {
         let level = &self.level;
         let memory = &mut self.level_memory;
-        for pos in memory.positions() {
+        for pos in grid::positions() {
             if memory[pos] == TileView::Seen {
                 memory[pos] = TileView::Remembered(level[pos].terrain);
             }
@@ -151,9 +150,8 @@ impl Game {
 }
 
 fn place_player(level: &Grid<Tile>) -> Pos {
-    let center = level.center();
-    level
-        .positions()
+    let center = grid::center();
+    grid::positions()
         .filter(|&pos| level[pos].terrain.passable())
         .min_by_key(|&pos| pos.distance(center))
         .unwrap()

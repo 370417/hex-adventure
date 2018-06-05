@@ -73,7 +73,7 @@ fn recur<F>(
 mod tests {
     use super::*;
 
-    use grid::Grid;
+    use grid::{self, Grid};
     use rand::{thread_rng, Rng};
 
     /// Naive recursive floodfill used to compare against the scanline floodfill.
@@ -109,9 +109,9 @@ mod tests {
     fn flood_equiv_basic_flood() {
         let mut rng = thread_rng();
         for _i in 0..40 {
-            let grid: Grid<bool> = Grid::new(40, 40, |_pos| rng.gen_bool(0.75));
-            let normal_set = flood(grid.center(), |pos| grid.contains(pos) && grid[pos]);
-            let basic_set = basic_flood(grid.center(), |pos| grid.contains(pos) && grid[pos]);
+            let grid: Grid<bool> = Grid::new(|_pos| rng.gen_bool(0.75));
+            let normal_set = flood(grid::center(), |pos| grid::contains(pos) && grid[pos]);
+            let basic_set = basic_flood(grid::center(), |pos| grid::contains(pos) && grid[pos]);
             assert!(set_equiv(&normal_set, &basic_set));
         }
     }

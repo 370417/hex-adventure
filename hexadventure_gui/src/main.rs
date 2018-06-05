@@ -14,7 +14,7 @@ extern crate image;
 
 extern crate hexadventure;
 use hexadventure::game::Game;
-use hexadventure::grid::{Direction, Grid, Location, Pos};
+use hexadventure::grid::{self, pos_to_location, Direction, Grid, Location, Pos};
 use hexadventure::level::tile::FullTileView;
 
 mod sprite;
@@ -32,21 +32,21 @@ struct MainState {
     dests: Grid<Point2>,
 }
 
-fn pos_to_point2<T>(pos: Pos, grid: &Grid<T>) -> Point2 {
-    let Location { x, y } = grid.pos_to_location(pos);
+fn pos_to_point2(pos: Pos) -> Point2 {
+    let Location { x, y } = pos_to_location(pos);
     Point2::new((x * 9) as f32, (y * 16 - 7) as f32)
 }
 
 impl MainState {
-    fn new(ctx: &mut Context, width: usize, height: usize) -> Self {
+    fn new(ctx: &mut Context) -> Self {
         let spritebatch = sprite::load_spritebatch(ctx);
-        let mut dests = Grid::new(width, height, |_pos| Point2::new(0.0, 0.0));
-        for pos in dests.positions() {
-            dests[pos] = pos_to_point2(pos, &dests);
+        let mut dests = Grid::new(|_pos| Point2::new(0.0, 0.0));
+        for pos in grid::positions() {
+            dests[pos] = pos_to_point2(pos);
         }
         let game = match load_game() {
             Ok(game) => game,
-            _ => Game::new(width, height),
+            _ => Game::new(),
         };
         MainState {
             game,
@@ -81,7 +81,7 @@ impl EventHandler for MainState {
         self.redraw = false;
         graphics::clear(ctx);
         self.spritebatch.clear();
-        for pos in self.game.positions() {
+        for pos in grid::positions() {
             match self.game.tile(pos) {
                 FullTileView::Seen { terrain, mob: None } => {
                     self.spritebatch.add(DrawParam {
@@ -152,14 +152,12 @@ impl EventHandler for MainState {
 }
 
 fn main() {
-    let width = 40;
-    let height = 26;
-    let config = generate_config(width, height);
+    let config = generate_config(grid::WIDTH, grid::HEIGHT);
     let mut ctx = Context::load_from_conf("hex-adventure", "as-f", config)
         .expect("Failed to load context from configuration.");
     graphics::set_default_filter(&mut ctx, graphics::FilterMode::Nearest);
     graphics::set_background_color(&mut ctx, graphics::BLACK);
-    let mut state = MainState::new(&mut ctx, width, height);
+    let mut state = MainState::new(&mut ctx);
     match event::run(&mut ctx, &mut state) {
         Err(e) => println!("Error encountered: {}", e),
         _ => println!("Game exited cleanly"),

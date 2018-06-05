@@ -10,6 +10,6 @@ keywords = ["roguelike"]
 license = "MIT"
 
 [dependencies]
-rand = { version = "0.5.0", features = ["serde1"] }
+rand = { version = "0.5", features = ["serde1"] }
 serde = "1.0"
 serde_derive = "1.0"

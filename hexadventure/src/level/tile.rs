@@ -14,6 +14,7 @@ pub enum Terrain {
     ShortGrass,
     Exit,
     Entrance,
+    Water,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq)]
@@ -40,6 +41,7 @@ impl Terrain {
             Terrain::ShortGrass => true,
             Terrain::Exit => false,
             Terrain::Entrance => false,
+            Terrain::Water => false,
         }
     }
 
@@ -50,6 +52,7 @@ impl Terrain {
             Terrain::ShortGrass => true,
             Terrain::Exit => true,
             Terrain::Entrance => true,
+            Terrain::Water => true,
         }
     }
 }
