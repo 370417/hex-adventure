@@ -538,7 +538,7 @@ mod tests {
         }
     }
 
-    fn on_outer_edge<T>(pos: Pos, grid: &Grid<T>) -> bool {
+    fn on_outer_edge<T>(pos: Pos) -> bool {
         contains(pos) && pos.neighbors().any(|pos| !contains(pos))
     }
 

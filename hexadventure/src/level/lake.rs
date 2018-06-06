@@ -27,9 +27,9 @@ pub(super) fn add_lakes<R: Rng>(level: &mut Grid<Terrain>, rng: &mut R) {
     let mut lake_count = 0;
     while tries + lake_count < 5 {
         tries += 1;
-        let mut lake_level = prune_tunnels(basic::generate(rng));
+        let mut lake_level = basic::generate(rng);
         for pos in grid::inner_positions() {
-            let lake = flood(pos, |pos| lake_level[pos] == basic::Terrain::Floor);
+            let lake = flood(pos, |pos| basic::is_cave(pos, &lake_level));
             let mut lake_floor_size = 0;
             for &pos in &lake {
                 lake_level[pos] = basic::Terrain::Wall;
@@ -64,16 +64,6 @@ fn floodable(pos: Pos, level: &Grid<Terrain>) -> bool {
     }
 }
 
-fn prune_tunnels(mut level: Grid<basic::Terrain>) -> Grid<basic::Terrain> {
-    let is_cave = Grid::new(|pos| basic::is_cave(pos, &level));
-    for pos in grid::positions() {
-        if level[pos] == basic::Terrain::Floor && !is_cave[pos] {
-            level[pos] = basic::Terrain::Wall
-        }
-    }
-    level
-}
-
 fn remove_isolated_walls(grid: &mut Grid<Terrain>) {
     let outer_wall = flood(grid::corner(), |pos| {
         grid::contains(pos) && grid[pos] == Terrain::Wall
@@ -94,18 +84,3 @@ fn remove_isolated_walls(grid: &mut Grid<Terrain>) {
         }
     }
 }
-
-// find a path from
-
-/* So, roguelikes are fundamentally about resources. Currently, the only resource is fov 
-
-potential other resource: skills/abilities, ie experience
-this makes a fixed, known skill tree something to explore
-
-Player progression needs to be driven by some need.
-That might be in-game resources, in-game story, or it might be player skill.
-
-Combat is a balance of finding optimal play and dealing with the unknown.
-In multiplayer, the source of uncertainty is the opponents.
-In singleplayer, the source of uncertainty is unknown information.
-*/

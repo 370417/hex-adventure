@@ -165,13 +165,6 @@ fn for_each_leaf_neighbor<FC, FG, FP>(
 }
 
 impl Chirality {
-    fn opposite(&self) -> Self {
-        match self {
-            Chirality::Clockwise => Chirality::Counterclockwise,
-            Chirality::Counterclockwise => Chirality::Clockwise,
-        }
-    }
-
     fn rotate(&self, direction: Direction, n: i32) -> Direction {
         match self {
             Chirality::Clockwise => direction.rotate(n),
