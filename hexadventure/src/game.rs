@@ -18,7 +18,7 @@ pub struct Game {
 
 impl Game {
     pub fn foo(&mut self) {
-        let player = self.mobs.get(self.player_id).unwrap();
+        let player = &self.mobs[self.player_id];
         // let node = JumpPoint {
         //     pos: player.pos(),
         //     direction: player.facing(),
@@ -105,7 +105,7 @@ impl Game {
 
     pub fn move_player(&mut self, direction: Direction) {
         {
-            let player = self.mobs.get_mut(self.player_id).unwrap();
+            let player = &mut self.mobs[self.player_id];
             self.level[player.pos()].mob_id = None;
             let target_pos = player.pos() + direction;
             if self.level[target_pos].terrain.passable() {
@@ -140,7 +140,7 @@ impl Game {
                 memory[pos] = TileView::Remembered(level[pos].terrain);
             }
         }
-        let player = self.mobs.get_mut(self.player_id).unwrap();
+        let player = &mut self.mobs[self.player_id];
         fov(
             player.pos(),
             |pos| level[pos].terrain.transparent(),

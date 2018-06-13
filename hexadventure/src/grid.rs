@@ -538,14 +538,13 @@ mod tests {
         }
     }
 
-    fn on_outer_edge<T>(pos: Pos) -> bool {
+    fn on_outer_edge(pos: Pos) -> bool {
         contains(pos) && pos.neighbors().any(|pos| !contains(pos))
     }
 
     #[test]
     fn test_inner_positions() {
-        let grid = Grid::new(|_pos| false);
         let mut positions = inner_positions();
-        assert!(positions.all(|pos| !on_outer_edge(pos, &grid)));
+        assert!(positions.all(|pos| !on_outer_edge(pos)));
     }
 }

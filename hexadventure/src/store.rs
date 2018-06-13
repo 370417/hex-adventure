@@ -3,6 +3,7 @@
 //! This is intended to avoid cycles in structs so that they can be serialized.
 
 use std::marker::PhantomData;
+use std::ops::{Index, IndexMut};
 
 const INVALID_VERSION: u32 = 0;
 const FIRST_VALID_VERSION: u32 = 1;
@@ -101,6 +102,20 @@ impl<T> Store<T> {
             values: &self.values,
             index: 0,
         }
+    }
+}
+
+impl<T> Index<Id<T>> for Store<T> {
+    type Output = T;
+
+    fn index(&self, id: Id<T>) -> &T {
+        self.get(id).unwrap()
+    }
+}
+
+impl<T> IndexMut<Id<T>> for Store<T> {
+    fn index_mut(&mut self, id: Id<T>) -> &mut T {
+        self.get_mut(id).unwrap()
     }
 }
 

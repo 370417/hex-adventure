@@ -144,7 +144,7 @@ impl EventHandler for MainState {
             Keycode::D => self.game.move_player(Direction::East),
             Keycode::Z => self.game.move_player(Direction::Southwest),
             Keycode::X => self.game.move_player(Direction::Southeast),
-            Keycode::Space => self.game.foo(),
+            // Keycode::Space => self.game.foo(),
             _ => (),
         }
         self.redraw = true;
