@@ -55,4 +55,8 @@ impl Terrain {
             Terrain::Water => true,
         }
     }
+
+    pub fn solid(&self) -> bool {
+        !self.passable() && !self.transparent()
+    }
 }

@@ -34,7 +34,7 @@ impl Architect {
             Some(ref mut next_level) => {
                 let mut new_next_level = exit::add_exit(next_level, &mut self.rng);
                 lake::add_lakes(next_level, &mut self.rng);
-                populate(replace(next_level, new_next_level))
+                populate(replace(next_level, new_next_level), &mut self.rng)
             }
             None => {
                 let mut level = basic::generate(&mut self.rng)
@@ -42,7 +42,8 @@ impl Architect {
                     .map(|&t| Terrain::from(t))
                     .collect();
                 self.next_level = Some(exit::add_exit(&mut level, &mut self.rng));
-                populate(level)
+                lake::add_lakes(&mut level, &mut self.rng);
+                populate(level, &mut self.rng)
             }
         }
     }

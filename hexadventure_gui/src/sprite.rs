@@ -7,12 +7,13 @@ use image::GenericImage;
 use image::ImageFormat;
 
 use hexadventure::level::tile::Terrain;
-use hexadventure::mob::Mob;
+use hexadventure::mob::{self, Mob};
 
 pub enum Sprite {
     Wall,
     Floor,
     Player,
+    Archer,
     ShortGrass,
     Stairs,
     Water,
@@ -32,7 +33,10 @@ impl From<Terrain> for Sprite {
 }
 
 pub fn sprite_from_mob(mob: &Mob) -> Sprite {
-    Sprite::Player
+    match mob {
+        Mob { kind: mob::Type::Hero, .. } => Sprite::Player,
+        Mob { kind: mob::Type::Archer, .. } => Sprite::Archer,
+    }
 }
 
 pub fn color_from_tile(terrain: Terrain) -> Color {
@@ -79,6 +83,7 @@ pub fn sprite_src(sprite: Sprite) -> Rect {
         Sprite::Stairs => (5, 0),
         Sprite::Water => (4, 0),
         Sprite::Player => (0, 1),
+        Sprite::Archer => (1, 1),
     };
     let w = 18;
     let h = 24;

@@ -1,3 +1,6 @@
+//! A minheap that separates values from priorities.
+//! Intended for use in astar.
+
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 

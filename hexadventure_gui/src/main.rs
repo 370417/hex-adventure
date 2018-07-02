@@ -1,6 +1,9 @@
 extern crate bincode;
 use bincode::{deserialize_from, serialize_into};
 
+extern crate app_dirs;
+use app_dirs::{app_root, AppInfo, AppDataType};
+
 extern crate ggez;
 use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
@@ -20,10 +23,13 @@ use hexadventure::level::tile::FullTileView;
 mod sprite;
 use sprite::{color_from_tile, darken, sprite_from_mob, Sprite};
 
+mod side;
+
 use std::error::Error;
 use std::fs::File;
 
-const SAVE_PATH: &str = "save.bincode";
+const SAVE_NAME: &str = "save.bincode";
+const APP_INFO: AppInfo = AppInfo { name: "hex-adventure", author: "as-f" };
 
 struct MainState {
     game: Game,
@@ -58,13 +64,17 @@ impl MainState {
 }
 
 fn load_game() -> Result<Game, Box<Error>> {
-    let file = File::open(SAVE_PATH)?;
+    let mut path = app_root(AppDataType::UserData, &APP_INFO)?;
+    path.push(SAVE_NAME);
+    let file = File::open(path)?;
     let game = deserialize_from(file)?;
     Ok(game)
 }
 
 fn save_game(game: &Game) -> Result<(), Box<Error>> {
-    let file = File::create(SAVE_PATH)?;
+    let mut path = app_root(AppDataType::UserData, &APP_INFO)?;
+    path.push(SAVE_NAME);
+    let file = File::create(path)?;
     serialize_into(file, game)?;
     Ok(())
 }
@@ -80,6 +90,7 @@ impl EventHandler for MainState {
         }
         self.redraw = false;
         graphics::clear(ctx);
+        side::Sidebar::new().draw(ctx, Point2::new((grid::WIDTH * 18 + 9) as f32, 0.0))?;
         self.spritebatch.clear();
         for pos in grid::positions() {
             match self.game.tile(pos) {
@@ -95,7 +106,7 @@ impl EventHandler for MainState {
                     self.spritebatch.add(DrawParam {
                         src: sprite::sprite_src(sprite_from_mob(mob)),
                         dest: self.dests[pos],
-                        offset: match mob.facing() {
+                        offset: match mob.facing {
                             Direction::West | Direction::Northwest | Direction::Southwest => {
                                 Point2::new(0.0, 0.0)
                             }
@@ -103,7 +114,7 @@ impl EventHandler for MainState {
                                 Point2::new(1.0, 0.0)
                             }
                         },
-                        scale: match mob.facing() {
+                        scale: match mob.facing {
                             Direction::West | Direction::Northwest | Direction::Southwest => {
                                 Point2::new(1.0, 1.0)
                             }
@@ -144,7 +155,6 @@ impl EventHandler for MainState {
             Keycode::D => self.game.move_player(Direction::East),
             Keycode::Z => self.game.move_player(Direction::Southwest),
             Keycode::X => self.game.move_player(Direction::Southeast),
-            // Keycode::Space => self.game.foo(),
             _ => (),
         }
         self.redraw = true;
@@ -152,26 +162,26 @@ impl EventHandler for MainState {
 }
 
 fn main() {
-    let config = generate_config(grid::WIDTH, grid::HEIGHT);
-    let mut ctx = Context::load_from_conf("hex-adventure", "as-f", config)
+    let mut ctx = Context::load_from_conf("hex-adventure", "as-f", conf())
         .expect("Failed to load context from configuration.");
     graphics::set_default_filter(&mut ctx, graphics::FilterMode::Nearest);
     graphics::set_background_color(&mut ctx, graphics::BLACK);
     let mut state = MainState::new(&mut ctx);
-    match event::run(&mut ctx, &mut state) {
-        Err(e) => println!("Error encountered: {}", e),
-        _ => println!("Game exited cleanly"),
+    if let Err(e) = event::run(&mut ctx, &mut state) {
+        println!("Error encountered: {}", e);
     }
     if let Err(e) = save_game(&state.game) {
         println!("Error in saving game: {}", e);
     }
 }
 
-fn generate_config(width: usize, height: usize) -> Conf {
+fn conf() -> Conf {
+    let level_width = grid::WIDTH as u32 * 18 + 9;
+    let side_width = side::WIDTH * 9;
     Conf {
         window_mode: WindowMode {
-            width: width as u32 * 18 + 9,
-            height: height as u32 * 16 + 2,
+            width: level_width + side_width,
+            height: grid::HEIGHT as u32 * 16 + 2,
             ..Default::default()
         },
         window_setup: WindowSetup {

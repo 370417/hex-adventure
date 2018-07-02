@@ -1,9 +1,8 @@
-use astar::jps;
 use fov::fov;
 use grid::{self, Direction, Grid, Pos};
 use level::tile::{FullTileView, Terrain, Tile, TileView};
 use level::Architect;
-use mob::Mob;
+use mob::{self, Mob};
 use rand::{thread_rng, Rng};
 use store::{Id, Store};
 
@@ -14,44 +13,14 @@ pub struct Game {
     player_id: Id<Mob>,
     level_memory: Grid<TileView>,
     mobs: Store<Mob>,
+    actors: Vec<Id<Mob>>,
+    animated: Vec<()>,
 }
 
 impl Game {
-    pub fn foo(&mut self) {
-        let player = &self.mobs[self.player_id];
-        // let node = JumpPoint {
-        //     pos: player.pos(),
-        //     direction: player.facing(),
-        // };
-        // for pos in self.level.inner_positions() {
-        //     if self.level[pos].terrain == Terrain::ShortGrass {
-        //         self.level[pos].terrain = Terrain::Floor;
-        //     }
-        // }
-        // for node in node.neighbors(&|_| false, &|pos| self.level[pos].terrain == Terrain::Floor) {
-        //     self.level[node.pos].terrain = Terrain::ShortGrass;
-        // }
-        let exit_pos: Pos = grid::inner_positions()
-            .find(|&pos| self.level[pos].terrain == Terrain::Exit)
-            .unwrap();
-        let path = jps(
-            player.pos(),
-            |pos| pos == exit_pos,
-            |pos| self.level[pos].terrain != Terrain::Wall,
-            |pos| pos.distance(exit_pos),
-        );
-        for pos in grid::inner_positions() {
-            if self.level[pos].terrain == Terrain::ShortGrass {
-                self.level[pos].terrain = Terrain::Floor;
-            }
-        }
-        if let Some(path) = path {
-            for pos in path {
-                if self.level[pos].terrain == Terrain::Floor {
-                    self.level[pos].terrain = Terrain::ShortGrass;
-                }
-            }
-        }
+    pub fn tick() -> Option<()> {
+        
+        panic!();
     }
 
     pub fn new() -> Self {
@@ -60,9 +29,10 @@ impl Game {
         let mut architect = Architect::new(seed);
         let mut level = architect.generate();
         let player_pos = place_player(&level);
-        let player = Mob::Hero {
+        let player = Mob {
             pos: player_pos,
             facing: Direction::East,
+            kind: mob::Type::Hero,
         };
         let mut mobs = Store::new();
         let player_id = mobs.insert(player);
@@ -74,6 +44,8 @@ impl Game {
             player_id,
             level_memory,
             mobs,
+            actors: Vec::new(),
+            animated: Vec::new(),
         };
         game.next_turn();
         game
@@ -106,11 +78,14 @@ impl Game {
     pub fn move_player(&mut self, direction: Direction) {
         {
             let player = &mut self.mobs[self.player_id];
-            self.level[player.pos()].mob_id = None;
-            let target_pos = player.pos() + direction;
-            if self.level[target_pos].terrain.passable() {
+            self.level[player.pos].mob_id = None;
+            let target_pos = player.pos + direction;
+            let target_terrain = self.level[player.pos + direction].terrain;
+            let left_terrain = self.level[player.pos + direction.rotate(-1)].terrain;
+            let right_terrain = self.level[player.pos + direction.rotate(1)].terrain;
+            if target_terrain.passable() {
                 player.move_by(direction);
-            } else if self.level[target_pos].terrain == Terrain::Exit {
+            } else if target_terrain == Terrain::Exit {
                 self.level = self.architect.generate();
                 player.move_by(direction);
                 for i in 3..9 {
@@ -123,11 +98,17 @@ impl Game {
                 for tile_view in self.level_memory.iter_mut() {
                     *tile_view = TileView::None;
                 }
+            } else if target_terrain.solid() {
+                if left_terrain.passable() && right_terrain.solid() {
+                    player.move_by(direction.rotate(-1));
+                } else if right_terrain.passable() && left_terrain.solid() {
+                    player.move_by(direction.rotate(1));
+                }
             } else {
-                self.level[player.pos()].mob_id = Some(self.player_id);
+                self.level[player.pos].mob_id = Some(self.player_id);
                 return;
             }
-            self.level[player.pos()].mob_id = Some(self.player_id);
+            self.level[player.pos].mob_id = Some(self.player_id);
         }
         self.next_turn();
     }
@@ -142,7 +123,7 @@ impl Game {
         }
         let player = &mut self.mobs[self.player_id];
         fov(
-            player.pos(),
+            player.pos,
             |pos| level[pos].terrain.transparent(),
             |pos| memory[pos] = TileView::Seen,
         );
