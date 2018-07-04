@@ -2,7 +2,7 @@ extern crate bincode;
 use bincode::{deserialize_from, serialize_into};
 
 extern crate app_dirs;
-use app_dirs::{app_root, AppInfo, AppDataType};
+use app_dirs::{app_root, AppDataType, AppInfo};
 
 extern crate ggez;
 use ggez::conf::{Conf, WindowMode, WindowSetup};
@@ -29,7 +29,10 @@ use std::error::Error;
 use std::fs::File;
 
 const SAVE_NAME: &str = "save.bincode";
-const APP_INFO: AppInfo = AppInfo { name: "hex-adventure", author: "as-f" };
+const APP_INFO: AppInfo = AppInfo {
+    name: "hex-adventure",
+    author: "as-f",
+};
 
 enum Arrow {
     None,
@@ -201,7 +204,7 @@ impl EventHandler for MainState {
                     Arrow::Up => {
                         self.game.move_player(Direction::Northwest);
                         Arrow::Up
-                    },
+                    }
                     Arrow::Down => {
                         self.game.move_player(Direction::Southwest);
                         Arrow::Down

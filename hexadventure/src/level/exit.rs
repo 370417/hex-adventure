@@ -42,7 +42,8 @@ fn is_valid_exit(pos: Pos, level: &Grid<Terrain>) -> bool {
 }
 
 fn is_valid_entrance(pos: Pos, level: &Grid<basic::Terrain>) -> bool {
-    level[pos] == basic::Terrain::Wall && basic::count_floor_groups(pos, level) == 1
+    level[pos] == basic::Terrain::Wall
+        && basic::count_floor_groups(pos, level) == 1
         && count_neighbors(pos, level, |t| t == basic::Terrain::Wall) == 4
 }
 

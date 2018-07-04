@@ -1,7 +1,7 @@
 //! Turn system
 
-use store::Id;
 use mob::Mob;
+use store::Id;
 
 struct Scheduler {
     turn: u32,

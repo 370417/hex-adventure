@@ -34,8 +34,14 @@ impl From<Terrain> for Sprite {
 
 pub fn sprite_from_mob(mob: &Mob) -> Sprite {
     match mob {
-        Mob { kind: mob::Type::Hero, .. } => Sprite::Player,
-        Mob { kind: mob::Type::Archer, .. } => Sprite::Archer,
+        Mob {
+            kind: mob::Type::Hero,
+            ..
+        } => Sprite::Player,
+        Mob {
+            kind: mob::Type::Archer,
+            ..
+        } => Sprite::Archer,
     }
 }
 

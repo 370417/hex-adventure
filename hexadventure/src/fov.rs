@@ -1,63 +1,39 @@
 //! Field of view calculation.
 
-use std::cmp::{Ord, Ordering};
 use grid::{Pos, DIRECTIONS};
+use num::rational::Ratio;
+use num::traits::identities::{One, Zero};
 
-const START: Slope = Slope { dx: 0, dy: 1 };
-const END: Slope = Slope { dx: 1, dy: 1 };
-
-struct Slope {
-    dx: u32,
-    dy: u32,
+fn slope(x: u32, y: u32) -> Ratio<u32> {
+    Ratio::new_raw(2 * x - 1, 2 * y)
 }
 
-impl Slope {
-    fn new(x: u32, y: u32) -> Slope {
-        Slope {
-            dx: 2 * x - 1,
-            dy: 2 * y,
-        }
-    }
-
-    fn min_x(&self, y: u32) -> u32 {
-        let q = (self.dx * y) / self.dy;
-        let r = (self.dx * y) % self.dy;
-        match (2 * r).cmp(&self.dy) {
-            Ordering::Greater => q + 1,
-            Ordering::Less => q,
-            Ordering::Equal => q + 1,
-        }
-    }
-
-    fn max_x(&self, y: u32) -> u32 {
-        let q = (self.dx * y) / self.dy;
-        let r = (self.dx * y) % self.dy;
-        match (2 * r).cmp(&self.dy) {
-            Ordering::Greater => q + 1,
-            Ordering::Less => q,
-            Ordering::Equal => q,
-        }
-    }
+fn round_tie_high(x: Ratio<u32>) -> u32 {
+    x.round().to_integer()
 }
 
-fn scan<F, G>(y: u32, start: Slope, end: Slope, transparent: &F, reveal: &mut G)
+fn round_tie_low(x: Ratio<u32>) -> u32 {
+    (x - Ratio::new_raw(1, 2)).ceil().to_integer()
+}
+
+fn scan<F, G>(y: u32, start: Ratio<u32>, end: Ratio<u32>, transparent: &F, reveal: &mut G)
 where
     F: Fn(u32, u32) -> bool,
-    G: FnMut(u32, u32)
+    G: FnMut(u32, u32),
 {
-    let min_x = start.min_x(y);
-    let max_x = end.max_x(y);
+    let min_x = round_tie_high(start * y);
+    let max_x = round_tie_low(end * y);
     let mut start = Some(start);
     for x in min_x..=max_x {
         reveal(x, y);
         if transparent(x, y) {
             if start.is_none() {
-                start = Some(Slope::new(x, y));
+                start = Some(slope(x, y));
             }
         } else {
             if x > min_x {
                 if let Some(start) = start {
-                    scan(y + 1, start, Slope::new(x, y), transparent, reveal);
+                    scan(y + 1, start, slope(x, y), transparent, reveal);
                 }
             }
             start = None;
@@ -75,10 +51,10 @@ where
     G: FnMut(Pos),
 {
     reveal(center);
-    for &dir_y in &DIRECTIONS {
-        let dir_x = dir_y.rotate(2);
-        let f = |x, y| transparent(center + dir_x * x + dir_y * y);
-        let mut g = |x, y| reveal(center + dir_x * x + dir_y * y);
-        scan(1, START, END, &f, &mut g);
+    for &dy in &DIRECTIONS {
+        let dx = dy.rotate(2);
+        let f = |x, y| transparent(center + dx * x + dy * y);
+        let mut g = |x, y| reveal(center + dx * x + dy * y);
+        scan(1, Ratio::zero(), Ratio::one(), &f, &mut g);
     }
 }
