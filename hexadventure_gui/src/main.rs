@@ -31,11 +31,20 @@ use std::fs::File;
 const SAVE_NAME: &str = "save.bincode";
 const APP_INFO: AppInfo = AppInfo { name: "hex-adventure", author: "as-f" };
 
+enum Arrow {
+    None,
+    Up,
+    Down,
+    Left { diagonal: bool },
+    Right { diagonal: bool },
+}
+
 struct MainState {
     game: Game,
     spritebatch: SpriteBatch,
     redraw: bool,
     dests: Grid<Point2>,
+    pressed_arrow: Arrow,
 }
 
 fn pos_to_point2(pos: Pos) -> Point2 {
@@ -59,6 +68,7 @@ impl MainState {
             spritebatch,
             redraw: true,
             dests,
+            pressed_arrow: Arrow::None,
         }
     }
 }
@@ -155,6 +165,107 @@ impl EventHandler for MainState {
             Keycode::D => self.game.move_player(Direction::East),
             Keycode::Z => self.game.move_player(Direction::Southwest),
             Keycode::X => self.game.move_player(Direction::Southeast),
+            Keycode::Up => {
+                self.pressed_arrow = match self.pressed_arrow {
+                    Arrow::None | Arrow::Up => Arrow::Up,
+                    Arrow::Down => Arrow::None,
+                    Arrow::Left { .. } => {
+                        self.game.move_player(Direction::Northwest);
+                        Arrow::Left { diagonal: true }
+                    }
+                    Arrow::Right { .. } => {
+                        self.game.move_player(Direction::Northeast);
+                        Arrow::Right { diagonal: true }
+                    }
+                };
+            }
+            Keycode::Down => {
+                self.pressed_arrow = match self.pressed_arrow {
+                    Arrow::None | Arrow::Down => Arrow::Down,
+                    Arrow::Up => Arrow::None,
+                    Arrow::Left { .. } => {
+                        self.game.move_player(Direction::Southwest);
+                        Arrow::Left { diagonal: true }
+                    }
+                    Arrow::Right { .. } => {
+                        self.game.move_player(Direction::Southeast);
+                        Arrow::Right { diagonal: true }
+                    }
+                }
+            }
+            Keycode::Left => {
+                self.pressed_arrow = match self.pressed_arrow {
+                    Arrow::None => Arrow::Left { diagonal: false },
+                    Arrow::Left { diagonal } => Arrow::Left { diagonal },
+                    Arrow::Right { .. } => Arrow::None,
+                    Arrow::Up => {
+                        self.game.move_player(Direction::Northwest);
+                        Arrow::Up
+                    },
+                    Arrow::Down => {
+                        self.game.move_player(Direction::Southwest);
+                        Arrow::Down
+                    }
+                };
+            }
+            Keycode::Right => {
+                self.pressed_arrow = match self.pressed_arrow {
+                    Arrow::None => Arrow::Right { diagonal: false },
+                    Arrow::Right { diagonal } => Arrow::Right { diagonal },
+                    Arrow::Left { .. } => Arrow::None,
+                    Arrow::Up => {
+                        self.game.move_player(Direction::Northeast);
+                        Arrow::Up
+                    }
+                    Arrow::Down => {
+                        self.game.move_player(Direction::Southeast);
+                        Arrow::Down
+                    }
+                };
+            }
+            _ => (),
+        }
+        self.redraw = true;
+    }
+
+    fn key_up_event(&mut self, _ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
+        match keycode {
+            Keycode::Up => {
+                self.pressed_arrow = match self.pressed_arrow {
+                    Arrow::None | Arrow::Up | Arrow::Down => Arrow::None,
+                    Arrow::Left { diagonal } => Arrow::Left { diagonal },
+                    Arrow::Right { diagonal } => Arrow::Right { diagonal },
+                };
+            }
+            Keycode::Down => {
+                self.pressed_arrow = match self.pressed_arrow {
+                    Arrow::None | Arrow::Down | Arrow::Up => Arrow::None,
+                    Arrow::Left { diagonal } => Arrow::Left { diagonal },
+                    Arrow::Right { diagonal } => Arrow::Right { diagonal },
+                }
+            }
+            Keycode::Left => {
+                self.pressed_arrow = match self.pressed_arrow {
+                    Arrow::Left { diagonal: false } => {
+                        self.game.move_player(Direction::West);
+                        Arrow::None
+                    }
+                    Arrow::Up => Arrow::Up,
+                    Arrow::Down => Arrow::Down,
+                    _ => Arrow::None,
+                }
+            }
+            Keycode::Right => {
+                self.pressed_arrow = match self.pressed_arrow {
+                    Arrow::Right { diagonal: false } => {
+                        self.game.move_player(Direction::East);
+                        Arrow::None
+                    }
+                    Arrow::Up => Arrow::Up,
+                    Arrow::Down => Arrow::Down,
+                    _ => Arrow::None,
+                };
+            }
             _ => (),
         }
         self.redraw = true;
