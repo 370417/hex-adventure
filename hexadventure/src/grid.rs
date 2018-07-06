@@ -39,15 +39,15 @@ struct Index2d {
 
 /// A position on a hexagonal grid in axial coordinates.
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Hash, Serialize, Deserialize)]
-pub struct Pos {
-    x: i32,
-    y: i32,
+pub struct Pos<T=i32> {
+    x: T,
+    y: T,
 }
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
-pub struct Displacement {
-    x: i32,
-    y: i32,
+pub struct Displacement<T=i32> {
+    x: T,
+    y: T,
 }
 
 /// The location of a position as shown on screen.
@@ -156,18 +156,37 @@ impl Displacement {
         (self.x.abs() + self.y.abs() + (self.x + self.y).abs()) as u32 / 2u32
     }
 
-    pub fn direction(self) -> Option<Direction> {
-        if self.distance() == 0 {
-            return None;
-        }
-        match self / self.distance() {
-            Displacement { x: 1, y: 0 } => Some(Direction::Southeast),
-            Displacement { x: 1, y: -1 } => Some(Direction::East),
-            Displacement { x: 0, y: -1 } => Some(Direction::Northeast),
-            Displacement { x: -1, y: 0 } => Some(Direction::Northwest),
-            Displacement { x: -1, y: 1 } => Some(Direction::West),
-            Displacement { x: 0, y: 1 } => Some(Direction::Southwest),
-            _ => None,
+    // pub fn direction(self) -> Option<Direction> {
+    //     if self.distance() == 0 {
+    //         return None;
+    //     }
+    //     compare |x-y|, |x-z|, and |y-z|
+    // }
+}
+
+impl Displacement<f32> {
+    pub fn round(self) -> Displacement {
+        let x_int = self.x.round();
+        let y_int = self.y.round();
+        let xy_int = (self.x + self.y).round();
+        let dx = (self.x - x_int).abs();
+        let dy = (self.y - y_int).abs();
+        let dxy = self.x + self.y - xy_int.abs();
+        if dx > dy && dx > dxy {
+            Displacement {
+                x: (xy_int - y_int) as i32,
+                y: y_int as i32,
+            }
+        } else if dy > dxy {
+            Displacement {
+                x: x_int as i32,
+                y: (xy_int - x_int) as i32,
+            }
+        } else {
+            Displacement {
+                x: x_int as i32,
+                y: y_int as i32,
+            }
         }
     }
 }
@@ -229,36 +248,15 @@ impl ops::Mul<u32> for Displacement {
 }
 
 impl ops::Div<u32> for Displacement {
-    type Output = Displacement;
+    type Output = Displacement<f32>;
 
-    #[allow(suspicious_arithmetic_impl)]
-    fn div(self, rhs: u32) -> Displacement {
+    fn div(self, rhs: u32) -> Displacement<f32> {
         if rhs == 0 {
             panic!("attempt to divide by zero");
         }
-        let x = self.x as f32 / rhs as f32;
-        let y = self.y as f32 / rhs as f32;
-        let x_int = x.round();
-        let y_int = y.round();
-        let xy_int = (x + y).round();
-        let dx = (x - x_int).abs();
-        let dy = (y - y_int).abs();
-        let dz = (x + y - xy_int).abs();
-        if dx > dy && dx > dz {
-            Displacement {
-                x: (xy_int - y_int) as i32,
-                y: y_int as i32,
-            }
-        } else if dy > dz {
-            Displacement {
-                x: x_int as i32,
-                y: (xy_int - x_int) as i32,
-            }
-        } else {
-            Displacement {
-                x: x_int as i32,
-                y: y_int as i32,
-            }
+        Displacement {
+            x: self.x as f32 / rhs as f32,
+            y: self.y as f32 / rhs as f32,
         }
     }
 }

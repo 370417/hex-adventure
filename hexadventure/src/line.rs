@@ -35,7 +35,7 @@ impl Iterator for LineIterator {
         if self.progress > self.length {
             None
         } else {
-            let pos = self.start + (self.end - self.start) * self.progress / self.length;
+            let pos = self.start + ((self.end - self.start) * self.progress / self.length).round();
             self.progress += 1;
             Some(pos)
         }
