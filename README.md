@@ -1,4 +1,4 @@
-# Hex Adventure [![Build Status](https://travis-ci.org/as-f/hex-adventure.svg?branch=master)](https://travis-ci.org/as-f/hex-adventure) [![Build status](https://ci.appveyor.com/api/projects/status/agee2283p0fui3x9/branch/master?svg=true)](https://ci.appveyor.com/project/as-f/hex-adventure/branch/master)
+# Hex Adventure [![Build Status](https://travis-ci.org/as-f/hex-adventure.svg?branch=master)](https://travis-ci.org/as-f/hex-adventure) [![Build status](https://ci.appveyor.com/api/projects/status/agee2283p0fui3x9/branch/master?svg=true)](https://ci.appveyor.com/project/as-f/hex-adventure/branch/master) [![dependency status](https://deps.rs/repo/github/as-f/hex-adventure/status.svg)](https://deps.rs/repo/github/as-f/hex-adventure)
 
 A roguelike game about exploring hexagonal caves.
 
