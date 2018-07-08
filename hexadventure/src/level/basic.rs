@@ -27,7 +27,7 @@ pub(super) fn generate<R: Rng>(rng: &mut R) -> Grid<Terrain> {
     grid
 }
 
-fn calc_shuffled_positions<R: Rng>(rng: &mut R) -> Vec<Pos> {
+pub(super) fn calc_shuffled_positions<R: Rng>(rng: &mut R) -> Vec<Pos> {
     let mut positions: Vec<Pos> = grid::inner_positions().collect();
     rng.shuffle(&mut positions);
     positions

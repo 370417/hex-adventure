@@ -1,6 +1,8 @@
 extern crate bincode;
 use bincode::{deserialize_from, serialize_into};
 
+// todo: running
+
 extern crate app_dirs;
 use app_dirs::{app_root, AppDataType, AppInfo};
 
@@ -16,7 +18,7 @@ use ggez::{Context, GameResult};
 extern crate image;
 
 extern crate hexadventure;
-use hexadventure::game::Game;
+use hexadventure::game::{Action, Game};
 use hexadventure::grid::{self, pos_to_location, Direction, Grid, Location, Pos};
 use hexadventure::level::tile::FullTileView;
 
@@ -103,7 +105,11 @@ impl EventHandler for MainState {
         }
         self.redraw = false;
         graphics::clear(ctx);
-        side::Sidebar::new().draw(ctx, Point2::new((grid::WIDTH * 18 + 9) as f32, 0.0))?;
+        side::Sidebar::new().draw(
+            ctx,
+            Point2::new((grid::WIDTH * 18 + 9) as f32, 0.0),
+            &mut self.spritebatch,
+        )?;
         self.spritebatch.clear();
         for pos in grid::positions() {
             match self.game.tile(pos) {
@@ -162,22 +168,23 @@ impl EventHandler for MainState {
         _repeat: bool,
     ) {
         match keycode {
-            Keycode::W => self.game.move_player(Direction::Northwest),
-            Keycode::E => self.game.move_player(Direction::Northeast),
-            Keycode::A => self.game.move_player(Direction::West),
-            Keycode::D => self.game.move_player(Direction::East),
-            Keycode::Z => self.game.move_player(Direction::Southwest),
-            Keycode::X => self.game.move_player(Direction::Southeast),
+            Keycode::W => self.game.play(Action::Walk(Direction::Northwest)),
+            Keycode::E => self.game.play(Action::Walk(Direction::Northeast)),
+            Keycode::A => self.game.play(Action::Walk(Direction::West)),
+            Keycode::D => self.game.play(Action::Walk(Direction::East)),
+            Keycode::Z => self.game.play(Action::Walk(Direction::Southwest)),
+            Keycode::X => self.game.play(Action::Walk(Direction::Southeast)),
+            Keycode::S => self.game.play(Action::Rest),
             Keycode::Up => {
                 self.pressed_arrow = match self.pressed_arrow {
                     Arrow::None | Arrow::Up => Arrow::Up,
                     Arrow::Down => Arrow::None,
                     Arrow::Left { .. } => {
-                        self.game.move_player(Direction::Northwest);
+                        self.game.play(Action::Walk(Direction::Northwest));
                         Arrow::Left { diagonal: true }
                     }
                     Arrow::Right { .. } => {
-                        self.game.move_player(Direction::Northeast);
+                        self.game.play(Action::Walk(Direction::Northeast));
                         Arrow::Right { diagonal: true }
                     }
                 };
@@ -187,11 +194,11 @@ impl EventHandler for MainState {
                     Arrow::None | Arrow::Down => Arrow::Down,
                     Arrow::Up => Arrow::None,
                     Arrow::Left { .. } => {
-                        self.game.move_player(Direction::Southwest);
+                        self.game.play(Action::Walk(Direction::Southwest));
                         Arrow::Left { diagonal: true }
                     }
                     Arrow::Right { .. } => {
-                        self.game.move_player(Direction::Southeast);
+                        self.game.play(Action::Walk(Direction::Southeast));
                         Arrow::Right { diagonal: true }
                     }
                 }
@@ -202,11 +209,11 @@ impl EventHandler for MainState {
                     Arrow::Left { diagonal } => Arrow::Left { diagonal },
                     Arrow::Right { .. } => Arrow::None,
                     Arrow::Up => {
-                        self.game.move_player(Direction::Northwest);
+                        self.game.play(Action::Walk(Direction::Northwest));
                         Arrow::Up
                     }
                     Arrow::Down => {
-                        self.game.move_player(Direction::Southwest);
+                        self.game.play(Action::Walk(Direction::Southwest));
                         Arrow::Down
                     }
                 };
@@ -217,11 +224,11 @@ impl EventHandler for MainState {
                     Arrow::Right { diagonal } => Arrow::Right { diagonal },
                     Arrow::Left { .. } => Arrow::None,
                     Arrow::Up => {
-                        self.game.move_player(Direction::Northeast);
+                        self.game.play(Action::Walk(Direction::Northeast));
                         Arrow::Up
                     }
                     Arrow::Down => {
-                        self.game.move_player(Direction::Southeast);
+                        self.game.play(Action::Walk(Direction::Southeast));
                         Arrow::Down
                     }
                 };
@@ -250,7 +257,7 @@ impl EventHandler for MainState {
             Keycode::Left => {
                 self.pressed_arrow = match self.pressed_arrow {
                     Arrow::Left { diagonal: false } => {
-                        self.game.move_player(Direction::West);
+                        self.game.play(Action::Walk(Direction::West));
                         Arrow::None
                     }
                     Arrow::Up => Arrow::Up,
@@ -261,7 +268,7 @@ impl EventHandler for MainState {
             Keycode::Right => {
                 self.pressed_arrow = match self.pressed_arrow {
                     Arrow::Right { diagonal: false } => {
-                        self.game.move_player(Direction::East);
+                        self.game.play(Action::Walk(Direction::East));
                         Arrow::None
                     }
                     Arrow::Up => Arrow::Up,

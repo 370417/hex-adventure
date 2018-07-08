@@ -96,12 +96,18 @@ impl<T> Store<T> {
         }
     }
 
-    /// Returns an iterator that iterates through every value.
-    pub fn iter(&self) -> Iter<T> {
-        Iter {
-            values: &self.values,
-            index: 0,
-        }
+    pub fn keys<'a>(&'a self) -> Vec<Id<T>> {
+        self.values
+            .iter()
+            .enumerate()
+            .filter_map(|(index, versioned)| {
+                if versioned.version >= FIRST_VALID_VERSION {
+                    Some(Id::new(index, versioned.version))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }
 
@@ -116,28 +122,6 @@ impl<T> Index<Id<T>> for Store<T> {
 impl<T> IndexMut<Id<T>> for Store<T> {
     fn index_mut(&mut self, id: Id<T>) -> &mut T {
         self.get_mut(id).unwrap()
-    }
-}
-
-pub struct Iter<'a, T: 'a> {
-    values: &'a Vec<Versioned<T>>,
-    index: usize,
-}
-
-impl<'a, T> Iterator for Iter<'a, T> {
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if self.index >= self.values.len() {
-                break None;
-            }
-            let versioned = &self.values[self.index];
-            if versioned.version > 0 {
-                break Some(&versioned.value);
-            }
-            self.index += 1;
-        }
     }
 }
 

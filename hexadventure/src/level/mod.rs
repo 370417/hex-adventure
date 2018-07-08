@@ -2,6 +2,7 @@
 
 mod basic;
 mod exit;
+mod grass;
 mod lake;
 mod populate;
 pub mod tile;
@@ -10,7 +11,7 @@ use self::populate::populate;
 
 use self::tile::{Terrain, Tile};
 use grid::Grid;
-
+use mob::Mob;
 use rand::IsaacRng;
 use std::mem::replace;
 
@@ -18,33 +19,23 @@ use std::mem::replace;
 #[derive(Serialize, Deserialize)]
 pub(super) struct Architect {
     rng: IsaacRng,
-    next_level: Option<Grid<Terrain>>,
+    next_level: Grid<Terrain>,
 }
 
 impl Architect {
     pub fn new(seed: u64) -> Self {
-        Architect {
-            rng: IsaacRng::new_from_u64(seed),
-            next_level: None,
-        }
+        let mut rng = IsaacRng::new_from_u64(seed);
+        let next_level = basic::generate(&mut rng)
+            .iter()
+            .map(|&t| Terrain::from(t))
+            .collect();
+        Architect { rng, next_level }
     }
 
-    pub fn generate(&mut self) -> Grid<Tile> {
-        match self.next_level {
-            Some(ref mut next_level) => {
-                let mut new_next_level = exit::add_exit(next_level, &mut self.rng);
-                lake::add_lakes(next_level, &mut self.rng);
-                populate(replace(next_level, new_next_level), &mut self.rng)
-            }
-            None => {
-                let mut level = basic::generate(&mut self.rng)
-                    .iter()
-                    .map(|&t| Terrain::from(t))
-                    .collect();
-                self.next_level = Some(exit::add_exit(&mut level, &mut self.rng));
-                lake::add_lakes(&mut level, &mut self.rng);
-                populate(level, &mut self.rng)
-            }
-        }
+    pub fn generate(&mut self) -> Grid<(Terrain, Option<Mob>)> {
+        let new_next_level = exit::add_exit(&mut self.next_level, &mut self.rng);
+        lake::add_lakes(&mut self.next_level, &mut self.rng);
+        // grass::add_grass(next_level, &mut self.rng);
+        populate(replace(&mut self.next_level, new_next_level), &mut self.rng)
     }
 }

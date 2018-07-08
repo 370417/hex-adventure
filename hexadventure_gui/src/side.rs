@@ -1,3 +1,4 @@
+use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::graphics::{Color, DrawMode, DrawParam, Drawable, Mesh, Point2};
 use ggez::{Context, GameResult};
 
@@ -12,7 +13,12 @@ impl Sidebar {
         Sidebar {}
     }
 
-    pub fn draw(&self, ctx: &mut Context, dest: Point2) -> GameResult<()> {
+    pub fn draw(
+        &self,
+        ctx: &mut Context,
+        dest: Point2,
+        spritebatch: &mut SpriteBatch,
+    ) -> GameResult<()> {
         let width = WIDTH as f32 * 9.0;
         let height = grid::HEIGHT as f32 * 16.0;
         let background = [
@@ -32,4 +38,8 @@ impl Sidebar {
         )?;
         Ok(())
     }
+}
+
+fn draw_str(string: &str, ctx: &mut Context) -> GameResult<()> {
+    Ok(())
 }

@@ -15,7 +15,10 @@ pub enum Sprite {
     Player,
     Archer,
     ShortGrass,
-    Stairs,
+    TallGrass,
+    Brownberry,
+    Entrance,
+    Exit,
     Water,
 }
 
@@ -25,8 +28,10 @@ impl From<Terrain> for Sprite {
             Terrain::Wall => Sprite::Wall,
             Terrain::Floor => Sprite::Floor,
             Terrain::ShortGrass => Sprite::ShortGrass,
-            Terrain::Exit => Sprite::Stairs,
-            Terrain::Entrance => Sprite::Stairs,
+            Terrain::TallGrass => Sprite::TallGrass,
+            Terrain::Brownberry => Sprite::Brownberry,
+            Terrain::Exit => Sprite::Exit,
+            Terrain::Entrance => Sprite::Entrance,
             Terrain::Water => Sprite::Water,
         }
     }
@@ -39,19 +44,18 @@ pub fn sprite_from_mob(mob: &Mob) -> Sprite {
             ..
         } => Sprite::Player,
         Mob {
-            kind: mob::Type::Archer,
+            kind: mob::Type::Skeleton,
             ..
         } => Sprite::Archer,
     }
 }
 
 pub fn color_from_tile(terrain: Terrain) -> Color {
+    use self::Terrain::*;
     match terrain {
-        Terrain::Wall => graphics::WHITE,
+        Wall | Entrance | Exit => graphics::WHITE,
         Terrain::Floor => Color::new(0.75, 0.75, 0.75, 1.0),
-        Terrain::ShortGrass => graphics::WHITE,
-        Terrain::Exit => graphics::WHITE,
-        Terrain::Entrance => graphics::WHITE,
+        ShortGrass | TallGrass | Brownberry => Color::new(0.0, 0.75, 0.0, 1.0),
         Terrain::Water => Color::new(0.0, 0.5, 1.0, 1.0),
     }
 }
@@ -80,21 +84,25 @@ pub fn load_spritebatch(ctx: &mut Context) -> SpriteBatch {
 }
 
 pub fn sprite_src(sprite: Sprite) -> Rect {
-    let width = 256.0;
-    let height = 256.0;
+    use self::Sprite::*;
+    let width = 288.0;
+    let height = 288.0;
     let (x, y) = match sprite {
-        Sprite::Wall => (0, 0),
-        Sprite::Floor => (1, 0),
-        Sprite::ShortGrass => (3, 0),
-        Sprite::Stairs => (5, 0),
-        Sprite::Water => (4, 0),
-        Sprite::Player => (0, 1),
-        Sprite::Archer => (1, 1),
+        Wall => (0, 0),
+        Floor => (1, 0),
+        ShortGrass => (3, 0),
+        TallGrass => (2, 0),
+        Brownberry => (4, 0),
+        Entrance => (7, 0),
+        Exit => (6, 0),
+        Water => (5, 0),
+        Player => (0, 1),
+        Archer => (1, 1),
     };
-    let w = 18;
+    let w = 16;
     let h = 24;
     let x = x * w;
-    let y = 64 + y * h;
+    let y = 48 + y * h;
     Rect {
         x: x as f32 / width,
         y: y as f32 / height,

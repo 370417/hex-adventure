@@ -12,6 +12,8 @@ pub enum Terrain {
     Wall,
     Floor,
     ShortGrass,
+    TallGrass,
+    Brownberry,
     Exit,
     Entrance,
     Water,
@@ -35,24 +37,18 @@ pub enum FullTileView<'a> {
 
 impl Terrain {
     pub fn passable(&self) -> bool {
+        use self::Terrain::*;
         match *self {
-            Terrain::Wall => false,
-            Terrain::Floor => true,
-            Terrain::ShortGrass => true,
-            Terrain::Exit => false,
-            Terrain::Entrance => false,
-            Terrain::Water => false,
+            Wall | Entrance | Exit | Water => false,
+            _ => true,
         }
     }
 
     pub fn transparent(&self) -> bool {
+        use self::Terrain::*;
         match *self {
-            Terrain::Wall => false,
-            Terrain::Floor => true,
-            Terrain::ShortGrass => true,
-            Terrain::Exit => true,
-            Terrain::Entrance => true,
-            Terrain::Water => true,
+            Wall | TallGrass => false,
+            _ => true,
         }
     }
 
