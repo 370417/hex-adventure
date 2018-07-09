@@ -15,6 +15,8 @@ pub(super) fn populate<R: Rng>(level: Grid<Terrain>, rng: &mut R) -> Grid<(Terra
                 pos,
                 facing: Direction::West,
                 kind: Type::Skeleton,
+                guard: 100,
+                guard_recovery: Vec::new(),
             });
             break;
         }

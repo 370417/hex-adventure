@@ -90,12 +90,30 @@ impl Displacement {
         (self.x.abs() + self.y.abs() + (self.x + self.y).abs()) as u32 / 2u32
     }
 
-    // pub fn direction(self) -> Option<Direction> {
-    //     if self.distance() == 0 {
-    //         return None;
-    //     }
-    //     compare |x-y|, |x-z|, and |y-z|
-    // }
+    pub fn direction(self) -> Direction {
+        let a = (self.x - self.y).abs();
+        let b = (2 * self.y + self.x).abs();
+        let c = (2 * self.x + self.y).abs();
+        if a >= b && a >= c {
+            if self.x > 0 {
+                Direction::East
+            } else {
+                Direction::West
+            }
+        } else if b >= c {
+            if self.y > 0 {
+                Direction::Southwest
+            } else {
+                Direction::Northeast
+            }
+        } else {
+            if self.x > 0 {
+                Direction::Southeast
+            } else {
+                Direction::Northwest
+            }
+        }
+    }
 }
 
 impl Displacement<f32> {

@@ -54,7 +54,7 @@ struct MainState {
 
 fn pos_to_point2(pos: Pos) -> Point2 {
     let Location { x, y } = pos_to_location(pos);
-    Point2::new((x * 9) as f32, (y * 16 - 7) as f32)
+    Point2::new((1 + x * 9) as f32, (1 + y * 16 - 7) as f32)
 }
 
 impl MainState {
@@ -105,12 +105,13 @@ impl EventHandler for MainState {
         }
         self.redraw = false;
         graphics::clear(ctx);
+        self.spritebatch.clear();
         side::Sidebar::new().draw(
             ctx,
             Point2::new((grid::WIDTH * 18 + 9) as f32, 0.0),
+            &self.game,
             &mut self.spritebatch,
         )?;
-        self.spritebatch.clear();
         for pos in grid::positions() {
             match self.game.tile(pos) {
                 FullTileView::Seen { terrain, mob: None } => {

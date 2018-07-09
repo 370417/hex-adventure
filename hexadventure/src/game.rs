@@ -1,26 +1,39 @@
 use fov::fov;
 use grid::{self, Direction, Grid, Pos};
-use level::tile::{FullTileView, Terrain, Tile, TileView};
+use level::tile::{FullTileView, Tile, TileView};
 use level::Architect;
 use mob::{self, Mob};
 use rand::{thread_rng, Rng};
 use store::{Id, Store};
 
+struct Mobs {
+    player: Mob,
+    npcs: Vec<Mob>,
+}
+
+enum MobId {
+    Player,
+    Npc(usize),
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Game {
     level: Grid<Tile>,
     architect: Architect,
-    player: Id<Mob>,
-    level_memory: Grid<TileView>,
-    mobs: Store<Mob>,
+    pub(crate) player: Id<Mob>,
+    pub(crate) level_memory: Grid<TileView>,
+    pub(crate) mobs: Store<Mob>,
+    /// Stores all actors except the player in their turn order
+    actors: Vec<Id<Mob>>,
     animated: Vec<()>,
 }
 
 impl Game {
     // returns # of ticks until player's turn
     pub fn tick(&mut self) -> u32 {
-        for mob in self.mobs.keys() {
-            let action = Action::Rest;
+        for mob in self.actors.clone() { // TODO: deal with this clone
+            let action = mob.act(&self);
+            println!("{:?}", action);
             self.execute(action, mob);
         }
         0
@@ -29,10 +42,7 @@ impl Game {
     pub fn play(&mut self, action: Action) {
         let player = self.player;
         // FIXME: NLL (self.execute(action, self.player))
-        let mut action = ActionResult::Alt(action);
-        while let ActionResult::Alt(alt) = action {
-            action = self.execute(alt, player);
-        }
+        self.execute(action, player);
         self.next_turn();
         self.tick();
     }
@@ -43,12 +53,15 @@ impl Game {
         let mut architect = Architect::new(seed);
         let level = architect.generate();
         let mut mobs = Store::new();
-        let mut level = mobs.import_level(level);
+        let mut actors = Vec::new();
+        let mut level = mobs.import_level(level, &mut actors);
         let player_pos = place_player(&level);
         let player = Mob {
             pos: player_pos,
             facing: Direction::East,
             kind: mob::Type::Hero,
+            guard: 100,
+            guard_recovery: Vec::new(),
         };
         let player_id = mobs.insert(player);
         level[player_pos].mob_id = Some(player_id);
@@ -59,6 +72,7 @@ impl Game {
             player: player_id,
             level_memory,
             mobs,
+            actors,
             animated: Vec::new(),
         };
         game.next_turn();
@@ -81,6 +95,10 @@ impl Game {
             TileView::Remembered(terrain) => FullTileView::Remembered(terrain),
             TileView::None => FullTileView::None,
         }
+    }
+
+    pub fn player_guard(&self) -> u32 {
+        self.mobs[self.player].guard
     }
 
     // fn execute(action: &Action) {}
@@ -152,6 +170,7 @@ fn place_player(level: &Grid<Tile>) -> Pos {
         .unwrap()
 }
 
+#[derive(Debug)]
 pub enum Action {
     Walk(Direction),
     MeleeAttack(Direction), // LastHit { dmg, direction }
@@ -161,7 +180,6 @@ pub enum Action {
 enum ActionResult {
     Ok,
     Err,
-    Alt(Action),
 }
 
 impl Game {
@@ -171,7 +189,7 @@ impl Game {
             Action::Walk(direction) => {
                 let target_pos = mob_pos + direction;
                 if self.level[target_pos].mob_id.is_some() {
-                    ActionResult::Alt(Action::MeleeAttack(direction))
+                    self.execute(Action::MeleeAttack(direction), actor)
                 } else if self.level[target_pos].terrain.passable() {
                     self.level[self.mobs[actor].pos].mob_id = None;
                     self.mobs[actor].pos += direction;
@@ -179,17 +197,23 @@ impl Game {
                     self.level[self.mobs[actor].pos].mob_id = Some(actor);
                     ActionResult::Ok
                 } else {
-                    ActionResult::Alt(Action::Rest)
+                    ActionResult::Err
                 }
             }
             Action::MeleeAttack(direction) => {
                 let target_pos = mob_pos + direction;
                 if let Some(mob) = self.level[target_pos].mob_id {
-                    println!("Boink!");
+                    let damage = thread_rng().gen_range(6, 10);
+                    let guard = self.mobs[mob].guard;
+                    if damage <= guard {
+                        self.mobs[mob].guard -= damage;
+                    } else {
+                        self.mobs[mob].guard = 0;
+                    }
                     self.mobs[actor].facing = direction;
                     ActionResult::Ok
                 } else {
-                    ActionResult::Alt(Action::Rest)
+                    ActionResult::Err
                 }
             }
             Action::Rest => ActionResult::Ok,
