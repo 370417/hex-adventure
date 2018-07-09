@@ -32,7 +32,7 @@ impl Architect {
         Architect { rng, next_level }
     }
 
-    pub fn generate(&mut self) -> Grid<(Terrain, Option<Mob>)> {
+    pub fn generate(&mut self) -> (Grid<Tile>, Vec<Mob>) {
         let new_next_level = exit::add_exit(&mut self.next_level, &mut self.rng);
         lake::add_lakes(&mut self.next_level, &mut self.rng);
         // grass::add_grass(next_level, &mut self.rng);

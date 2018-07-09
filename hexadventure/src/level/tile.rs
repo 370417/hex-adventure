@@ -1,10 +1,10 @@
 use mob::Mob;
-use store::Id;
+use game::MobId;
 
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct Tile {
     pub terrain: Terrain,
-    pub mob_id: Option<Id<Mob>>,
+    pub mob_id: Option<MobId>,
 }
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
