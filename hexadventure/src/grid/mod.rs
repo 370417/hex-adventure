@@ -83,6 +83,16 @@ impl Pos {
             end: target,
         }
     }
+
+    pub fn ring(self, size: u32) -> impl Iterator<Item=Pos> {
+        (0..size * 6).map(move |i| {
+            let major = i / size;
+            let minor = i % size;
+            let major_dir = DIRECTIONS[major as usize];
+            let minor_dir = major_dir.rotate(2);
+            self + major_dir * size + minor_dir * minor
+        })
+    }
 }
 
 impl Displacement {

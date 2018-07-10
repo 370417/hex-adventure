@@ -12,18 +12,18 @@ use ggez::event;
 use ggez::event::{EventHandler, Keycode, Mod};
 use ggez::graphics;
 use ggez::graphics::spritebatch::SpriteBatch;
-use ggez::graphics::{DrawParam, Point2};
+use ggez::graphics::{DrawParam, Point2, Color};
 use ggez::{Context, GameResult};
 
 extern crate image;
 
 extern crate hexadventure;
-use hexadventure::game::{MobId, Game};
-use hexadventure::grid::{self, pos_to_location, Direction, Grid, Location, Pos};
-use hexadventure::level::tile::FullTileView;
+use hexadventure::prelude::*;
+use hexadventure::grid::{pos_to_location, Location};
+use hexadventure::level::tile::{Tile, TileView};
 
 mod sprite;
-use sprite::{color_from_tile, darken, sprite_from_mob, Sprite};
+use sprite::{color_from_tile, darken, sprite_from_species, Sprite, sprite_src};
 
 mod side;
 
@@ -45,7 +45,7 @@ enum Arrow {
 }
 
 struct MainState {
-    game: Game,
+    world: World,
     spritebatch: SpriteBatch,
     redraw: bool,
     dests: Grid<Point2>,
@@ -64,12 +64,12 @@ impl MainState {
         for pos in grid::positions() {
             dests[pos] = pos_to_point2(pos);
         }
-        let game = match load_game() {
-            Ok(game) => game,
-            _ => Game::new(),
+        let world = match load_world() {
+            Ok(world) => world,
+            _ => World::new(),
         };
         MainState {
-            game,
+            world,
             spritebatch,
             redraw: true,
             dests,
@@ -78,7 +78,7 @@ impl MainState {
     }
 }
 
-fn load_game() -> Result<Game, Box<Error>> {
+fn load_world() -> Result<World, Box<Error>> {
     let mut path = app_root(AppDataType::UserData, &APP_INFO)?;
     path.push(SAVE_NAME);
     let file = File::open(path)?;
@@ -86,12 +86,33 @@ fn load_game() -> Result<Game, Box<Error>> {
     Ok(game)
 }
 
-fn save_game(game: &Game) -> Result<(), Box<Error>> {
+fn save_world(game: &World) -> Result<(), Box<Error>> {
     let mut path = app_root(AppDataType::UserData, &APP_INFO)?;
     path.push(SAVE_NAME);
     let file = File::create(path)?;
     serialize_into(file, game)?;
     Ok(())
+}
+
+impl MainState {
+    fn draw_tile(&mut self, sprite: Sprite, pos: Pos, color: Color, flip: bool) {
+        self.spritebatch.add(DrawParam {
+            src: sprite_src(sprite),
+            dest: self.dests[pos],
+            color: Some(color),
+            offset: if flip {
+                Point2::new(1.0, 0.0)
+            } else {
+                Point2::new(0.0, 0.0)
+            },
+            scale: if flip {
+                Point2::new(-1.0, 1.0)
+            } else {
+                Point2::new(-1.0, 1.0)  
+            },
+            ..Default::default()
+        });
+    }
 }
 
 impl EventHandler for MainState {
@@ -109,52 +130,86 @@ impl EventHandler for MainState {
         side::Sidebar::new().draw(
             ctx,
             Point2::new((grid::WIDTH * 18 + 9) as f32, 0.0),
-            &self.game,
+            &self.world,
             &mut self.spritebatch,
         )?;
         for pos in grid::positions() {
-            match self.game.tile(pos) {
-                FullTileView::Seen { terrain, mob: None } => {
-                    self.spritebatch.add(DrawParam {
-                        src: sprite::sprite_src(Sprite::from(terrain)),
-                        dest: self.dests[pos],
-                        color: Some(color_from_tile(terrain)),
-                        ..Default::default()
-                    });
+            match self.world.fov[pos] {
+                TileView::Seen => {
+                    if let Some(mob_id) = self.world.level[pos].mob_id {
+                        let sprite = sprite_from_species(&self.world[mob_id].species);
+                        let flip = match self.world[mob_id].facing {
+                            Direction::West | Direction::Northwest | Direction::Southwest => false,
+                            Direction::East | Direction::Northeast | Direction::Southeast => true,
+                        };
+                        self.draw_tile(
+                            sprite,
+                            pos,
+                            graphics::WHITE,
+                            flip,
+                        );
+                    } else {
+                        let terrain = self.world.level[pos].terrain;
+                        self.draw_tile(
+                            Sprite::from(terrain),
+                            pos,
+                            color_from_tile(terrain),
+                            false,
+                        );
+                    }
                 }
-                FullTileView::Seen { mob: Some(mob), .. } => {
-                    self.spritebatch.add(DrawParam {
-                        src: sprite::sprite_src(sprite_from_mob(mob)),
-                        dest: self.dests[pos],
-                        offset: match mob.facing {
-                            Direction::West | Direction::Northwest | Direction::Southwest => {
-                                Point2::new(0.0, 0.0)
-                            }
-                            Direction::East | Direction::Northeast | Direction::Southeast => {
-                                Point2::new(1.0, 0.0)
-                            }
-                        },
-                        scale: match mob.facing {
-                            Direction::West | Direction::Northwest | Direction::Southwest => {
-                                Point2::new(1.0, 1.0)
-                            }
-                            Direction::East | Direction::Northeast | Direction::Southeast => {
-                                Point2::new(-1.0, 1.0)
-                            }
-                        },
-                        ..Default::default()
-                    });
+                TileView::Remembered(terrain) => {
+                    self.draw_tile(
+                        Sprite::from(terrain),
+                        pos,
+                        darken(color_from_tile(terrain)),
+                        false,
+                    )
                 }
-                FullTileView::Remembered(terrain) => {
-                    self.spritebatch.add(DrawParam {
-                        src: sprite::sprite_src(Sprite::from(terrain)),
-                        dest: self.dests[pos],
-                        color: Some(darken(color_from_tile(terrain))),
-                        ..Default::default()
-                    });
-                }
-                FullTileView::None => (),
-            }
+                TileView::None => {}
+            };
+            // match self.game.tile(pos) {
+            //     FullTileView::Seen { terrain, mob: None } => {
+            //         self.spritebatch.add(DrawParam {
+            //             src: sprite::sprite_src(Sprite::from(terrain)),
+            //             dest: self.dests[pos],
+            //             color: Some(color_from_tile(terrain)),
+            //             ..Default::default()
+            //         });
+            //     }
+            //     FullTileView::Seen { mob: Some(mob), .. } => {
+            //         self.spritebatch.add(DrawParam {
+            //             src: sprite::sprite_src(sprite_from_mob(mob)),
+            //             dest: self.dests[pos],
+            //             offset: match mob.facing {
+            //                 Direction::West | Direction::Northwest | Direction::Southwest => {
+            //                     Point2::new(0.0, 0.0)
+            //                 }
+            //                 Direction::East | Direction::Northeast | Direction::Southeast => {
+            //                     Point2::new(1.0, 0.0)
+            //                 }
+            //             },
+            //             scale: match mob.facing {
+            //                 Direction::West | Direction::Northwest | Direction::Southwest => {
+            //                     Point2::new(1.0, 1.0)
+            //                 }
+            //                 Direction::East | Direction::Northeast | Direction::Southeast => {
+            //                     Point2::new(-1.0, 1.0)
+            //                 }
+            //             },
+            //             ..Default::default()
+            //         });
+            //     }
+            //     FullTileView::Remembered(terrain) => {
+            //         self.spritebatch.add(DrawParam {
+            //             src: sprite::sprite_src(Sprite::from(terrain)),
+            //             dest: self.dests[pos],
+            //             color: Some(darken(color_from_tile(terrain))),
+            //             ..Default::default()
+            //         });
+            //     }
+            //     FullTileView::None => (),
+            // }
         }
         graphics::draw(ctx, &self.spritebatch, Point2::new(0.0, 0.0), 0.0)?;
         graphics::present(ctx);
@@ -168,118 +223,118 @@ impl EventHandler for MainState {
         _keymod: Mod,
         _repeat: bool,
     ) {
-        match keycode {
-            Keycode::W => self.game.walk(Direction::Northwest),
-            Keycode::E => self.game.walk(Direction::Northeast),
-            Keycode::A => self.game.walk(Direction::West),
-            Keycode::D => self.game.walk(Direction::East),
-            Keycode::Z => self.game.walk(Direction::Southwest),
-            Keycode::X => self.game.walk(Direction::Southeast),
-            Keycode::S => self.game.rest(),
-            Keycode::Up => {
-                self.pressed_arrow = match self.pressed_arrow {
-                    Arrow::None | Arrow::Up => Arrow::Up,
-                    Arrow::Down => Arrow::None,
-                    Arrow::Left { .. } => {
-                        self.game.walk(Direction::Northwest);
-                        Arrow::Left { diagonal: true }
-                    }
-                    Arrow::Right { .. } => {
-                        self.game.walk(Direction::Northeast);
-                        Arrow::Right { diagonal: true }
-                    }
-                };
-            }
-            Keycode::Down => {
-                self.pressed_arrow = match self.pressed_arrow {
-                    Arrow::None | Arrow::Down => Arrow::Down,
-                    Arrow::Up => Arrow::None,
-                    Arrow::Left { .. } => {
-                        self.game.walk(Direction::Southwest);
-                        Arrow::Left { diagonal: true }
-                    }
-                    Arrow::Right { .. } => {
-                        self.game.walk(Direction::Southeast);
-                        Arrow::Right { diagonal: true }
-                    }
-                }
-            }
-            Keycode::Left => {
-                self.pressed_arrow = match self.pressed_arrow {
-                    Arrow::None => Arrow::Left { diagonal: false },
-                    Arrow::Left { diagonal } => Arrow::Left { diagonal },
-                    Arrow::Right { .. } => Arrow::None,
-                    Arrow::Up => {
-                        self.game.walk(Direction::Northwest);
-                        Arrow::Up
-                    }
-                    Arrow::Down => {
-                        self.game.walk(Direction::Southwest);
-                        Arrow::Down
-                    }
-                };
-            }
-            Keycode::Right => {
-                self.pressed_arrow = match self.pressed_arrow {
-                    Arrow::None => Arrow::Right { diagonal: false },
-                    Arrow::Right { diagonal } => Arrow::Right { diagonal },
-                    Arrow::Left { .. } => Arrow::None,
-                    Arrow::Up => {
-                        self.game.walk(Direction::Northeast);
-                        Arrow::Up
-                    }
-                    Arrow::Down => {
-                        self.game.walk(Direction::Southeast);
-                        Arrow::Down
-                    }
-                };
-            }
-            _ => (),
-        }
-        self.redraw = true;
+        // match keycode {
+        //     Keycode::W => self.game.walk(Direction::Northwest),
+        //     Keycode::E => self.game.walk(Direction::Northeast),
+        //     Keycode::A => self.game.walk(Direction::West),
+        //     Keycode::D => self.game.walk(Direction::East),
+        //     Keycode::Z => self.game.walk(Direction::Southwest),
+        //     Keycode::X => self.game.walk(Direction::Southeast),
+        //     Keycode::S => self.game.rest(),
+        //     Keycode::Up => {
+        //         self.pressed_arrow = match self.pressed_arrow {
+        //             Arrow::None | Arrow::Up => Arrow::Up,
+        //             Arrow::Down => Arrow::None,
+        //             Arrow::Left { .. } => {
+        //                 self.game.walk(Direction::Northwest);
+        //                 Arrow::Left { diagonal: true }
+        //             }
+        //             Arrow::Right { .. } => {
+        //                 self.game.walk(Direction::Northeast);
+        //                 Arrow::Right { diagonal: true }
+        //             }
+        //         };
+        //     }
+        //     Keycode::Down => {
+        //         self.pressed_arrow = match self.pressed_arrow {
+        //             Arrow::None | Arrow::Down => Arrow::Down,
+        //             Arrow::Up => Arrow::None,
+        //             Arrow::Left { .. } => {
+        //                 self.game.walk(Direction::Southwest);
+        //                 Arrow::Left { diagonal: true }
+        //             }
+        //             Arrow::Right { .. } => {
+        //                 self.game.walk(Direction::Southeast);
+        //                 Arrow::Right { diagonal: true }
+        //             }
+        //         }
+        //     }
+        //     Keycode::Left => {
+        //         self.pressed_arrow = match self.pressed_arrow {
+        //             Arrow::None => Arrow::Left { diagonal: false },
+        //             Arrow::Left { diagonal } => Arrow::Left { diagonal },
+        //             Arrow::Right { .. } => Arrow::None,
+        //             Arrow::Up => {
+        //                 self.game.walk(Direction::Northwest);
+        //                 Arrow::Up
+        //             }
+        //             Arrow::Down => {
+        //                 self.game.walk(Direction::Southwest);
+        //                 Arrow::Down
+        //             }
+        //         };
+        //     }
+        //     Keycode::Right => {
+        //         self.pressed_arrow = match self.pressed_arrow {
+        //             Arrow::None => Arrow::Right { diagonal: false },
+        //             Arrow::Right { diagonal } => Arrow::Right { diagonal },
+        //             Arrow::Left { .. } => Arrow::None,
+        //             Arrow::Up => {
+        //                 self.game.walk(Direction::Northeast);
+        //                 Arrow::Up
+        //             }
+        //             Arrow::Down => {
+        //                 self.game.walk(Direction::Southeast);
+        //                 Arrow::Down
+        //             }
+        //         };
+        //     }
+        //     _ => (),
+        // }
+        // self.redraw = true;
     }
 
     fn key_up_event(&mut self, _ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
-        match keycode {
-            Keycode::Up => {
-                self.pressed_arrow = match self.pressed_arrow {
-                    Arrow::None | Arrow::Up | Arrow::Down => Arrow::None,
-                    Arrow::Left { diagonal } => Arrow::Left { diagonal },
-                    Arrow::Right { diagonal } => Arrow::Right { diagonal },
-                };
-            }
-            Keycode::Down => {
-                self.pressed_arrow = match self.pressed_arrow {
-                    Arrow::None | Arrow::Down | Arrow::Up => Arrow::None,
-                    Arrow::Left { diagonal } => Arrow::Left { diagonal },
-                    Arrow::Right { diagonal } => Arrow::Right { diagonal },
-                }
-            }
-            Keycode::Left => {
-                self.pressed_arrow = match self.pressed_arrow {
-                    Arrow::Left { diagonal: false } => {
-                        self.game.walk(Direction::West);
-                        Arrow::None
-                    }
-                    Arrow::Up => Arrow::Up,
-                    Arrow::Down => Arrow::Down,
-                    _ => Arrow::None,
-                }
-            }
-            Keycode::Right => {
-                self.pressed_arrow = match self.pressed_arrow {
-                    Arrow::Right { diagonal: false } => {
-                        self.game.walk(Direction::East);
-                        Arrow::None
-                    }
-                    Arrow::Up => Arrow::Up,
-                    Arrow::Down => Arrow::Down,
-                    _ => Arrow::None,
-                };
-            }
-            _ => (),
-        }
-        self.redraw = true;
+        // match keycode {
+        //     Keycode::Up => {
+        //         self.pressed_arrow = match self.pressed_arrow {
+        //             Arrow::None | Arrow::Up | Arrow::Down => Arrow::None,
+        //             Arrow::Left { diagonal } => Arrow::Left { diagonal },
+        //             Arrow::Right { diagonal } => Arrow::Right { diagonal },
+        //         };
+        //     }
+        //     Keycode::Down => {
+        //         self.pressed_arrow = match self.pressed_arrow {
+        //             Arrow::None | Arrow::Down | Arrow::Up => Arrow::None,
+        //             Arrow::Left { diagonal } => Arrow::Left { diagonal },
+        //             Arrow::Right { diagonal } => Arrow::Right { diagonal },
+        //         }
+        //     }
+        //     Keycode::Left => {
+        //         self.pressed_arrow = match self.pressed_arrow {
+        //             Arrow::Left { diagonal: false } => {
+        //                 self.game.walk(Direction::West);
+        //                 Arrow::None
+        //             }
+        //             Arrow::Up => Arrow::Up,
+        //             Arrow::Down => Arrow::Down,
+        //             _ => Arrow::None,
+        //         }
+        //     }
+        //     Keycode::Right => {
+        //         self.pressed_arrow = match self.pressed_arrow {
+        //             Arrow::Right { diagonal: false } => {
+        //                 self.game.walk(Direction::East);
+        //                 Arrow::None
+        //             }
+        //             Arrow::Up => Arrow::Up,
+        //             Arrow::Down => Arrow::Down,
+        //             _ => Arrow::None,
+        //         };
+        //     }
+        //     _ => (),
+        // }
+        // self.redraw = true;
     }
 }
 
@@ -292,7 +347,7 @@ fn main() {
     if let Err(e) = event::run(&mut ctx, &mut state) {
         println!("Error encountered: {}", e);
     }
-    if let Err(e) = save_game(&state.game) {
+    if let Err(e) = save_world(&state.world) {
         println!("Error in saving game: {}", e);
     }
 }

@@ -1,5 +1,4 @@
-use mob::Mob;
-use game::MobId;
+use prelude::*;
 
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct Tile {
@@ -26,14 +25,14 @@ pub enum TileView {
     None,
 }
 
-pub enum FullTileView<'a> {
-    Seen {
-        terrain: Terrain,
-        mob: Option<&'a Mob>,
-    },
-    Remembered(Terrain),
-    None,
-}
+// pub enum FullTileView<'a> {
+//     Seen {
+//         terrain: Terrain,
+//         mob: Option<&'a Mob>,
+//     },
+//     Remembered(Terrain),
+//     None,
+// }
 
 impl Terrain {
     pub fn passable(&self) -> bool {
@@ -52,7 +51,7 @@ impl Terrain {
         }
     }
 
-    pub fn solid(&self) -> bool {
-        !self.passable() && !self.transparent()
-    }
+    // pub fn solid(&self) -> bool {
+    //     !self.passable() && !self.transparent()
+    // }
 }

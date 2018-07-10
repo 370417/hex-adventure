@@ -1,7 +1,7 @@
 use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::graphics::{Color, DrawMode, DrawParam, Drawable, Mesh, Point2, Rect};
 use ggez::{Context, GameResult};
-use hexadventure::game::Game;
+use hexadventure::prelude::*;
 use grid;
 
 pub const WIDTH: u32 = 24;
@@ -17,7 +17,7 @@ impl Sidebar {
         &self,
         ctx: &mut Context,
         dest: Point2,
-        game: &Game,
+        world: &World,
         spritebatch: &mut SpriteBatch,
     ) -> GameResult<()> {
         let width = WIDTH as f32 * 9.0;
@@ -37,7 +37,10 @@ impl Sidebar {
                 ..Default::default()
             },
         )?;
-        draw_str(&format!("Guard: {}", game.player_guard()), spritebatch, Point2::new(dest.x + 18.0, dest.y + 16.0))?;
+        // draw_str(&format!("Guard: {}", game.mobs.player.guard), spritebatch, Point2::new(dest.x + 18.0, dest.y + 16.0))?;
+        // for (index, mob) in game.mobs.npcs.iter().enumerate() {
+        //     draw_str(&format!("Guard: {}", mob.guard), spritebatch, Point2::new(dest.x + 18.0, dest.y + 32.0 + 16.0 * index as f32))?;
+        // }
         Ok(())
     }
 }

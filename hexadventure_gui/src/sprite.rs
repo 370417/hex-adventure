@@ -7,7 +7,7 @@ use image::GenericImage;
 use image::ImageFormat;
 
 use hexadventure::level::tile::Terrain;
-use hexadventure::mob::{self, Mob};
+use hexadventure::world::mob::Species;
 
 pub enum Sprite {
     Wall,
@@ -20,6 +20,7 @@ pub enum Sprite {
     Entrance,
     Exit,
     Water,
+    Skeleton2,
 }
 
 impl From<Terrain> for Sprite {
@@ -37,16 +38,9 @@ impl From<Terrain> for Sprite {
     }
 }
 
-pub fn sprite_from_mob(mob: &Mob) -> Sprite {
-    match mob {
-        Mob {
-            kind: mob::Type::Hero,
-            ..
-        } => Sprite::Player,
-        Mob {
-            kind: mob::Type::Skeleton,
-            ..
-        } => Sprite::Archer,
+pub fn sprite_from_species(species: &Species) -> Sprite {
+    match species {
+        Species::Hero => Sprite::Player,
     }
 }
 
@@ -98,6 +92,7 @@ pub fn sprite_src(sprite: Sprite) -> Rect {
         Water => (5, 0),
         Player => (0, 1),
         Archer => (1, 1),
+        Skeleton2 => (3, 1),
     };
     let w = 16;
     let h = 24;

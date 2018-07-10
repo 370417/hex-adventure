@@ -10,8 +10,7 @@ pub mod tile;
 use self::populate::populate;
 
 use self::tile::{Terrain, Tile};
-use grid::Grid;
-use mob::Mob;
+use prelude::*;
 use rand::IsaacRng;
 use std::mem::replace;
 

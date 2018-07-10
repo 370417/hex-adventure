@@ -1,3 +1,5 @@
+//! Contains everything that mutates game state
+
 use fov::fov;
 use grid::{self, Direction, Grid, Pos};
 use level::tile::{FullTileView, Tile, TileView};
@@ -9,7 +11,7 @@ use std::ops::{Index, IndexMut};
 #[derive(Serialize, Deserialize)]
 pub struct Mobs {
     pub player: Mob,
-    npcs: Vec<Mob>,
+    pub npcs: Vec<Mob>,
 }
 
 impl Mobs {
@@ -47,7 +49,7 @@ impl IndexMut<MobId> for Mobs {
     }
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MobId {
     Player,
     Npc(usize),
@@ -55,21 +57,23 @@ pub enum MobId {
 
 #[derive(Serialize, Deserialize)]
 pub struct Game {
-    pub(crate) level: Grid<Tile>,
+    pub level: Grid<Tile>,
     architect: Architect,
-    pub(crate) level_memory: Grid<TileView>,
-    pub(crate) mobs: Mobs,
+    pub level_memory: Grid<TileView>,
+    pub mobs: Mobs,
     animated: Vec<()>,
 }
 
 impl Game {
     // returns # of ticks until player's turn
     pub fn tick(&mut self) -> u32 {
+        MobId::Player.post_act(self);
         // can't use a for loop because self.mobs might be mutated during the loop
         let mut i = 0;
         while i < self.mobs.npcs.len() {
             let mob = MobId::Npc(i);
             mob.act(self);
+            mob.post_act(self);
             i += 1;
         }
         0
@@ -86,7 +90,7 @@ impl Game {
             facing: Direction::East,
             kind: mob::Type::Hero,
             guard: 100,
-            guard_recovery: Vec::new(),
+            guard_recovery: 0,
         };
         let mobs = Mobs::new(player, npcs);
         level[player_pos].mob_id = Some(MobId::Player);
@@ -102,10 +106,6 @@ impl Game {
         game
     }
 
-    // pub fn positions(&self) -> impl Iterator<Item = Pos> {
-    //     self.level.positions()
-    // }
-
     pub fn tile(&self, pos: Pos) -> FullTileView {
         match self.level_memory[pos] {
             TileView::Seen => FullTileView::Seen {
@@ -118,10 +118,6 @@ impl Game {
             TileView::Remembered(terrain) => FullTileView::Remembered(terrain),
             TileView::None => FullTileView::None,
         }
-    }
-
-    pub fn player_guard(&self) -> u32 {
-        self.mobs.player.guard
     }
 
     pub fn walk(&mut self, direction: Direction) {
@@ -151,6 +147,38 @@ impl Game {
             |pos| level[pos].terrain.transparent(),
             |pos| memory[pos] = TileView::Seen,
         );
+    }
+
+    pub fn descend(&mut self, direction: Direction) {
+        self.mobs.player.guard = 100;
+        let (level, npcs) = self.architect.generate();
+        self.level = level;
+        let player_pos = self.mobs.player.pos;
+        let opposite: Pos = player_pos + direction * 2;
+        let left: Pos = player_pos + direction.rotate(-1);
+        let right: Pos = player_pos + direction.rotate(1);
+        if self.level[player_pos].terrain.passable() {
+            self.level[player_pos].mob_id = Some(MobId::Player);
+            self.mobs.player.facing = direction.rotate(3);
+        } else if self.level[opposite].terrain.passable() {
+            self.level[opposite].mob_id = Some(MobId::Player);
+            self.mobs.player.pos = opposite;
+        } else if self.level[left].terrain.passable() {
+            self.level[left].mob_id = Some(MobId::Player);
+            self.mobs.player.pos = left;
+            self.mobs.player.facing = direction.rotate(-2);
+        } else if self.level[right].terrain.passable() {
+            self.level[right].mob_id = Some(MobId::Player);
+            self.mobs.player.pos = right;
+            self.mobs.player.facing = direction.rotate(2);
+        } else {
+            panic!("Could not find spot to place player");
+        }
+        self.mobs.npcs = npcs;
+        for pos in grid::positions() {
+            self.level_memory[pos] = TileView::None;
+        }
+        self.next_turn();
     }
 }
 
