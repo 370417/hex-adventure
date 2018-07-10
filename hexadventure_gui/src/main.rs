@@ -12,18 +12,18 @@ use ggez::event;
 use ggez::event::{EventHandler, Keycode, Mod};
 use ggez::graphics;
 use ggez::graphics::spritebatch::SpriteBatch;
-use ggez::graphics::{DrawParam, Point2, Color};
+use ggez::graphics::{Color, DrawParam, Point2};
 use ggez::{Context, GameResult};
 
 extern crate image;
 
 extern crate hexadventure;
-use hexadventure::prelude::*;
 use hexadventure::grid::{pos_to_location, Location};
 use hexadventure::level::tile::{Tile, TileView};
+use hexadventure::prelude::*;
 
 mod sprite;
-use sprite::{color_from_tile, darken, sprite_from_species, Sprite, sprite_src};
+use sprite::{color_from_tile, darken, sprite_from_species, sprite_src, Sprite};
 
 mod side;
 
@@ -108,7 +108,7 @@ impl MainState {
             scale: if flip {
                 Point2::new(-1.0, 1.0)
             } else {
-                Point2::new(-1.0, 1.0)  
+                Point2::new(1.0, 1.0)
             },
             ..Default::default()
         });
@@ -142,30 +142,18 @@ impl EventHandler for MainState {
                             Direction::West | Direction::Northwest | Direction::Southwest => false,
                             Direction::East | Direction::Northeast | Direction::Southeast => true,
                         };
-                        self.draw_tile(
-                            sprite,
-                            pos,
-                            graphics::WHITE,
-                            flip,
-                        );
+                        self.draw_tile(sprite, pos, graphics::WHITE, flip);
                     } else {
                         let terrain = self.world.level[pos].terrain;
-                        self.draw_tile(
-                            Sprite::from(terrain),
-                            pos,
-                            color_from_tile(terrain),
-                            false,
-                        );
+                        self.draw_tile(Sprite::from(terrain), pos, color_from_tile(terrain), false);
                     }
                 }
-                TileView::Remembered(terrain) => {
-                    self.draw_tile(
-                        Sprite::from(terrain),
-                        pos,
-                        darken(color_from_tile(terrain)),
-                        false,
-                    )
-                }
+                TileView::Remembered(terrain) => self.draw_tile(
+                    Sprite::from(terrain),
+                    pos,
+                    darken(color_from_tile(terrain)),
+                    false,
+                ),
                 TileView::None => {}
             };
             // match self.game.tile(pos) {

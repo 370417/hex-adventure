@@ -1,6 +1,6 @@
 use super::basic::calc_shuffled_positions;
 use super::tile::Terrain;
-use fov::fov;
+use fov::calc_fov;
 use grid::{Grid, Pos};
 use rand::Rng;
 
@@ -22,6 +22,6 @@ fn calc_fov_size(level: &mut Grid<Terrain>, pos: Pos) -> u32 {
         _ => false,
     };
     let mut fov_size = 0;
-    fov(pos, transparent, |_| fov_size += 1);
+    calc_fov(pos, transparent, |_| fov_size += 1);
     fov_size
 }

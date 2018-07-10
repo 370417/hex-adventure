@@ -84,7 +84,7 @@ impl Pos {
         }
     }
 
-    pub fn ring(self, size: u32) -> impl Iterator<Item=Pos> {
+    pub fn ring(self, size: u32) -> impl Iterator<Item = Pos> {
         (0..size * 6).map(move |i| {
             let major = i / size;
             let minor = i % size;

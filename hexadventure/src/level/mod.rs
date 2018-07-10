@@ -8,11 +8,11 @@ mod populate;
 pub mod tile;
 
 use self::populate::populate;
-
 use self::tile::{Terrain, Tile};
 use prelude::*;
 use rand::IsaacRng;
 use std::mem::replace;
+use world::mob::Npcs;
 
 /// Responsible for generating levels.
 #[derive(Serialize, Deserialize)]
@@ -31,7 +31,7 @@ impl Architect {
         Architect { rng, next_level }
     }
 
-    pub fn generate(&mut self) -> (Grid<Tile>, Vec<Mob>) {
+    pub fn generate(&mut self) -> (Grid<Tile>, Npcs) {
         let new_next_level = exit::add_exit(&mut self.next_level, &mut self.rng);
         lake::add_lakes(&mut self.next_level, &mut self.rng);
         // grass::add_grass(next_level, &mut self.rng);

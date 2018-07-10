@@ -9,14 +9,14 @@ pub mod floodfill;
 pub mod fov;
 // pub mod game;
 pub mod grid;
-pub mod world;
 pub mod level;
 pub mod line;
 mod minheap;
 mod util;
+pub mod world;
 
 pub mod prelude {
-    pub use world::World;
-    pub use grid::{self, Pos, Grid, Direction};
+    pub use grid::{self, Direction, Grid, Pos};
     pub use world::mob::{Mob, MobId};
+    pub use world::World;
 }

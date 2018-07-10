@@ -14,18 +14,18 @@ pub struct Mob {
 }
 
 /// The identity of a mob
-/// 
+///
 /// Mob identites are used instead of regular rust references to maintain
 /// interior mutability. Instead of using Cell or Refcell, this interior
 /// mutability is achieved with a central mob owner whose mutability follows
 /// regular borrow checker rules.
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct MobId {
     inner: InnerMobId,
 }
 
 /// A vector that owns all non-player mobs
-/// 
+///
 /// This struct wraps a vec in order to keep in private, preventing access
 /// of mobs without using their id.
 #[derive(Serialize, Deserialize)]
@@ -39,7 +39,7 @@ pub enum Species {
 }
 
 /// Identifies a mob
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
 enum InnerMobId {
     Player,
     Npc(usize),
@@ -66,9 +66,7 @@ impl MobId {
 impl Npcs {
     /// Creates a new empty Npcs struct
     pub fn new() -> Self {
-        Npcs {
-            npcs: Vec::new(),
-        }
+        Npcs { npcs: Vec::new() }
     }
 
     /// Inserts a new mob and returns its id
@@ -81,7 +79,7 @@ impl Npcs {
 
 impl World {
     /// Iterates over each npc
-    /// 
+    ///
     /// Since the closure needs to be able to borrow World mutably, this
     /// function can't borrow MobOwner. That's why we use a while loop instead
     /// of an iterator and why this function is implemented for World.

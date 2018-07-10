@@ -11,7 +11,7 @@ use num::traits::identities::{One, Zero};
 /// Calculates field of view.
 ///
 /// All this does is call scan on each of the six sextants.
-pub fn fov<F, G>(center: Pos, transparent: F, mut reveal: G)
+pub fn calc_fov<F, G>(center: Pos, transparent: F, mut reveal: G)
 where
     F: Fn(Pos) -> bool,
     G: FnMut(Pos),
