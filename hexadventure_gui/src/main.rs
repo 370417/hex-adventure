@@ -1,8 +1,6 @@
 extern crate bincode;
 use bincode::{deserialize_from, serialize_into};
 
-// todo: running
-
 extern crate app_dirs;
 use app_dirs::{app_root, AppDataType, AppInfo};
 
@@ -19,8 +17,10 @@ extern crate image;
 
 extern crate hexadventure;
 use hexadventure::grid::{pos_to_location, Location};
-use hexadventure::level::tile::{Tile, TileView};
+use hexadventure::level::tile::TileView;
 use hexadventure::prelude::*;
+use hexadventure::world::action;
+use hexadventure::world::mob::PLAYER_ID;
 
 mod sprite;
 use sprite::{color_from_tile, darken, sprite_from_species, sprite_src, Sprite};
@@ -135,7 +135,7 @@ impl EventHandler for MainState {
         )?;
         for pos in grid::positions() {
             match self.world.fov[pos] {
-                TileView::Seen => {
+                TileView::Visible => {
                     if let Some(mob_id) = self.world.level[pos].mob_id {
                         let sprite = sprite_from_species(&self.world[mob_id].species);
                         let flip = match self.world[mob_id].facing {
@@ -156,48 +156,6 @@ impl EventHandler for MainState {
                 ),
                 TileView::None => {}
             };
-            // match self.game.tile(pos) {
-            //     FullTileView::Seen { terrain, mob: None } => {
-            //         self.spritebatch.add(DrawParam {
-            //             src: sprite::sprite_src(Sprite::from(terrain)),
-            //             dest: self.dests[pos],
-            //             color: Some(color_from_tile(terrain)),
-            //             ..Default::default()
-            //         });
-            //     }
-            //     FullTileView::Seen { mob: Some(mob), .. } => {
-            //         self.spritebatch.add(DrawParam {
-            //             src: sprite::sprite_src(sprite_from_mob(mob)),
-            //             dest: self.dests[pos],
-            //             offset: match mob.facing {
-            //                 Direction::West | Direction::Northwest | Direction::Southwest => {
-            //                     Point2::new(0.0, 0.0)
-            //                 }
-            //                 Direction::East | Direction::Northeast | Direction::Southeast => {
-            //                     Point2::new(1.0, 0.0)
-            //                 }
-            //             },
-            //             scale: match mob.facing {
-            //                 Direction::West | Direction::Northwest | Direction::Southwest => {
-            //                     Point2::new(1.0, 1.0)
-            //                 }
-            //                 Direction::East | Direction::Northeast | Direction::Southeast => {
-            //                     Point2::new(-1.0, 1.0)
-            //                 }
-            //             },
-            //             ..Default::default()
-            //         });
-            //     }
-            //     FullTileView::Remembered(terrain) => {
-            //         self.spritebatch.add(DrawParam {
-            //             src: sprite::sprite_src(Sprite::from(terrain)),
-            //             dest: self.dests[pos],
-            //             color: Some(darken(color_from_tile(terrain))),
-            //             ..Default::default()
-            //         });
-            //     }
-            //     FullTileView::None => (),
-            // }
         }
         graphics::draw(ctx, &self.spritebatch, Point2::new(0.0, 0.0), 0.0)?;
         graphics::present(ctx);
@@ -211,119 +169,142 @@ impl EventHandler for MainState {
         _keymod: Mod,
         _repeat: bool,
     ) {
-        // match keycode {
-        //     Keycode::W => self.game.walk(Direction::Northwest),
-        //     Keycode::E => self.game.walk(Direction::Northeast),
-        //     Keycode::A => self.game.walk(Direction::West),
-        //     Keycode::D => self.game.walk(Direction::East),
-        //     Keycode::Z => self.game.walk(Direction::Southwest),
-        //     Keycode::X => self.game.walk(Direction::Southeast),
-        //     Keycode::S => self.game.rest(),
-        //     Keycode::Up => {
-        //         self.pressed_arrow = match self.pressed_arrow {
-        //             Arrow::None | Arrow::Up => Arrow::Up,
-        //             Arrow::Down => Arrow::None,
-        //             Arrow::Left { .. } => {
-        //                 self.game.walk(Direction::Northwest);
-        //                 Arrow::Left { diagonal: true }
-        //             }
-        //             Arrow::Right { .. } => {
-        //                 self.game.walk(Direction::Northeast);
-        //                 Arrow::Right { diagonal: true }
-        //             }
-        //         };
-        //     }
-        //     Keycode::Down => {
-        //         self.pressed_arrow = match self.pressed_arrow {
-        //             Arrow::None | Arrow::Down => Arrow::Down,
-        //             Arrow::Up => Arrow::None,
-        //             Arrow::Left { .. } => {
-        //                 self.game.walk(Direction::Southwest);
-        //                 Arrow::Left { diagonal: true }
-        //             }
-        //             Arrow::Right { .. } => {
-        //                 self.game.walk(Direction::Southeast);
-        //                 Arrow::Right { diagonal: true }
-        //             }
-        //         }
-        //     }
-        //     Keycode::Left => {
-        //         self.pressed_arrow = match self.pressed_arrow {
-        //             Arrow::None => Arrow::Left { diagonal: false },
-        //             Arrow::Left { diagonal } => Arrow::Left { diagonal },
-        //             Arrow::Right { .. } => Arrow::None,
-        //             Arrow::Up => {
-        //                 self.game.walk(Direction::Northwest);
-        //                 Arrow::Up
-        //             }
-        //             Arrow::Down => {
-        //                 self.game.walk(Direction::Southwest);
-        //                 Arrow::Down
-        //             }
-        //         };
-        //     }
-        //     Keycode::Right => {
-        //         self.pressed_arrow = match self.pressed_arrow {
-        //             Arrow::None => Arrow::Right { diagonal: false },
-        //             Arrow::Right { diagonal } => Arrow::Right { diagonal },
-        //             Arrow::Left { .. } => Arrow::None,
-        //             Arrow::Up => {
-        //                 self.game.walk(Direction::Northeast);
-        //                 Arrow::Up
-        //             }
-        //             Arrow::Down => {
-        //                 self.game.walk(Direction::Southeast);
-        //                 Arrow::Down
-        //             }
-        //         };
-        //     }
-        //     _ => (),
-        // }
-        // self.redraw = true;
+        let action = match keycode {
+            Keycode::W => Some(Action::Walk(Direction::Northwest)),
+            Keycode::E => Some(Action::Walk(Direction::Northeast)),
+            Keycode::A => Some(Action::Walk(Direction::West)),
+            Keycode::D => Some(Action::Walk(Direction::East)),
+            Keycode::Z => Some(Action::Walk(Direction::Southwest)),
+            Keycode::X => Some(Action::Walk(Direction::Southeast)),
+            Keycode::S => Some(Action::Rest),
+            Keycode::Up => {
+                let (action, pressed_arrow) = match self.pressed_arrow {
+                    Arrow::None | Arrow::Up => (None, Arrow::Up),
+                    Arrow::Down => (None, Arrow::None),
+                    Arrow::Left { .. } => (
+                        Some(Action::Walk(Direction::Northwest)),
+                        Arrow::Left { diagonal: true },
+                    ),
+                    Arrow::Right { .. } => (
+                        Some(Action::Walk(Direction::Northeast)),
+                        Arrow::Right { diagonal: true },
+                    ),
+                };
+                self.pressed_arrow = pressed_arrow;
+                action
+            }
+            Keycode::Down => {
+                let (action, pressed_arrow) = match self.pressed_arrow {
+                    Arrow::None | Arrow::Down => (None, Arrow::Down),
+                    Arrow::Up => (None, Arrow::None),
+                    Arrow::Left { .. } => (
+                        Some(Action::Walk(Direction::Southwest)),
+                        Arrow::Left { diagonal: true },
+                    ),
+                    Arrow::Right { .. } => (
+                        Some(Action::Walk(Direction::Southeast)),
+                        Arrow::Right { diagonal: true },
+                    ),
+                };
+                self.pressed_arrow = pressed_arrow;
+                action
+            }
+            Keycode::Left => {
+                let (action, pressed_arrow) = match self.pressed_arrow {
+                    Arrow::None => (None, Arrow::Left { diagonal: false }),
+                    Arrow::Left { diagonal } => (None, Arrow::Left { diagonal }),
+                    Arrow::Right { .. } => (None, Arrow::None),
+                    Arrow::Up => (Some(Action::Walk(Direction::Northwest)), Arrow::Up),
+                    Arrow::Down => (Some(Action::Walk(Direction::Southwest)), Arrow::Down),
+                };
+                self.pressed_arrow = pressed_arrow;
+                action
+            }
+            Keycode::Right => {
+                let (action, pressed_arrow) = match self.pressed_arrow {
+                    Arrow::None => (None, Arrow::Right { diagonal: false }),
+                    Arrow::Right { diagonal } => (None, Arrow::Right { diagonal }),
+                    Arrow::Left { .. } => (None, Arrow::None),
+                    Arrow::Up => (Some(Action::Walk(Direction::Northeast)), Arrow::Up),
+                    Arrow::Down => (Some(Action::Walk(Direction::Southeast)), Arrow::Down),
+                };
+                self.pressed_arrow = pressed_arrow;
+                action
+            }
+            _ => None,
+        };
+        if let Some(action) = action {
+            let success = match action {
+                Action::Rest => action::rest(PLAYER_ID, &mut self.world),
+                Action::Walk(direction) => action::walk(PLAYER_ID, direction, &mut self.world),
+            };
+            if success.is_ok() {
+                self.world.tick();
+            }
+            self.redraw = true;
+        }
     }
 
     fn key_up_event(&mut self, _ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
-        // match keycode {
-        //     Keycode::Up => {
-        //         self.pressed_arrow = match self.pressed_arrow {
-        //             Arrow::None | Arrow::Up | Arrow::Down => Arrow::None,
-        //             Arrow::Left { diagonal } => Arrow::Left { diagonal },
-        //             Arrow::Right { diagonal } => Arrow::Right { diagonal },
-        //         };
-        //     }
-        //     Keycode::Down => {
-        //         self.pressed_arrow = match self.pressed_arrow {
-        //             Arrow::None | Arrow::Down | Arrow::Up => Arrow::None,
-        //             Arrow::Left { diagonal } => Arrow::Left { diagonal },
-        //             Arrow::Right { diagonal } => Arrow::Right { diagonal },
-        //         }
-        //     }
-        //     Keycode::Left => {
-        //         self.pressed_arrow = match self.pressed_arrow {
-        //             Arrow::Left { diagonal: false } => {
-        //                 self.game.walk(Direction::West);
-        //                 Arrow::None
-        //             }
-        //             Arrow::Up => Arrow::Up,
-        //             Arrow::Down => Arrow::Down,
-        //             _ => Arrow::None,
-        //         }
-        //     }
-        //     Keycode::Right => {
-        //         self.pressed_arrow = match self.pressed_arrow {
-        //             Arrow::Right { diagonal: false } => {
-        //                 self.game.walk(Direction::East);
-        //                 Arrow::None
-        //             }
-        //             Arrow::Up => Arrow::Up,
-        //             Arrow::Down => Arrow::Down,
-        //             _ => Arrow::None,
-        //         };
-        //     }
-        //     _ => (),
-        // }
-        // self.redraw = true;
+        let action = match keycode {
+            Keycode::Up => {
+                self.pressed_arrow = match self.pressed_arrow {
+                    Arrow::None | Arrow::Up | Arrow::Down => Arrow::None,
+                    Arrow::Left { diagonal } => Arrow::Left { diagonal },
+                    Arrow::Right { diagonal } => Arrow::Right { diagonal },
+                };
+                None
+            }
+            Keycode::Down => {
+                self.pressed_arrow = match self.pressed_arrow {
+                    Arrow::None | Arrow::Down | Arrow::Up => Arrow::None,
+                    Arrow::Left { diagonal } => Arrow::Left { diagonal },
+                    Arrow::Right { diagonal } => Arrow::Right { diagonal },
+                };
+                None
+            }
+            Keycode::Left => {
+                let (action, pressed_arrow) = match self.pressed_arrow {
+                    Arrow::Left { diagonal: false } => {
+                        (Some(Action::Walk(Direction::West)), Arrow::None)
+                    }
+                    Arrow::Up => (None, Arrow::Up),
+                    Arrow::Down => (None, Arrow::Down),
+                    _ => (None, Arrow::None),
+                };
+                self.pressed_arrow = pressed_arrow;
+                action
+            }
+            Keycode::Right => {
+                let (action, pressed_arrow) = match self.pressed_arrow {
+                    Arrow::Right { diagonal: false } => {
+                        (Some(Action::Walk(Direction::East)), Arrow::None)
+                    }
+                    Arrow::Up => (None, Arrow::Up),
+                    Arrow::Down => (None, Arrow::Down),
+                    _ => (None, Arrow::None),
+                };
+                self.pressed_arrow = pressed_arrow;
+                action
+            }
+            _ => None,
+        };
+        if let Some(action) = action {
+            let success = match action {
+                Action::Rest => action::rest(PLAYER_ID, &mut self.world),
+                Action::Walk(direction) => action::walk(PLAYER_ID, direction, &mut self.world),
+            };
+            if success.is_ok() {
+                self.world.tick();
+            }
+            self.redraw = true;
+        }
     }
+}
+enum Action {
+    Rest,
+    Walk(Direction),
+    // MeleeAttack(Direction),
 }
 
 fn main() {

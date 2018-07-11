@@ -3,6 +3,7 @@ use ggez::graphics::{Color, DrawMode, DrawParam, Drawable, Mesh, Point2, Rect};
 use ggez::{Context, GameResult};
 use grid;
 use hexadventure::prelude::*;
+use hexadventure::world::mob;
 
 pub const WIDTH: u32 = 24;
 
@@ -37,7 +38,31 @@ impl Sidebar {
                 ..Default::default()
             },
         )?;
-        // draw_str(&format!("Guard: {}", game.mobs.player.guard), spritebatch, Point2::new(dest.x + 18.0, dest.y + 16.0))?;
+        draw_str(
+            &format!("Health: {}", world.player.health),
+            spritebatch,
+            Point2::new(dest.x + 18.0, dest.y + 16.0),
+        )?;
+        draw_str(
+            &format!("Guard: {}", world.player.guard),
+            spritebatch,
+            Point2::new(dest.x + 18.0, dest.y + 32.0),
+        )?;
+        let mut i = 0;
+        mob::for_each(world, |mob_id| {
+            let mob = &world[mob_id];
+            draw_str(
+                &format!("Health: {}", mob.health),
+                spritebatch,
+                Point2::new(dest.x + 18.0, dest.y + 48.0 + 32.0 * i as f32),
+            );
+            draw_str(
+                &format!("Guard: {}", mob.guard),
+                spritebatch,
+                Point2::new(dest.x + 18.0, dest.y + 64.0 + 32.0 * i as f32),
+            );
+            i += 1;
+        });
         // for (index, mob) in game.mobs.npcs.iter().enumerate() {
         //     draw_str(&format!("Guard: {}", mob.guard), spritebatch, Point2::new(dest.x + 18.0, dest.y + 32.0 + 16.0 * index as f32))?;
         // }

@@ -7,6 +7,7 @@ mod lake;
 mod populate;
 pub mod tile;
 
+pub use self::populate::place_mob;
 use self::populate::populate;
 use self::tile::{Terrain, Tile};
 use prelude::*;

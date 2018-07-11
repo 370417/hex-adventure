@@ -11,6 +11,12 @@ pub struct Mob {
     pub pos: Pos,
     pub facing: Direction,
     pub species: Species,
+    pub guard: u32,
+    pub max_guard: u32,
+    pub guard_recovery: u32,
+    pub health: u32,
+    pub max_health: u32,
+    pub alive: bool,
 }
 
 /// The identity of a mob
@@ -36,6 +42,7 @@ pub struct Npcs {
 #[derive(Serialize, Deserialize)]
 pub enum Species {
     Hero,
+    Skeleton,
 }
 
 /// Identifies a mob
@@ -51,11 +58,30 @@ impl Mob {
             pos,
             facing: Direction::East,
             species,
+            guard: 100,
+            max_guard: 100,
+            guard_recovery: 0,
+            health: 100,
+            max_health: 100,
+            alive: true,
         }
     }
 }
 
 impl MobId {
+    pub fn is_player(&self) -> bool {
+        match self.inner {
+            InnerMobId::Player => true,
+            InnerMobId::Npc(_) => false,
+        }
+    }
+
+    pub fn die(self, world: &mut World) {
+        let mob_pos = world[self].pos;
+        world.level[mob_pos].mob_id = None;
+        world[self].alive = false;
+    }
+
     fn new(index: usize) -> Self {
         MobId {
             inner: InnerMobId::Npc(index),
@@ -77,22 +103,32 @@ impl Npcs {
     }
 }
 
-impl World {
-    /// Iterates over each npc
-    ///
-    /// Since the closure needs to be able to borrow World mutably, this
-    /// function can't borrow MobOwner. That's why we use a while loop instead
-    /// of an iterator and why this function is implemented for World.
-    pub fn for_each_npc<F>(&mut self, mut f: F)
-    where
-        F: FnMut(MobId, &mut World),
-    {
-        let mut i = 0;
-        while i < self.npcs.npcs.len() {
-            let id = MobId::new(i);
-            f(id, self);
-            i += 1;
-        }
+/// Iterates over each npc
+///
+/// Since the closure needs to be able to borrow World mutably, this
+/// function can't borrow MobOwner. That's why we use a while loop instead
+/// of an iterator and why this function is implemented for World.
+pub fn for_each_mut<F>(world: &mut World, mut f: F)
+where
+    F: FnMut(MobId, &mut World),
+{
+    let mut i = 0;
+    while i < world.npcs.npcs.len() {
+        let id = MobId::new(i);
+        f(id, world);
+        i += 1;
+    }
+}
+
+pub fn for_each<F>(world: &World, mut f: F)
+where
+    F: FnMut(MobId),
+{
+    let mut i = 0;
+    while i < world.npcs.npcs.len() {
+        let id = MobId::new(i);
+        f(id);
+        i += 1;
     }
 }
 

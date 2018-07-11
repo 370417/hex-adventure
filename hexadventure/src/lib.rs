@@ -7,7 +7,6 @@ extern crate num;
 mod astar;
 pub mod floodfill;
 pub mod fov;
-// pub mod game;
 pub mod grid;
 pub mod level;
 pub mod line;

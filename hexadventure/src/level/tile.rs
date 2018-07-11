@@ -20,7 +20,7 @@ pub enum Terrain {
 
 #[derive(Serialize, Deserialize, PartialEq, Eq)]
 pub enum TileView {
-    Seen,
+    Visible,
     Remembered(Terrain),
     None,
 }
@@ -54,4 +54,13 @@ impl Terrain {
     // pub fn solid(&self) -> bool {
     //     !self.passable() && !self.transparent()
     // }
+}
+
+impl TileView {
+    pub fn is_visible(&self) -> bool {
+        match self {
+            TileView::Visible => true,
+            _ => false,
+        }
+    }
 }
