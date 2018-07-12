@@ -4,7 +4,24 @@ use prelude::*;
 use rand::{thread_rng, Rng};
 use world::mob::PLAYER_ID;
 
-pub fn rest(_mob_id: MobId, _world: &mut World) -> Result<(), ()> {
+pub fn rest(mob_id: MobId, world: &mut World) -> Result<(), ()> {
+    fn enemy_visible(pos: Pos, world: &mut World) -> bool {
+        if world.fov[pos].is_visible() {
+            if let Some(mob_id) = world.level[pos].mob_id {
+                !mob_id.is_player()
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    if mob_id.is_player() {
+        if !grid::positions().any(|pos| enemy_visible(pos, world)) {
+            world.player.guard = world.player.max_guard;
+        }
+    }
     Ok(())
 }
 
