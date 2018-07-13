@@ -2,7 +2,7 @@ use level::place_mob;
 use level::tile::{Terrain, TileView};
 use prelude::*;
 use rand::{thread_rng, Rng};
-use world::mob::PLAYER_ID;
+use world::mob::{PLAYER_ID, mob_guard, Species};
 
 pub fn rest(mob_id: MobId, world: &mut World) -> Result<(), ()> {
     fn enemy_visible(pos: Pos, world: &mut World) -> bool {
@@ -19,7 +19,7 @@ pub fn rest(mob_id: MobId, world: &mut World) -> Result<(), ()> {
 
     if mob_id.is_player() {
         if !grid::positions().any(|pos| enemy_visible(pos, world)) {
-            world.player.guard = world.player.max_guard;
+            world.player.guard = mob_guard(world.player.species);
         }
     }
     Ok(())
@@ -29,7 +29,7 @@ pub fn walk(mob_id: MobId, direction: Direction, world: &mut World) -> Result<()
     let target_pos = world[mob_id].pos + direction;
     if world.level[target_pos].mob_id.is_some() {
         attack_melee(mob_id, direction, world)
-    } else if world.level[target_pos].terrain.passable() {
+    } else if world.level[target_pos].terrain.can_move(&world[mob_id]) {
         if world[mob_id].guard_recovery > 0 && world[mob_id].facing == direction.rotate(3) {
             retreat_unchecked(mob_id, direction, world)
         } else {
@@ -58,8 +58,11 @@ fn attack_melee(mob_id: MobId, direction: Direction, world: &mut World) -> Resul
         if mob_id.is_player() || target.is_player() {
             let damage = thread_rng().gen_range(1, 7) + thread_rng().gen_range(1, 7);
             let guard = world[target].guard;
-            if damage <= guard {
+            if damage < guard {
                 world[target].guard -= damage;
+                if world[target].facing == direction.rotate(3) {
+                    world[target].guard_recovery = damage / 2;
+                }
             } else {
                 let damage = damage - world[target].guard;
                 world[target].guard = 0;
@@ -69,9 +72,6 @@ fn attack_melee(mob_id: MobId, direction: Direction, world: &mut World) -> Resul
                     world[target].health = 0;
                     target.die(world);
                 }
-            }
-            if world[target].facing == direction.rotate(3) {
-                world[target].guard_recovery = damage / 2;
             }
             world[mob_id].facing = direction;
             Ok(())

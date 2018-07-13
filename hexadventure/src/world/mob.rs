@@ -12,11 +12,11 @@ pub struct Mob {
     pub facing: Direction,
     pub species: Species,
     pub guard: u32,
-    pub max_guard: u32,
     pub guard_recovery: u32,
     pub health: u32,
-    pub max_health: u32,
     pub alive: bool,
+    /// last seen position of the thing this mob is chasing
+    pub target: Option<Pos>,
 }
 
 /// The identity of a mob
@@ -39,10 +39,11 @@ pub struct Npcs {
     npcs: Vec<Mob>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum Species {
     Hero,
-    Skeleton,
+    Bat,
+    Rat,
 }
 
 /// Identifies a mob
@@ -58,12 +59,18 @@ impl Mob {
             pos,
             facing: Direction::East,
             species,
-            guard: 100,
-            max_guard: 100,
+            guard: mob_guard(species),
             guard_recovery: 0,
-            health: 100,
-            max_health: 100,
+            health: mob_health(species),
             alive: true,
+            target: None,
+        }
+    }
+
+    pub fn can_fly(&self) -> bool {
+        match self.species {
+            Species::Bat => true,
+            _ => false,
         }
     }
 }
@@ -129,6 +136,22 @@ where
         let id = MobId::new(i);
         f(id);
         i += 1;
+    }
+}
+
+pub fn mob_health(species: Species) -> u32 {
+    match species {
+        Species::Hero => 100,
+        Species::Bat => 40,
+        Species::Rat => 40,
+    }
+}
+
+pub fn mob_guard(species: Species) -> u32 {
+    match species {
+        Species::Hero => 100,
+        Species::Bat => 40,
+        Species::Rat => 40,
     }
 }
 

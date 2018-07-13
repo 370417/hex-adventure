@@ -51,9 +51,21 @@ impl Terrain {
         }
     }
 
-    // pub fn solid(&self) -> bool {
-    //     !self.passable() && !self.transparent()
-    // }
+    pub fn flyable(&self) -> bool {
+        use self::Terrain::*;
+        match *self {
+            Wall | Entrance | Exit => false,
+            _ => true,
+        }
+    }
+
+    pub fn can_move(&self, mob: &Mob) -> bool {
+        if mob.can_fly() {
+            self.flyable()
+        } else {
+            self.passable()
+        }
+    }
 }
 
 impl TileView {

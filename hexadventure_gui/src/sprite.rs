@@ -20,6 +20,8 @@ pub enum Sprite {
     Exit,
     Water,
     Skeleton,
+    Rat,
+    Bat,
 }
 
 impl From<Terrain> for Sprite {
@@ -40,7 +42,8 @@ impl From<Terrain> for Sprite {
 pub fn sprite_from_species(species: &Species) -> Sprite {
     match species {
         Species::Hero => Sprite::Player,
-        Species::Skeleton => Sprite::Skeleton,
+        Species::Bat => Sprite::Bat,
+        Species::Rat => Sprite::Rat,
     }
 }
 
@@ -92,8 +95,10 @@ pub fn sprite_src(sprite: Sprite) -> Rect {
         Water => (5, 0),
         Player => (0, 1),
         Skeleton => (3, 1),
+        Rat => (5, 1),
+        Bat => (6, 1),
     };
-    let w = 16;
+    let w = 18;
     let h = 24;
     let x = x * w;
     let y = 48 + y * h;

@@ -21,11 +21,15 @@ pub(super) fn populate<R: Rng>(level: Grid<Terrain>, rng: &mut R) -> (Grid<Tile>
     let mut npc_count = 0;
     for pos in positions {
         if level[pos].terrain.passable() && !near_entrance(pos, &level) {
-            let mob = Mob::new(pos, Species::Skeleton);
+            let species = match npc_count % 2 {
+                0 => Species::Bat,
+                _ => Species::Rat,
+            };
+            let mob = Mob::new(pos, species);
             let mob_id = npcs.insert(mob);
             level[pos].mob_id = Some(mob_id);
             npc_count += 1;
-            if npc_count > 1 {
+            if npc_count >= 4 {
                 break;
             }
         }
