@@ -6,8 +6,7 @@ use app_dirs::{app_root, AppDataType, AppInfo};
 
 extern crate ggez;
 use ggez::conf::{Conf, WindowMode, WindowSetup};
-use ggez::event;
-use ggez::event::{EventHandler, Keycode, Mod};
+use ggez::event::{EventHandler, Keycode, Mod, self};
 use ggez::graphics;
 use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::graphics::{Color, DrawParam, Point2};
@@ -166,7 +165,7 @@ impl EventHandler for MainState {
         &mut self,
         _ctx: &mut Context,
         keycode: Keycode,
-        _keymod: Mod,
+        keymod: Mod,
         _repeat: bool,
     ) {
         let action = match keycode {
@@ -231,10 +230,17 @@ impl EventHandler for MainState {
                 self.pressed_arrow = pressed_arrow;
                 action
             }
+            Keycode::R => {
+                if shift_pressed(keymod) {
+                    self.world = World::new();
+                    self.redraw = true;
+                }
+                None
+            }
             _ => None,
         };
         if let Some(action) = action {
-            save_world(&self.world);
+            let _ = save_world(&self.world);
             let success = match action {
                 Action::Rest => action::rest(PLAYER_ID, &mut self.world),
                 Action::Walk(direction) => action::walk(PLAYER_ID, direction, &mut self.world),
@@ -302,6 +308,11 @@ impl EventHandler for MainState {
         }
     }
 }
+
+fn shift_pressed(keymod: Mod) -> bool {
+    keymod.intersects(event::LSHIFTMOD) || keymod.intersects(event::RSHIFTMOD)
+}
+
 enum Action {
     Rest,
     Walk(Direction),

@@ -15,8 +15,7 @@ pub struct Mob {
     pub guard_recovery: u32,
     pub health: u32,
     pub alive: bool,
-    /// last seen position of the thing this mob is chasing
-    pub target: Option<Pos>,
+    pub path: Option<Vec<Pos>>,
 }
 
 /// The identity of a mob
@@ -63,7 +62,7 @@ impl Mob {
             guard_recovery: 0,
             health: mob_health(species),
             alive: true,
-            target: None,
+            path: None,
         }
     }
 

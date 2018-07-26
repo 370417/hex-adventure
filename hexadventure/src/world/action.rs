@@ -22,7 +22,7 @@ fn in_combat(mob_id: MobId, world: &World) -> bool {
         });
         in_combat
     } else {
-        world[mob_id].target != None
+        world[mob_id].path != None
     }
 }
 

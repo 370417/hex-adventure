@@ -1,7 +1,9 @@
 use grid::{decompose, Direction, Pos, DIRECTIONS};
 use minheap::MinHeap;
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 
+/// Returns the path as a stack. If you treat it as a list, it will
+/// be backwards.
 pub(super) fn jps<FG, FP, FH>(
     origin: Pos,
     is_goal: FG,
@@ -179,8 +181,7 @@ impl Chirality {
 }
 
 fn construct_path(parents: &HashMap<Pos, JumpPoint>, goal: Pos, total_cost: u32) -> Vec<Pos> {
-    let mut path = VecDeque::with_capacity(1 + total_cost as usize);
-    path.push_back(goal);
+    let mut path = Vec::with_capacity(total_cost as usize);
     let mut pos = goal;
     while let Some(&JumpPoint {
         pos: parent_pos,
@@ -191,13 +192,13 @@ fn construct_path(parents: &HashMap<Pos, JumpPoint>, goal: Pos, total_cost: u32)
         let leaf_direction = chirality.rotate(stem_direction, 1);
         let (stem_cost, leaf_cost) = decompose(pos - parent_pos, stem_direction, leaf_direction);
         let stem_tip = parent_pos + stem_direction * stem_cost;
-        for x in (0..leaf_cost).rev() {
-            path.push_back(stem_tip + leaf_direction * x);
+        for x in (1..=leaf_cost).rev() {
+            path.push(stem_tip + leaf_direction * x);
         }
-        for y in (0..stem_cost).rev() {
-            path.push_back(parent_pos + stem_direction * y);
+        for y in (1..=stem_cost).rev() {
+            path.push(parent_pos + stem_direction * y);
         }
         pos = parent_pos;
     }
-    Vec::from(path)
+    path
 }
