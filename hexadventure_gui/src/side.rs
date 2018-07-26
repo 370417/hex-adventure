@@ -51,21 +51,20 @@ impl Sidebar {
         let mut i = 0;
         mob::for_each(world, |mob_id| {
             let mob = &world[mob_id];
-            draw_str(
-                &format!("Health: {}", mob.health),
-                spritebatch,
-                Point2::new(dest.x + 18.0, dest.y + 48.0 + 32.0 * i as f32),
-            );
-            draw_str(
-                &format!("Guard: {}", mob.guard),
-                spritebatch,
-                Point2::new(dest.x + 18.0, dest.y + 64.0 + 32.0 * i as f32),
-            );
-            i += 1;
+            if mob.alive && world.fov[mob.pos].is_visible() {
+                draw_str(
+                    &format!("Health: {}", mob.health),
+                    spritebatch,
+                    Point2::new(dest.x + 18.0, dest.y + 64.0 + 32.0 * i as f32),
+                ).unwrap();
+                draw_str(
+                    &format!("Guard: {}", mob.guard),
+                    spritebatch,
+                    Point2::new(dest.x + 18.0, dest.y + 80.0 + 32.0 * i as f32),
+                ).unwrap();
+                i += 1;
+            }
         });
-        // for (index, mob) in game.mobs.npcs.iter().enumerate() {
-        //     draw_str(&format!("Guard: {}", mob.guard), spritebatch, Point2::new(dest.x + 18.0, dest.y + 32.0 + 16.0 * index as f32))?;
-        // }
         Ok(())
     }
 }

@@ -234,6 +234,7 @@ impl EventHandler for MainState {
             _ => None,
         };
         if let Some(action) = action {
+            save_world(&self.world);
             let success = match action {
                 Action::Rest => action::rest(PLAYER_ID, &mut self.world),
                 Action::Walk(direction) => action::walk(PLAYER_ID, direction, &mut self.world),
@@ -313,12 +314,8 @@ fn main() {
     graphics::set_default_filter(&mut ctx, graphics::FilterMode::Nearest);
     graphics::set_background_color(&mut ctx, graphics::BLACK);
     let mut state = MainState::new(&mut ctx);
-    if let Err(e) = event::run(&mut ctx, &mut state) {
-        println!("Error encountered: {}", e);
-    }
-    if let Err(e) = save_world(&state.world) {
-        println!("Error in saving game: {}", e);
-    }
+    event::run(&mut ctx, &mut state).unwrap();
+    save_world(&state.world).unwrap();
 }
 
 fn conf() -> Conf {

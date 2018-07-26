@@ -7,6 +7,7 @@ pub(super) fn jps<FG, FP, FH>(
     is_goal: FG,
     passable: FP,
     heuristic: FH,
+    flip: bool,
 ) -> Option<Vec<Pos>>
 where
     FG: Fn(Pos) -> bool,
@@ -21,7 +22,7 @@ where
     let mut parents: HashMap<Pos, JumpPoint> = HashMap::new();
     let initial_priority = heuristic(origin);
     for &direction in &DIRECTIONS {
-        open.push(OpenNode::initial(origin, direction), initial_priority);
+        open.push(OpenNode::initial(origin, direction, flip), initial_priority);
     }
     costs.insert(origin, 0);
     while let Some(node) = open.pop() {
@@ -75,11 +76,15 @@ enum Chirality {
 }
 
 impl OpenNode {
-    fn initial(pos: Pos, direction: Direction) -> Self {
+    fn initial(pos: Pos, direction: Direction, flip: bool) -> Self {
         OpenNode::JumpPoint(JumpPoint {
             pos,
             direction,
-            chirality: Chirality::Clockwise,
+            chirality: if flip {
+                Chirality::Counterclockwise
+            } else {
+                Chirality::Clockwise
+            },
         })
     }
 

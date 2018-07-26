@@ -2,6 +2,11 @@ use prelude::*;
 use rand::{thread_rng, Rng};
 use world::action;
 use world::mob::Species;
+use astar;
+
+pub enum Behavior {
+    
+}
 
 pub fn act(mob_id: MobId, world: &mut World) -> Result<(), ()> {
     let mob_pos = world[mob_id].pos;
@@ -23,15 +28,30 @@ fn chase(mob_id: MobId, world: &mut World) -> Result<(), ()> {
             world[mob_id].target = None;
             return action::rest(mob_id, world);
         }
-        let root_direction = (mob_pos - target).direction();
-        for i in 0..6 {
-            let direction = if flip { root_direction.rotate(i) } else { root_direction.rotate(-i) };
-            let pos = mob_pos + direction;
-            if pos.distance(target) < mob_pos.distance(target) {
-                if let Ok(x) = action::walk(mob_id, direction, world) {
-                    return Ok(x);
-                }
-            }
+        if mob_pos.distance(target) == 1 {
+            return action::walk(mob_id, (target - mob_pos).direction(), world);
+        }
+        let path = astar::jps(
+            mob_pos,
+            |pos| pos == target,
+            |pos| pos == target || world.level[pos].mob_id.is_none() && world.level[pos].terrain.can_move(&world[mob_id]),
+            |pos| pos.distance(target),
+            flip,
+        );
+        if let Some(path) = path {
+            return action::walk(mob_id, (path[path.len() - 2] - mob_pos).direction(), world);
+        }
+        let path = astar::jps(
+            mob_pos,
+            |pos| pos == target,
+            |pos| world.level[pos].terrain.can_move(&world[mob_id]),
+            |pos| pos.distance(target),
+            flip,
+        );
+        if let Some(path) = path {
+            return action::walk(mob_id, (path[path.len() - 2] - mob_pos).direction(), world).or_else(|()| {
+                action::rest(mob_id, world)
+            });
         }
     }
     action::rest(mob_id, world)

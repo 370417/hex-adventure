@@ -2,27 +2,28 @@ use level::place_mob;
 use level::tile::{Terrain, TileView};
 use prelude::*;
 use rand::{thread_rng, Rng};
-use world::mob::{PLAYER_ID, mob_guard, Species};
+use world::mob::{self, PLAYER_ID, mob_guard};
 
 pub fn rest(mob_id: MobId, world: &mut World) -> Result<(), ()> {
-    fn enemy_visible(pos: Pos, world: &mut World) -> bool {
-        if world.fov[pos].is_visible() {
-            if let Some(mob_id) = world.level[pos].mob_id {
-                !mob_id.is_player()
-            } else {
-                false
-            }
-        } else {
-            false
-        }
-    }
-
-    if mob_id.is_player() {
-        if !grid::positions().any(|pos| enemy_visible(pos, world)) {
-            world.player.guard = mob_guard(world.player.species);
-        }
+    if !in_combat(mob_id, world) {
+        world[mob_id].guard = mob_guard(world[mob_id].species);
     }
     Ok(())
+}
+
+fn in_combat(mob_id: MobId, world: &World) -> bool {
+    if mob_id.is_player() {
+        let mut in_combat = false;
+        mob::for_each(world, |other_mob_id| {
+            let other_mob_pos = world[other_mob_id].pos;
+            if world[other_mob_id].alive && world.fov[other_mob_pos].is_visible() {
+                in_combat = true;
+            }
+        });
+        in_combat
+    } else {
+        world[mob_id].target != None
+    }
 }
 
 pub fn walk(mob_id: MobId, direction: Direction, world: &mut World) -> Result<(), ()> {
