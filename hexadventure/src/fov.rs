@@ -4,13 +4,12 @@
 //! if and only if the position is on a line with an endpoint at the
 //! origin not blocked by any wall.
 
-use grid::{Pos, DIRECTIONS};
+use prelude::*;
+use grid::DIRECTIONS;
 use num::rational::Ratio;
 use num::traits::identities::{One, Zero};
 
 /// Calculates field of view.
-///
-/// All this does is call scan on each of the six sextants.
 pub fn calc_fov<F, G>(center: Pos, transparent: F, mut reveal: G)
 where
     F: Fn(Pos) -> bool,
@@ -18,11 +17,41 @@ where
 {
     reveal(center);
     for &dy in &DIRECTIONS {
-        let dx = dy.rotate(2);
-        let f = |x, y| transparent(center + dx * x + dy * y);
-        let mut g = |x, y| reveal(center + dx * x + dy * y);
-        scan(1, Ratio::zero(), Ratio::one(), &f, &mut g);
+        scan_sextant(center, dy, &transparent, &mut reveal);
     }
+}
+
+pub fn wander<F>(center: Pos, direction: Direction, transparent: F) -> Option<Vec<Pos>>
+where
+    F: Fn(Pos) -> bool,
+{
+    use rand::{thread_rng, Rng};
+    let mut rng = thread_rng();
+    let mut paths = Vec::new();
+    for &tangent in &[direction.rotate(2), direction.rotate(-2)] {
+        let xy_to_pos = |(x, y)| center + tangent * x + direction * y;
+        let xy_vec_to_pos_vec = |path: Vec<(u32, u32)>| path.into_iter().map(xy_to_pos).collect();
+        let f = |x, y| transparent(xy_to_pos((x, y)));
+        let mut g = |path: Vec<(u32, u32)>| paths.push(xy_vec_to_pos_vec(path));
+        scan_2(1, Ratio::zero(), Ratio::one(), false, false, &f, &mut g);
+    }
+    if paths.is_empty() {
+        None
+    } else {
+        let index = rng.gen_range(0, paths.len());
+        Some(paths.swap_remove(index))
+    }
+}
+
+fn scan_sextant<F, G>(center: Pos, dy: Direction, transparent: &F, reveal: &mut G)
+where
+    F: Fn(Pos) -> bool,
+    G: FnMut(Pos),
+{
+    let dx = dy.rotate(2);
+    let f = |x, y| transparent(center + dx * x + dy * y);
+    let mut g = |x, y| reveal(center + dx * x + dy * y);
+    scan_row(1, Ratio::zero(), Ratio::one(), &f, &mut g);
 }
 
 /// Scan a sextant using recursive shadowcasting.
@@ -35,7 +64,7 @@ where
 /// They range from 0 to 1. There is no check that start <= end, but it is always the case.
 /// The transparent and reveal closures abstract away the grid system.
 /// Passing in different closures will let you operate over different sextants.
-fn scan<F, G>(y: u32, start: Ratio<u32>, end: Ratio<u32>, transparent: &F, reveal: &mut G)
+fn scan_row<F, G>(y: u32, start: Ratio<u32>, end: Ratio<u32>, transparent: &F, reveal: &mut G)
 where
     F: Fn(u32, u32) -> bool,
     G: FnMut(u32, u32),
@@ -66,13 +95,58 @@ where
             }
         } else {
             if let Some(start_slope) = start {
-                scan(y + 1, start_slope, slope(x, y), transparent, reveal);
+                scan_row(y + 1, start_slope, slope(x, y), transparent, reveal);
                 start = None;
             }
         }
     }
     if let Some(start) = start {
-        scan(y + 1, start, end, transparent, reveal);
+        scan_row(y + 1, start, end, transparent, reveal);
+    }
+}
+
+fn scan_2<F, G>(
+    y: u32,
+    start: Ratio<u32>,
+    end: Ratio<u32>,
+    mut check_start_corner: bool,
+    check_end_corner: bool,
+    transparent: &F,
+    reveal: &mut G,
+) where
+    F: Fn(u32, u32) -> bool,
+    G: FnMut(Vec<(u32, u32)>),
+{
+    let min_x = round_tie_high(start * y);
+    let max_x = round_tie_low(end * y);
+    let mut start = if transparent(min_x, y) {
+        if check_start_corner {
+            reveal((1..=y).map(|y| (round_tie_high(start * y), y)).collect());
+            check_start_corner = false;
+        }
+        Some(start)
+    } else {
+        check_start_corner = true;
+        None
+    };
+    for x in min_x + 1..=max_x {
+        if transparent(x, y) {
+            if start.is_none() {
+                start = Some(slope(x, y));
+            }
+        } else {
+            if let Some(start_slope) = start {
+                scan_2(y + 1, start_slope, slope(x, y), check_start_corner, true, transparent, reveal);
+                start = None;
+                check_start_corner = true;
+            }
+        }
+    }
+    if let Some(start) = start {
+        if check_end_corner {
+            reveal((1..=y).map(|y| (round_tie_low(end * y), y)).collect());
+        }
+        scan_2(y + 1, start, end, check_start_corner, false, transparent, reveal);
     }
 }
 

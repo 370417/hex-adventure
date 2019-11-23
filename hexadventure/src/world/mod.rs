@@ -5,9 +5,10 @@ use level::tile::{Tile, TileView};
 use level::Architect;
 use prelude::*;
 use rand::{thread_rng, Rng};
+use self::ai::AIState;
 
 pub mod action;
-mod ai;
+pub mod ai;
 pub mod mob;
 mod schedule;
 
@@ -20,6 +21,10 @@ pub struct World {
     architect: Architect,
 }
 
+pub enum Action {}
+
+pub enum Result {}
+
 impl World {
     pub fn new() -> Self {
         let seed = thread_rng().gen();
@@ -28,7 +33,7 @@ impl World {
         let player_pos = place_mob(&mut level, grid::center(), PLAYER_ID, &mut thread_rng());
         let mut world = World {
             level,
-            player: Mob::new(player_pos, Hero),
+            player: Mob::new(player_pos, Hero, AIState::Player),
             npcs,
             fov: Grid::new(|_| TileView::None),
             architect,

@@ -80,6 +80,7 @@ impl MainState {
 fn load_world() -> Result<World, Box<Error>> {
     let mut path = app_root(AppDataType::UserData, &APP_INFO)?;
     path.push(SAVE_NAME);
+    println!("{:?}", path.clone());
     let file = File::open(path)?;
     let game = deserialize_from(file)?;
     Ok(game)
@@ -134,7 +135,7 @@ impl EventHandler for MainState {
         )?;
         for pos in grid::positions() {
             match self.world.fov[pos] {
-                TileView::Visible => {
+                TileView::Visible /*| _*/ => {
                     if let Some(mob_id) = self.world.level[pos].mob_id {
                         let sprite = sprite_from_species(&self.world[mob_id].species);
                         let flip = match self.world[mob_id].facing {

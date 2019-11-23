@@ -2,10 +2,21 @@ use prelude::*;
 use rand::{thread_rng, Rng};
 use world::action;
 use world::mob::Species;
+use fov::wander;
 use astar;
 
-pub enum Behavior {
-    
+#[derive(Serialize, Deserialize)]
+pub enum AIState {
+    Asleep(u32),
+    Wandering,
+    Hunting,
+    Player,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum Goal {
+    Sleep,
+    Wander,
 }
 
 pub fn act(mob_id: MobId, world: &mut World) -> Result<(), ()> {
@@ -18,7 +29,12 @@ pub fn act(mob_id: MobId, world: &mut World) -> Result<(), ()> {
             return tactical_retreat(mob_id, world.player.pos, world);
         }
     }
-    chase(mob_id, world)
+    if world[mob_id].path.is_some() {
+        follow_path(mob_id, world)
+    } else {
+        // world[mob_id].path = wander(mob_pos, world[mob_id].facing, |pos| world.level[pos].terrain.passable());
+        follow_path(mob_id, world)
+    }
 }
 
 fn path_to_target(mob_id: MobId, target: Pos, world: &World) -> Option<Vec<Pos>> {
@@ -41,7 +57,7 @@ fn path_to_target_through_mobs(mob_id: MobId, target: Pos, world: &World) -> Opt
     )
 }
 
-fn chase(mob_id: MobId, world: &mut World) -> Result<(), ()> {
+fn follow_path(mob_id: MobId, world: &mut World) -> Result<(), ()> {
     let mob_pos = world[mob_id].pos;
     let next_pos = match &world[mob_id].path {
         Some(path) => path.last().map(|&pos| pos),
@@ -55,6 +71,8 @@ fn chase(mob_id: MobId, world: &mut World) -> Result<(), ()> {
             }
         }
         return result;
+    } else {
+        world[mob_id].path = None;
     }
     action::rest(mob_id, world)
 }
@@ -69,16 +87,16 @@ fn tactical_retreat(mob_id: MobId, target: Pos, world: &mut World) -> Result<(),
                     action::walk(mob_id, (target - mob_pos).direction(), world)
                 })
             } else {
-                chase(mob_id, world)
+                follow_path(mob_id, world)
             }
         }
         2 => {
             if world[mob_id].guard > 0 {
                 action::rest(mob_id, world)
             } else {
-                chase(mob_id, world)
+                follow_path(mob_id, world)
             }
         }
-        _ => chase(mob_id, world),
+        _ => follow_path(mob_id, world),
     }
 }

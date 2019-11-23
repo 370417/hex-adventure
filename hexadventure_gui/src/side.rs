@@ -52,15 +52,26 @@ impl Sidebar {
         mob::for_each(world, |mob_id| {
             let mob = &world[mob_id];
             if mob.alive && world.fov[mob.pos].is_visible() {
+                use hexadventure::world::mob::Species;
+                let name = match mob.species {
+                    Species::Hero => "You",
+                    Species::Bat => "Bat",
+                    Species::Rat => "Rat",
+                };
+                draw_str(
+                    name,
+                    spritebatch,
+                    Point2::new(dest.x + 18.0, dest.y + 64.0 + 48.0 * i as f32),
+                ).unwrap();
                 draw_str(
                     &format!("Health: {}", mob.health),
                     spritebatch,
-                    Point2::new(dest.x + 18.0, dest.y + 64.0 + 32.0 * i as f32),
+                    Point2::new(dest.x + 18.0, dest.y + 80.0 + 48.0 * i as f32),
                 ).unwrap();
                 draw_str(
                     &format!("Guard: {}", mob.guard),
                     spritebatch,
-                    Point2::new(dest.x + 18.0, dest.y + 80.0 + 32.0 * i as f32),
+                    Point2::new(dest.x + 18.0, dest.y + 96.0 + 48.0 * i as f32),
                 ).unwrap();
                 i += 1;
             }

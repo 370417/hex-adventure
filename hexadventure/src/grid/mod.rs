@@ -22,7 +22,7 @@ pub const DIRECTIONS: [Direction; 6] = [
     Direction::Northwest,
 ];
 
-pub const WIDTH: usize = 34;
+pub const WIDTH: usize = 30;
 pub const HEIGHT: usize = 26;
 
 #[derive(Serialize, Deserialize)]

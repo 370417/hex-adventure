@@ -1,5 +1,6 @@
 use prelude::*;
 use std::ops::{Index, IndexMut};
+use super::ai::AIState;
 
 pub const PLAYER_ID: MobId = MobId {
     inner: InnerMobId::Player,
@@ -16,6 +17,7 @@ pub struct Mob {
     pub health: u32,
     pub alive: bool,
     pub path: Option<Vec<Pos>>,
+    pub ai_state: AIState,
 }
 
 /// The identity of a mob
@@ -53,7 +55,7 @@ enum InnerMobId {
 }
 
 impl Mob {
-    pub fn new(pos: Pos, species: Species) -> Self {
+    pub fn new(pos: Pos, species: Species, ai_state: AIState) -> Self {
         Mob {
             pos,
             facing: Direction::East,
@@ -63,6 +65,7 @@ impl Mob {
             health: mob_health(species),
             alive: true,
             path: None,
+            ai_state,
         }
     }
 
