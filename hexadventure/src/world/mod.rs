@@ -1,5 +1,5 @@
 use self::mob::{Mob, Npcs, Species::Hero, PLAYER_ID};
-use fov::calc_fov;
+use fov::FOVGrid;
 use level::place_mob;
 use level::tile::{Tile, TileView};
 use level::Architect;
@@ -43,17 +43,22 @@ impl World {
     }
 
     fn update_fov(&mut self) {
-        let level = &self.level;
         let fov = &mut self.fov;
         for pos in grid::positions() {
             if fov[pos].is_visible() {
                 fov[pos] = TileView::Remembered(self.level[pos].terrain);
             }
         }
-        calc_fov(
-            self.player.pos,
-            |pos| level[pos].terrain.transparent(),
-            |pos| fov[pos] = TileView::Visible,
-        );
+        self.calc_fov(self.player.pos);
+    }
+}
+
+impl FOVGrid for World {
+    fn transparent(&self, pos: Pos) -> bool {
+        self.level[pos].terrain.transparent()
+    }
+
+    fn reveal(&mut self, pos: Pos) {
+        self.fov[pos] = TileView::Visible;
     }
 }

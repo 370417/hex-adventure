@@ -77,7 +77,7 @@ impl MainState {
     }
 }
 
-fn load_world() -> Result<World, Box<Error>> {
+fn load_world() -> Result<World, Box<dyn Error>> {
     let mut path = app_root(AppDataType::UserData, &APP_INFO)?;
     path.push(SAVE_NAME);
     println!("{:?}", path.clone());
@@ -86,7 +86,7 @@ fn load_world() -> Result<World, Box<Error>> {
     Ok(game)
 }
 
-fn save_world(game: &World) -> Result<(), Box<Error>> {
+fn save_world(game: &World) -> Result<(), Box<dyn Error>> {
     let mut path = app_root(AppDataType::UserData, &APP_INFO)?;
     path.push(SAVE_NAME);
     let file = File::create(path)?;
@@ -127,17 +127,17 @@ impl EventHandler for MainState {
         self.redraw = false;
         graphics::clear(ctx);
         self.spritebatch.clear();
-        side::Sidebar::new().draw(
-            ctx,
-            Point2::new((grid::WIDTH * 18 + 9) as f32, 0.0),
-            &self.world,
-            &mut self.spritebatch,
-        )?;
+        // side::Sidebar::new().draw(
+        //     ctx,
+        //     Point2::new((grid::WIDTH * 18 + 9) as f32, 0.0),
+        //     &self.world,
+        //     &mut self.spritebatch,
+        // )?;
         for pos in grid::positions() {
             match self.world.fov[pos] {
                 TileView::Visible /*| _*/ => {
                     if let Some(mob_id) = self.world.level[pos].mob_id {
-                        let sprite = sprite_from_species(&self.world[mob_id].species);
+                        let sprite = sprite_from_species(self.world[mob_id].species);
                         let flip = match self.world[mob_id].facing {
                             Direction::West | Direction::Northwest | Direction::Southwest => false,
                             Direction::East | Direction::Northeast | Direction::Southeast => true,

@@ -43,7 +43,7 @@ pub fn walk(mob_id: MobId, direction: Direction, world: &mut World) -> Result<()
     } else if world.level[target_pos].terrain == Terrain::Exit {
         if mob_id.is_player() {
             world[mob_id].pos = target_pos;
-            descend_unchecked(world);
+            descend_unchecked(world, direction);
             Err(())
         } else {
             Err(())
@@ -93,7 +93,7 @@ fn retreat_unchecked(mob_id: MobId, direction: Direction, world: &mut World) -> 
     Ok(())
 }
 
-fn descend_unchecked(world: &mut World) {
+fn descend_unchecked(world: &mut World, entry: Direction) {
     let (level, npcs) = world.architect.generate();
     world.level = level;
     world.npcs = npcs;
@@ -107,4 +107,8 @@ fn descend_unchecked(world: &mut World) {
     world.player.pos = player_pos;
     world.fov = Grid::new(|_| TileView::None);
     world.update_fov();
+}
+
+fn place_descending_player() {
+    
 }

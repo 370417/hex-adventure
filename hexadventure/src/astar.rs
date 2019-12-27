@@ -2,6 +2,24 @@ use grid::{decompose, Direction, Pos, DIRECTIONS};
 use minheap::MinHeap;
 use std::collections::HashMap;
 
+//  # # # # # # # # # #
+// # . # 5 . # 6 . . . #
+//  @ - X - - X # . . #
+// # . \ \ \ \ \ # . . #
+//  # # X # \ \ \ # . #
+// # . 1 \ # \ \ \ # # #
+//  # . . \ # # \ X 4 #
+// # . . . # # # X # # #
+//  # . . . . . 2 X 3 #
+// # . . . . . . . \ . #
+//  # # # # # # # # # #
+
+trait JPSearchable {
+    fn passable(&self, pos: Pos) -> bool;
+    fn is_goal(&self, pos: Pos) -> bool;
+    fn heuristic(&self, pos: Pos) -> u32;
+}
+
 /// Returns the path as a stack. If you treat it as a list, it will
 /// be backwards.
 pub(super) fn jps<FG, FP, FH>(
@@ -98,12 +116,59 @@ impl OpenNode {
     }
 }
 
+struct Row {
+    jump_point: JumpPoint,
+    index: u32, // distance from jump point stem
+    start: u32, // distance along row (inclusive) 
+    end: u32, // distance along row (inclusive)
+}
+
+impl<'a> Row {
+    fn search<FC, FG, FP>(&self, callback: &mut FC, is_goal: &FG, passable: &FP)
+    where
+        FC: FnMut(OpenNode),
+        FG: Fn(Pos) -> bool,
+        FP: Fn(Pos) -> bool,
+    {
+        let jp = &self.jump_point;
+        let leaf_direction = jp.chirality.rotate(jp.direction, 1);
+        let origin = jp.pos + leaf_direction * self.index;
+
+        let prestart_pos = origin + jp.direction * (self.start - 1);
+        if passable(prestart_pos) {
+
+        }
+        
+    }
+}
+
 impl JumpPoint {
     fn neighbor_of(pos: Pos, old_direction: Direction, new_chirality: Chirality) -> Self {
         JumpPoint {
             pos,
             direction: new_chirality.rotate(old_direction, -1),
             chirality: new_chirality,
+        }
+    }
+
+    fn for_each_neighbor2<FC, FG, FP>(&self, mut callback: FC, is_goal: &FG, passable: &FP)
+    where
+        FC: FnMut(OpenNode),
+        FG: Fn(Pos) -> bool,
+        FP: Fn(Pos) -> bool,
+    {
+        let mut stem_len = 0;
+        loop {
+            let pos = self.pos + self.direction * (stem_len + 1);
+            if passable(pos) {
+                stem_len += 1;
+            } else {
+                break;
+            }
+            if is_goal(pos) {
+                callback(OpenNode::Goal(pos));
+                break;
+            }
         }
     }
 
@@ -172,7 +237,7 @@ fn for_each_leaf_neighbor<FC, FG, FP>(
 }
 
 impl Chirality {
-    fn rotate(&self, direction: Direction, n: i32) -> Direction {
+    fn rotate(self, direction: Direction, n: i32) -> Direction {
         match self {
             Chirality::Clockwise => direction.rotate(n),
             Chirality::Counterclockwise => direction.rotate(-n),

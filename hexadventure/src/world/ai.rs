@@ -2,7 +2,6 @@ use prelude::*;
 use rand::{thread_rng, Rng};
 use world::action;
 use world::mob::Species;
-use fov::wander;
 use astar;
 
 #[derive(Serialize, Deserialize)]
@@ -22,19 +21,19 @@ pub enum Goal {
 pub fn act(mob_id: MobId, world: &mut World) -> Result<(), ()> {
     let mob_pos = world[mob_id].pos;
     if world.fov[mob_pos].is_visible() {
-        world[mob_id].path = path_to_target(mob_id, world.player.pos, world).or(
+        world[mob_id].path = path_to_target(mob_id, world.player.pos, world).or_else(||
             path_to_target_through_mobs(mob_id, world.player.pos, world)
         );
         if let Species::Rat = world[mob_id].species {
             return tactical_retreat(mob_id, world.player.pos, world);
         }
     }
-    if world[mob_id].path.is_some() {
-        follow_path(mob_id, world)
-    } else {
+    // if world[mob_id].path.is_some() {
+        // follow_path(mob_id, world)
+    // } else {
         // world[mob_id].path = wander(mob_pos, world[mob_id].facing, |pos| world.level[pos].terrain.passable());
         follow_path(mob_id, world)
-    }
+    // }
 }
 
 fn path_to_target(mob_id: MobId, target: Pos, world: &World) -> Option<Vec<Pos>> {
@@ -60,7 +59,7 @@ fn path_to_target_through_mobs(mob_id: MobId, target: Pos, world: &World) -> Opt
 fn follow_path(mob_id: MobId, world: &mut World) -> Result<(), ()> {
     let mob_pos = world[mob_id].pos;
     let next_pos = match &world[mob_id].path {
-        Some(path) => path.last().map(|&pos| pos),
+        Some(path) => path.last().copied(),
         None => None,
     };
     if let Some(next_pos) = next_pos {

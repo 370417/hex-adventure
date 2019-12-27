@@ -21,6 +21,52 @@ where
     flooded
 }
 
+// struct Scanline<'a, F> where F: Fn(Pos) -> bool {
+//     y: i32,
+//     min_x: i32,
+//     max_x: i32,
+//     flooded: &'a mut HashSet<Pos>,
+//     floodable: &'a F,
+// }
+
+// impl<'a, F> Scanline<'a, F> where F: Fn(Pos) -> bool {
+//     fn pos(&self, x: i32, y: i32) -> Pos {
+//         self.origin + self.direction * y 
+//     }
+//     fn floodable(&self, x: i32, y: i32) {}
+//     fn flood(&mut self, x: i32, y: i32) {
+//         self.flooded.insert(self.pos(x, y));
+//     }
+//     fn scan(&self, flooded: &mut HashSet<Pos>, floodable: &F) {
+//         let prev_floodable = floodable()
+//     }
+// }
+
+struct A<'a, F: Fn(Pos) -> bool> {
+    origin: Pos,
+    direction: Direction,
+    flooded: &'a mut HashSet<Pos>,
+    floodable: &'a F,
+}
+
+impl<'a, F: Fn(Pos) -> bool> A<'a, F> {
+    fn pos(&self, x: i32, y: i32) -> Pos {
+        self.origin + self.direction * y 
+    }
+    fn floodable(&self, x: i32, y: i32) {}
+    fn flood(&mut self, x: i32, y: i32) {
+        self.flooded.insert(self.pos(x, y));
+    }
+}
+
+fn flood_stem2<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>, floodable: &F)
+where
+    F: Fn(Pos) -> bool,
+{
+    let mut stem_len = 1;
+    
+}
+
 fn flood_stem<F>(origin: Pos, direction: Direction, flooded: &mut HashSet<Pos>, floodable: &F)
 where
     F: Fn(Pos) -> bool,

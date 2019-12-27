@@ -17,8 +17,8 @@ impl<V: Eq, P: Ord> MinHeap<V, P> {
         MinHeap(BinaryHeap::new())
     }
 
-    pub fn push(&mut self, value: V, priority: P) {
-        self.0.push(MinHeapItem { value, priority })
+    pub fn push<T>(&mut self, value: T, priority: P) where T: Into<V> {
+        self.0.push(MinHeapItem { value: value.into(), priority })
     }
 
     pub fn pop(&mut self) -> Option<V> {

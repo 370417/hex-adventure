@@ -22,7 +22,7 @@ pub const DIRECTIONS: [Direction; 6] = [
     Direction::Northwest,
 ];
 
-pub const WIDTH: usize = 30;
+pub const WIDTH: usize = 40;
 pub const HEIGHT: usize = 26;
 
 #[derive(Serialize, Deserialize)]
@@ -69,7 +69,7 @@ pub enum Direction {
 impl Pos {
     pub fn neighbors(self) -> impl Iterator<Item = Pos> {
         DIRECTIONS
-            .into_iter()
+            .iter()
             .map(move |&direction| self + direction)
     }
 

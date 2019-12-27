@@ -5,6 +5,7 @@ extern crate serde_derive;
 extern crate num;
 
 mod astar;
+mod astar2;
 pub mod floodfill;
 pub mod fov;
 pub mod grid;

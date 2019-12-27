@@ -5,7 +5,7 @@ use grid;
 use hexadventure::prelude::*;
 use hexadventure::world::mob;
 
-pub const WIDTH: u32 = 24;
+pub const WIDTH: u32 = 0;
 
 pub struct Sidebar {}
 
@@ -94,9 +94,9 @@ fn draw_str(string: &str, spritebatch: &mut SpriteBatch, dest: Point2) -> GameRe
 
 fn char_src(character: u8) -> Rect {
     let (x, y) = match character {
-        x @ 32...63 => (x - 32, 0),
-        x @ 64...95 => (x - 64, 1),
-        x @ 96...127 => (x - 96, 2),
+        x @ 32..=63 => (x - 32, 0),
+        x @ 64..=95 => (x - 64, 1),
+        x @ 96..=127 => (x - 96, 2),
         _ => return Rect::new(0.0, 0.0, 0.0, 0.0),
     };
     let width = 288.0;

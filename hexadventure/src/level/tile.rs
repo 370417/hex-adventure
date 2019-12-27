@@ -35,31 +35,31 @@ pub enum TileView {
 // }
 
 impl Terrain {
-    pub fn passable(&self) -> bool {
+    pub fn passable(self) -> bool {
         use self::Terrain::*;
-        match *self {
+        match self {
             Wall | Entrance | Exit | Water => false,
             _ => true,
         }
     }
 
-    pub fn transparent(&self) -> bool {
+    pub fn transparent(self) -> bool {
         use self::Terrain::*;
-        match *self {
+        match self {
             Wall | TallGrass => false,
             _ => true,
         }
     }
 
-    pub fn flyable(&self) -> bool {
+    pub fn flyable(self) -> bool {
         use self::Terrain::*;
-        match *self {
+        match self {
             Wall | Entrance | Exit => false,
             _ => true,
         }
     }
 
-    pub fn can_move(&self, mob: &Mob) -> bool {
+    pub fn can_move(self, mob: &Mob) -> bool {
         if mob.can_fly() {
             self.flyable()
         } else {

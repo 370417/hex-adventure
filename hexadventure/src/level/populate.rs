@@ -21,21 +21,22 @@ pub(super) fn populate<R: Rng>(level: Grid<Terrain>, rng: &mut R) -> (Grid<Tile>
     let mut npcs = Npcs::new();
     let mut npc_count = rng.gen_range(0, 2);
     let max_npcs = rng.gen_range(4, 5);
-    for pos in positions {
-        if level[pos].terrain.passable() && !near_entrance(pos, &level) {
-            let species = match npc_count % 2 {
-                0 => Species::Bat,
-                _ => Species::Rat,
-            };
-            let mob = Mob::new(pos, species, AIState::Asleep(0));
-            let mob_id = npcs.insert(mob);
-            level[pos].mob_id = Some(mob_id);
-            npc_count += 1;
-            if npc_count >= max_npcs {
-                break;
-            }
-        }
-    }
+    // disable mob generation for now
+    // for pos in positions {
+    //     if level[pos].terrain.passable() && !near_entrance(pos, &level) {
+    //         let species = match npc_count % 2 {
+    //             0 => Species::Bat,
+    //             _ => Species::Rat,
+    //         };
+    //         let mob = Mob::new(pos, species, AIState::Asleep(0));
+    //         let mob_id = npcs.insert(mob);
+    //         level[pos].mob_id = Some(mob_id);
+    //         npc_count += 1;
+    //         if npc_count >= max_npcs {
+    //             break;
+    //         }
+    //     }
+    // }
     (level, npcs)
 }
 

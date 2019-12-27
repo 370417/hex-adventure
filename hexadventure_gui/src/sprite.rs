@@ -39,7 +39,7 @@ impl From<Terrain> for Sprite {
     }
 }
 
-pub fn sprite_from_species(species: &Species) -> Sprite {
+pub fn sprite_from_species(species: Species) -> Sprite {
     match species {
         Species::Hero => Sprite::Player,
         Species::Bat => Sprite::Bat,
