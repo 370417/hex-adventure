@@ -1,9 +1,5 @@
-
-save.bincode
-oryx/
-sprites.png
-
-rls/
-
-/target/
-**/*.rs.bk
+node_modules
+/dist
+/target
+/pkg
+/wasm-pack.log
