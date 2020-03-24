@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "module": "esnext",
+        "sourceMap": true,
+        "lib": [
+            "dom",
+            "es2015"
+        ]
+    },
+    "include": [
+        "./ts/"
+    ]
+}

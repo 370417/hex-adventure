@@ -7,7 +7,16 @@ const dist = path.resolve(__dirname, "dist");
 module.exports = {
   mode: "production",
   entry: {
-    index: "./js/index.js"
+    index: "./ts/index.ts"
+  },
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+    ],
   },
   output: {
     path: dist,
@@ -23,6 +32,7 @@ module.exports = {
 
     new WasmPackPlugin({
       crateDirectory: __dirname,
+      withTypescript: true
     }),
   ]
 };
