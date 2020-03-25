@@ -60,6 +60,14 @@ impl Client {
         }
     }
 
+    pub fn texture_location(&self, row: usize, col: usize) -> Location {
+        Location { x: 0, y: 54 }
+    }
+
+    pub fn color(&self, row: usize, col: usize) -> String {
+        "#800".to_owned()
+    }
+
     pub fn level_pixel_width() -> u32 {
         use grid::{index_to_pos, pos_to_location, Index2d, HEIGHT, WIDTH};
         // This pos is out of bounds, but it won't cause errors unless
