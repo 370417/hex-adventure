@@ -61,11 +61,15 @@ impl Client {
     }
 
     pub fn texture_location(&self, row: usize, col: usize) -> Location {
-        Location { x: 0, y: 54 }
+        use grid::{index_to_pos, Index2d};
+        let pos = index_to_pos(Index2d { row, col });
+        self.game.level[pos].to_location()
     }
 
     pub fn color(&self, row: usize, col: usize) -> String {
-        "#800".to_owned()
+        use grid::{index_to_pos, Index2d};
+        let pos = index_to_pos(Index2d { row, col });
+        self.game.level[pos].to_color()
     }
 
     pub fn level_pixel_width() -> u32 {

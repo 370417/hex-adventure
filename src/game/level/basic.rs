@@ -1,7 +1,5 @@
 //! Generate a connected level of only wall and floor tiles.
 
-use rand::Rng;
-
 use crate::game::util::{self, floodfill::flood};
 use crate::prelude::*;
 use rand::seq::SliceRandom;

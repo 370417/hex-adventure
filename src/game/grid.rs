@@ -227,6 +227,14 @@ impl<T> Grid<T> {
     pub fn iter_mut(&mut self) -> ::std::slice::IterMut<T> {
         self.0.iter_mut()
     }
+
+    pub fn map<B, F>(self, f: F) -> Grid<B>
+    where
+        F: FnMut(&T) -> B,
+    {
+        let _a = self.0.iter();
+        Grid(self.0.iter().map(f).collect())
+    }
 }
 
 /// Find the central position of this grid.
