@@ -8,12 +8,6 @@ use std::collections::HashSet;
 const MIN_CAVE_SIZE: usize = 4;
 const MIN_WALL_SIZE: usize = 6;
 
-#[derive(PartialEq, Eq, Copy, Clone)]
-pub enum Terrain {
-    Floor,
-    Wall,
-}
-
 pub(super) fn generate<R: Rng>(rng: &mut R) -> Grid<Terrain> {
     let mut grid = Grid::new(|_pos| Terrain::Wall);
     let positions = calc_shuffled_positions(rng);
@@ -64,13 +58,11 @@ pub fn count_floor_groups(pos: Pos, grid: &Grid<Terrain>) -> i32 {
     count_neighbor_groups(pos, grid, |terrain| terrain == Terrain::Floor)
 }
 
-fn count_floor_neighbors(pos: Pos, grid: &Grid<Terrain>) -> i32 {
-    pos.neighbors()
-        .map(|pos| match grid[pos] {
-            Terrain::Wall => 0,
-            Terrain::Floor => 1,
-        })
-        .sum()
+pub fn count_neighbors<T: Copy, F>(pos: Pos, level: &Grid<T>, predicate: F) -> usize
+where
+    F: Fn(T) -> bool,
+{
+    pos.neighbors().filter(|&pos| predicate(level[pos])).count()
 }
 
 /// Selectively remove walls near the edges of the map.
@@ -82,9 +74,10 @@ fn count_floor_neighbors(pos: Pos, grid: &Grid<Terrain>) -> i32 {
 fn connect_edges(positions: &[Pos], grid: &mut Grid<Terrain>) {
     let outer_wall = flood(grid::corner(), |pos| grid[pos] == Terrain::Wall, true);
     for &pos in positions {
+        let is_floor = |t| t == Terrain::Floor;
         if outer_wall.contains(&pos)
             && count_floor_groups(pos, grid) == 2
-            && count_floor_neighbors(pos, grid) == 2
+            && count_neighbors(pos, grid, is_floor) == 2
         {
             grid[pos] = Terrain::Floor;
         }
@@ -169,15 +162,6 @@ fn is_dead_end(pos: Pos, grid: &Grid<Terrain>) -> bool {
 
 pub(super) fn is_cave(pos: Pos<i32>, grid: &Grid<Terrain>) -> bool {
     grid[pos] == Terrain::Floor && count_floor_groups(pos, grid) == 1
-}
-
-impl From<Terrain> for super::Terrain {
-    fn from(terrain: Terrain) -> Self {
-        match terrain {
-            Terrain::Floor => super::Terrain::Floor,
-            Terrain::Wall => super::Terrain::Wall,
-        }
-    }
 }
 
 #[cfg(test)]

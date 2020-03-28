@@ -11,13 +11,24 @@ pub mod util;
 pub struct Game {
     pub rng: Xoshiro256StarStar,
     pub level: Grid<Terrain>,
+    architect: level::Architect,
 }
 
 impl Game {
     /// Create a new game from a seed.
     pub fn new(seed: u64) -> Game {
         let mut rng = Xoshiro256StarStar::seed_from_u64(seed);
-        let level = level::generate(&mut rng);
-        Game { rng, level }
+        let mut architect = level::Architect::new(rng.gen());
+        let level = architect.generate();
+        Game {
+            rng,
+            level,
+            architect,
+        }
+    }
+
+    /// Replace the current level with the next depth
+    pub fn descend(&mut self) {
+        self.level = self.architect.generate();
     }
 }

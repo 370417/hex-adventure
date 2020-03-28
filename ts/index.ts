@@ -42,6 +42,11 @@ import('../pkg/index.js').then(({ Client }) => {
                 client.restart(BigInt(performance.now()));
                 display();
             }
+
+            if (event.shiftKey && event.key == 'D') {
+                client.descend();
+                display();
+            }
         });
     }, console.error);
 }, console.error);

@@ -42,6 +42,9 @@ impl Terrain {
     pub fn to_location(self) -> super::Location {
         match self {
             Terrain::Wall => super::Location { x: 0, y: 54 },
+            Terrain::Floor => super::Location { x: 18, y: 54 },
+            Terrain::Entrance => super::Location { x: 7 * 18, y: 54 },
+            Terrain::Exit => super::Location { x: 8 * 18, y: 54 },
             _ => super::Location { x: 18, y: 54 },
         }
     }
@@ -49,6 +52,7 @@ impl Terrain {
     pub fn to_color(self) -> String {
         match self {
             Terrain::Wall => "#fff",
+            Terrain::Entrance | Terrain::Exit => "#fff",
             _ => "#888",
         }
         .to_owned()

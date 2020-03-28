@@ -43,6 +43,10 @@ impl Client {
         self.game = Game::new(seed);
     }
 
+    pub fn descend(&mut self) {
+        self.game.descend();
+    }
+
     pub fn expose_sprites() -> sprites::RawImage {
         sprites::expose_sprites()
     }
