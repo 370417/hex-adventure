@@ -1,15 +1,16 @@
 //! Function for performing an efficient floodfill.
 
-use crate::game::grid::{Direction, Pos, DIRECTIONS};
+use crate::prelude::*;
 use std::collections::HashSet;
 
 /// Performs a floodfill starting at origin.
 ///
 /// Positions are flooded if they are connected to the origin and floodable(pos) returns true.
-pub fn flood<F>(origin: Pos, floodable: F) -> HashSet<Pos>
+pub fn flood<F>(origin: Pos, floodable: F, check_bounds: bool) -> HashSet<Pos>
 where
     F: Fn(Pos) -> bool,
 {
+    let floodable = |pos| (!check_bounds || grid::contains(pos)) && floodable(pos);
     let mut flooded = HashSet::new();
     if !floodable(origin) {
         return flooded;
@@ -110,7 +111,7 @@ mod tests {
         let mut rng = thread_rng();
         for _i in 0..40 {
             let grid: Grid<bool> = Grid::new(|_pos| rng.gen_bool(0.75));
-            let normal_set = flood(grid::center(), |pos| grid::contains(pos) && grid[pos]);
+            let normal_set = flood(grid::center(), |pos| grid[pos], true);
             let basic_set = basic_flood(grid::center(), |pos| grid::contains(pos) && grid[pos]);
             assert!(set_equiv(&normal_set, &basic_set));
         }

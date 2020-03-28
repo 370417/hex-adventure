@@ -1,8 +1,6 @@
 import { RawImage } from '../pkg/index.js';
 
-console.log('Downloading js');
 import('../pkg/index.js').then(({ Client }) => {
-    console.log('Downloading wasm');
     import('../pkg/index_bg').then(({ memory }) => {
         const client = Client.new(BigInt(performance.now()));
         const spriteWidth = Client.sprite_width();
@@ -12,28 +10,39 @@ import('../pkg/index.js').then(({ Client }) => {
 
         const texture = createTexture(Client.expose_sprites(), memory);
 
-        for (let row = 0; row < Client.level_height(); row++) {
-            for (let col = 0; col < Client.level_width(); col++) {
-                // Sprite color
-                texture.fillStyle = client.color(row, col);
+        display();
+        function display(): void {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            for (let row = 0; row < Client.level_height(); row++) {
+                for (let col = 0; col < Client.level_width(); col++) {
+                    // Sprite color
+                    texture.fillStyle = client.color(row, col);
 
-                // Source rectangle
-                const { x: sx, y: sy } = client.texture_location(row, col);
-                const sw = spriteWidth;
-                const sh = spriteHeight;
+                    // Source rectangle
+                    const { x: sx, y: sy } = client.texture_location(row, col);
+                    const sw = spriteWidth;
+                    const sh = spriteHeight;
 
-                // Destination rectangle
-                const { x: dx, y: dy } = Client.location(row, col);
-                const dw = spriteWidth;
-                const dh = spriteHeight;
+                    // Destination rectangle
+                    const { x: dx, y: dy } = Client.location(row, col);
+                    const dw = spriteWidth;
+                    const dh = spriteHeight;
 
-                // Apply color to the texture
-                texture.fillRect(sx, sy, sw, sh);
+                    // Apply color to the texture
+                    texture.fillRect(sx, sy, sw, sh);
 
-                // Draw the texture on the main canvas
-                ctx.drawImage(texture.canvas, sx, sy, sw, sh, dx, dy, dw, dh);
+                    // Draw the texture on the main canvas
+                    ctx.drawImage(texture.canvas, sx, sy, sw, sh, dx, dy, dw, dh);
+                }
             }
         }
+
+        window.addEventListener('keydown', event => {
+            if (event.shiftKey && event.key == 'R') {
+                client.restart(BigInt(performance.now()));
+                display();
+            }
+        });
     }, console.error);
 }, console.error);
 

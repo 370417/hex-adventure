@@ -39,6 +39,10 @@ impl Client {
         to_string(&self.game).ok()
     }
 
+    pub fn restart(&mut self, seed: u64) {
+        self.game = Game::new(seed);
+    }
+
     pub fn expose_sprites() -> sprites::RawImage {
         sprites::expose_sprites()
     }

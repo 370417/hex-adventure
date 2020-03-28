@@ -18,6 +18,7 @@ pub(super) fn generate<R: Rng>(rng: &mut R) -> Grid<Terrain> {
     let mut grid = Grid::new(|_pos| Terrain::Wall);
     let positions = calc_shuffled_positions(rng);
     carve_caves(&positions, &mut grid);
+    connect_edges(&positions, &mut grid);
     remove_isolated_walls(&mut grid);
     remove_isolated_floors(&mut grid);
     remove_small_caves(&mut grid);
@@ -26,7 +27,6 @@ pub(super) fn generate<R: Rng>(rng: &mut R) -> Grid<Terrain> {
 
 pub(super) fn calc_shuffled_positions<R: Rng>(rng: &mut R) -> Vec<Pos> {
     let mut positions: Vec<Pos> = grid::inner_positions().collect();
-    // rng.shuffle(&mut positions);
     positions.shuffle(rng);
     positions
 }
@@ -64,17 +64,43 @@ pub fn count_floor_groups(pos: Pos, grid: &Grid<Terrain>) -> i32 {
     count_neighbor_groups(pos, grid, |terrain| terrain == Terrain::Floor)
 }
 
+fn count_floor_neighbors(pos: Pos, grid: &Grid<Terrain>) -> i32 {
+    pos.neighbors()
+        .map(|pos| match grid[pos] {
+            Terrain::Wall => 0,
+            Terrain::Floor => 1,
+        })
+        .sum()
+}
+
+/// Selectively remove walls near the edges of the map.
+///
+/// We do this because the edges of the map tend to have less open space. To
+/// encourage better use of the whole map, wall tiles that are part of the outer
+/// group of walls and that block two floor tiles from connecting get turned
+/// into floor tiles.
+fn connect_edges(positions: &[Pos], grid: &mut Grid<Terrain>) {
+    let outer_wall = flood(grid::corner(), |pos| grid[pos] == Terrain::Wall, true);
+    for &pos in positions {
+        if outer_wall.contains(&pos)
+            && count_floor_groups(pos, grid) == 2
+            && count_floor_neighbors(pos, grid) == 2
+        {
+            grid[pos] = Terrain::Floor;
+        }
+    }
+}
+
 /// Remove groups of 5 walls or less.
 fn remove_isolated_walls(grid: &mut Grid<Terrain>) {
-    let outer_wall = flood(grid::corner(), |pos| {
-        grid::contains(pos) && grid[pos] == Terrain::Wall
-    });
+    let outer_wall = flood(grid::corner(), |pos| grid[pos] == Terrain::Wall, true);
     let mut visited = Grid::new(|pos| outer_wall.contains(&pos));
+
     for pos in grid::positions() {
         if visited[pos] {
             continue;
         }
-        let wall_positions = flood(pos, |pos| grid::contains(pos) && grid[pos] == Terrain::Wall);
+        let wall_positions = flood(pos, |pos| grid[pos] == Terrain::Wall, false);
         for &pos in &wall_positions {
             visited[pos] = true;
         }
@@ -91,7 +117,7 @@ fn remove_isolated_floors(grid: &mut Grid<Terrain>) {
     let mut largest_floor_set = HashSet::new();
     for pos in grid::inner_positions() {
         if grid[pos] == Terrain::Floor {
-            let floor_set = flood(pos, |pos| grid[pos] == Terrain::Floor);
+            let floor_set = flood(pos, |pos| grid[pos] == Terrain::Floor, false);
             for &pos in &floor_set {
                 grid[pos] = Terrain::Wall;
             }
@@ -110,9 +136,11 @@ fn remove_small_caves(grid: &mut Grid<Terrain>) {
     let mut visited = Grid::new(|_pos| false);
     for pos in grid::inner_positions() {
         fill_dead_end(pos, grid);
-        let flooded = flood(pos, &|pos| {
-            grid::contains(pos) && !visited[pos] && is_cave(pos, grid)
-        });
+        let flooded = flood(
+            pos,
+            &|pos: Pos<i32>| !visited[pos] && is_cave(pos, grid),
+            true,
+        );
         if flooded.len() >= MIN_CAVE_SIZE {
             for pos in flooded {
                 visited[pos] = true;
@@ -139,7 +167,7 @@ fn is_dead_end(pos: Pos, grid: &Grid<Terrain>) -> bool {
     is_cave(pos, grid) && pos.neighbors().all(|pos| !is_cave(pos, grid))
 }
 
-pub(super) fn is_cave(pos: Pos, grid: &Grid<Terrain>) -> bool {
+pub(super) fn is_cave(pos: Pos<i32>, grid: &Grid<Terrain>) -> bool {
     grid[pos] == Terrain::Floor && count_floor_groups(pos, grid) == 1
 }
 
@@ -173,7 +201,7 @@ mod tests {
         let floor_pos = grid::positions()
             .find(|&pos| grid[pos] == Terrain::Floor)
             .unwrap();
-        let cave = flood(floor_pos, |pos| grid[pos] == Terrain::Floor);
+        let cave = flood(floor_pos, |pos| grid[pos] == Terrain::Floor, false);
         assert!(grid::positions().all(|pos| grid[pos] == Terrain::Wall || cave.contains(&pos)));
     }
 }
