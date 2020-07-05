@@ -4,10 +4,9 @@
 //! if and only if the position is on a line with an endpoint at the
 //! origin not blocked by any wall.
 
-use grid::DIRECTIONS;
-use num::rational::Ratio;
-use num::{One, Zero};
-use prelude::*;
+use crate::prelude::*;
+use num_rational::Ratio;
+use num_traits::identities::{One, Zero};
 
 /// Implementing FOVGrid for a struct makes it possible to calculate FOV for
 /// that struct.

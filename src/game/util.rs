@@ -1,6 +1,9 @@
 //! Miscellaneous functions.
 
+pub mod dijkstra;
 pub mod floodfill;
+pub mod fov;
+pub mod minheap;
 
 /// Zip a slice with itself but rotated forward by one.
 pub fn self_zip<T: Copy>(slice: &[T]) -> Vec<(T, T)> {

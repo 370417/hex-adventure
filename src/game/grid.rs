@@ -24,8 +24,9 @@ pub const DIRECTIONS: [Direction; 6] = [
     Direction::Northwest,
 ];
 
-pub const WIDTH: usize = 34;
-pub const HEIGHT: usize = 26;
+pub const WIDTH: usize = 44;
+// Height must be even for client-side width calculations to work
+pub const HEIGHT: usize = 32;
 
 #[derive(Serialize, Deserialize)]
 pub struct Grid<T>(Box<[T]>);

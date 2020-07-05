@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod grid;
 pub mod level;
+pub mod mob;
 pub mod util;
 
 /// Contains game state

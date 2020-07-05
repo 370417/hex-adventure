@@ -1,15 +1,19 @@
 pub mod tile;
 
 mod basic;
+mod chasm;
+mod lake;
 mod stairs;
 
-pub use tile::{Terrain, Tile};
+pub use tile::Terrain;
 
+use crate::game::mob::MobId;
 use crate::prelude::*;
 use rand_xoshiro::{rand_core::SeedableRng, Xoshiro256StarStar};
 
 pub struct Level {
     terrain: Grid<Terrain>,
+    mobs: Grid<Option<MobId>>,
 }
 
 /// Responsible for generating levels.
@@ -32,6 +36,9 @@ impl Architect {
 
     pub fn generate(&mut self) -> Grid<Terrain> {
         let new_next_level = stairs::generate_next(&mut self.next_level, &mut self.rng);
-        std::mem::replace(&mut self.next_level, new_next_level)
+        let mut new_level = std::mem::replace(&mut self.next_level, new_next_level);
+        // chasm::add_chasms(&mut new_level, &mut self.next_level, &mut self.rng);
+        lake::add_lakes(&mut new_level, &mut self.rng);
+        new_level
     }
 }

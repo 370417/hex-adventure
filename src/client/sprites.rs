@@ -45,6 +45,8 @@ impl Terrain {
             Terrain::Floor => super::Location { x: 18, y: 54 },
             Terrain::Entrance => super::Location { x: 7 * 18, y: 54 },
             Terrain::Exit => super::Location { x: 8 * 18, y: 54 },
+            Terrain::Chasm => super::Location { x: 6 * 18, y: 54 },
+            Terrain::Water => super::Location { x: 5 * 18, y: 54 },
             _ => super::Location { x: 18, y: 54 },
         }
     }
@@ -53,6 +55,8 @@ impl Terrain {
         match self {
             Terrain::Wall => "#fff",
             Terrain::Entrance | Terrain::Exit => "#fff",
+            Terrain::Chasm => "#426",
+            Terrain::Water => "#00a",
             _ => "#888",
         }
         .to_owned()

@@ -1,14 +1,5 @@
 use crate::prelude::*;
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
-pub struct Tile {
-    pub terrain: Terrain,
-    pub mob_id: Option<MobId>,
-}
-
-#[derive(Copy, Clone, Serialize, Deserialize)]
-pub struct MobId {} // TODO: replace with the real thing
-
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Terrain {
     Wall,
@@ -19,6 +10,7 @@ pub enum Terrain {
     Exit,
     Entrance,
     Water,
+    Chasm,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq)]
